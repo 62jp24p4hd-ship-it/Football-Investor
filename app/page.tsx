@@ -67,12 +67,15 @@ type GamePlayer = {
   owned: Owned[];
   sold: Sold[];
   purchaseChances: number;
+  soldBonusUsedThisSeason: boolean;
   cards: Cards;
   tripleNextSeason: boolean;
   frozenSeason: number | null;
 };
 
 type RewardCard = "freeze" | "triple" | "steal";
+
+type GameLengthMode = "classic" | "infinite";
 
 type NewsItem = {
   id: number;
@@ -91,6 +94,8 @@ type SeasonEvent = {
 };
 
 const START_BUDGET = 30;
+const CLASSIC_END_SEASON = 2028;
+const MAX_OWN_SEASONS = 5;
 
 const secretPlayers: Player[] = [
   {
@@ -113,6 +118,13 @@ const secretPlayers: Player[] = [
       2019: 400,
       2020: 600,
       2021: 800,
+      2022: 900,
+      2023: 1000,
+      2024: 1200,
+      2025: 1400,
+      2026: 1600,
+      2027: 1800,
+      2028: 2000,
     },
   },
 ];
@@ -164,6 +176,7 @@ function createPlayers(): GamePlayer[] {
       owned: [],
       sold: [],
       purchaseChances: 1,
+      soldBonusUsedThisSeason: false,
       cards: emptyCards(),
       tripleNextSeason: false,
       frozenSeason: null,
@@ -174,6 +187,7 @@ function createPlayers(): GamePlayer[] {
       owned: [],
       sold: [],
       purchaseChances: 1,
+      soldBonusUsedThisSeason: false,
       cards: emptyCards(),
       tripleNextSeason: false,
       frozenSeason: null,
@@ -187,14 +201,19 @@ function randomId() {
 
 export default function Home() {
   const [mode, setMode] = useState<"single" | "versus" | null>(null);
+  const [gameLengthMode, setGameLengthMode] =
+    useState<GameLengthMode | null>(null);
+
   const [started, setStarted] = useState(false);
   const [season, setSeason] = useState(2008);
-  const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>(createPlayers());
+  const [gamePlayers, setGamePlayers] =
+    useState<GamePlayer[]>(createPlayers());
+
   const [selectedSlot, setSelectedSlot] = useState("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
-  const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState<number | null>(15);
   const [timer, setTimer] = useState(15);
   const [timerActive, setTimerActive] = useState(false);
   const [turnIndex, setTurnIndex] = useState(0);
@@ -233,8 +252,17 @@ export default function Home() {
     return easterUnlocked ? [...basePlayers, ...secretPlayers] : basePlayers;
   }, [easterUnlocked]);
 
+  function getLastKnownValue(player: Player, targetSeason: number) {
+    return (
+      player.values[targetSeason] ??
+      player.values[2028] ??
+      player.values[2021] ??
+      1
+    );
+  }
+
   function currentValue(player: Player) {
-    let value = player.values[season] ?? player.values[2021] ?? 1;
+    let value = getLastKnownValue(player, season);
 
     if (seasonEvent?.marketMultiplier) {
       value *= seasonEvent.marketMultiplier;
@@ -248,7 +276,7 @@ export default function Home() {
   }
 
   function baseValue(player: Player, targetSeason: number) {
-    return player.values[targetSeason] ?? player.values[2021] ?? 1;
+    return getLastKnownValue(player, targetSeason);
   }
 
   function currentAge(player: Player) {
@@ -533,7 +561,10 @@ function createRandomSeasonEvent(
 function endVersusTurn(updatedList?: GamePlayer[]) {
   setSelectedSlot("");
   setTimerActive(false);
-  setTimer(selectedTime ?? 15);
+
+  if (selectedTime !== null) {
+    setTimer(selectedTime);
+  }
 
   if (turnIndex === 0) {
     setTurnIndex(1);
@@ -783,14 +814,13 @@ function autoPickFromSelectedSlot() {
 function finishGame() {
   const finalPlayers = gamePlayers.map((gp) => {
     const autoSold: Sold[] = gp.owned.map((item) => {
-      const sellPrice =
-        item.player.values[2021] ?? currentValue(item.player);
+      const sellPrice = currentValue(item.player);
 
       return {
         owner: gp.name,
         name: item.player.name,
         buySeason: item.buySeason,
-        sellSeason: 2021,
+        sellSeason: season,
         buyPrice: item.buyPrice,
         sellPrice,
         profit: sellPrice - item.buyPrice,
@@ -819,13 +849,45 @@ function setupSeason(
   list: GamePlayer[]
 ) {
   return list.map((gp) => {
-    const chances =
-      gp.tripleNextSeason ? 3 : 1;
+    const chances = gp.tripleNextSeason ? 3 : 1;
+
+    const autoSold: Sold[] = [];
+    const keptOwned: Owned[] = [];
+
+    gp.owned.forEach((item) => {
+      const yearsOwned = newSeason - item.buySeason;
+
+      if (yearsOwned >= MAX_OWN_SEASONS) {
+        const sellPrice =
+          getLastKnownValue(item.player, newSeason);
+
+        autoSold.push({
+          owner: gp.name,
+          name: item.player.name,
+          buySeason: item.buySeason,
+          sellSeason: newSeason,
+          buyPrice: item.buyPrice,
+          sellPrice,
+          profit: sellPrice - item.buyPrice,
+        });
+      } else {
+        keptOwned.push(item);
+      }
+    });
+
+    const autoMoney = autoSold.reduce(
+      (sum, s) => sum + s.sellPrice,
+      0
+    );
 
     return {
       ...gp,
+      budget: gp.budget + autoMoney,
+      owned: keptOwned,
+      sold: [...autoSold, ...gp.sold],
       purchaseChances:
         gp.frozenSeason === newSeason ? 0 : chances,
+      soldBonusUsedThisSeason: false,
       tripleNextSeason: false,
     };
   });
@@ -834,7 +896,10 @@ function setupSeason(
 function nextSeason(listOverride?: GamePlayer[]) {
   const currentList = listOverride ?? gamePlayers;
 
-  if (season >= 2021) {
+  if (
+    gameLengthMode === "classic" &&
+    season >= CLASSIC_END_SEASON
+  ) {
     finishGame();
     return;
   }
@@ -856,7 +921,11 @@ function nextSeason(listOverride?: GamePlayer[]) {
   setTurnIndex(0);
   setSelectedSlot("");
   setTimerActive(false);
-  setTimer(selectedTime ?? 15);
+
+  if (selectedTime !== null) {
+    setTimer(selectedTime);
+  }
+
   setSeasonEvent(generated.event);
   setGamePlayers(generated.updatedPlayers);
 
@@ -869,6 +938,7 @@ function nextSeason(listOverride?: GamePlayer[]) {
 function restartGame() {
   setStarted(false);
   setMode(null);
+  setGameLengthMode(null);
   setSeason(2008);
   setTurnIndex(0);
   setGamePlayers(createPlayers());
@@ -876,7 +946,7 @@ function restartGame() {
   setSelectedOwnedAction(null);
   setShowEndModal(false);
   setShowStats(false);
-  setSelectedTime(null);
+  setSelectedTime(15);
   setTimer(15);
   setTimerActive(false);
   setRewardChoice(null);
@@ -906,7 +976,7 @@ function getWinnerText() {
 }
 
 function startGame() {
-  if (!mode || !selectedTime) return;
+  if (!mode || !gameLengthMode) return;
 
   setStarted(true);
   setSeason(2008);
@@ -914,7 +984,11 @@ function startGame() {
   setGamePlayers(createPlayers());
   setSelectedSlot("");
   setSelectedOwnedAction(null);
-  setTimer(selectedTime);
+
+  if (selectedTime !== null) {
+    setTimer(selectedTime);
+  }
+
   setTimerActive(false);
   setSeasonEvent(null);
   setNews([
@@ -939,8 +1013,13 @@ function selectSlot(slot: string) {
 
   setSelectedOwnedAction(null);
   setSelectedSlot(slot);
-  setTimer(selectedTime ?? 15);
-  setTimerActive(true);
+
+  if (selectedTime !== null) {
+    setTimer(selectedTime);
+    setTimerActive(true);
+  } else {
+    setTimerActive(false);
+  }
 }
 
 function selectOwnedPlayer(
@@ -1024,7 +1103,9 @@ function useFreezeCard(playerIndex: number) {
     tone: "special",
   });
 
-  notify("تم استخدام كرت التجميد 🧊 الخصم سيتجمد الموسم القادم");
+  notify(
+    "تم استخدام كرت التجميد 🧊 الخصم سيتجمد الموسم القادم"
+  );
 }
 
 function useTripleCard(playerIndex: number) {
@@ -1053,7 +1134,9 @@ function useTripleCard(playerIndex: number) {
     tone: "special",
   });
 
-  notify("تم استخدام Triple Buy ⚡ الموسم القادم عندك 3 فرص شراء");
+  notify(
+    "تم استخدام Triple Buy ⚡ الموسم القادم عندك 3 فرص شراء"
+  );
 }
 
 function useStealCard(playerIndex: number) {
@@ -1108,10 +1191,14 @@ function swapPlayers() {
   }
 
   const userPlayerName =
-    gamePlayers[userIndex].owned[stealChallenge.ownIndex].player.name;
+    gamePlayers[userIndex].owned[
+      stealChallenge.ownIndex
+    ].player.name;
 
   const enemyPlayerName =
-    gamePlayers[enemyIndex].owned[stealChallenge.enemyIndex].player.name;
+    gamePlayers[enemyIndex].owned[
+      stealChallenge.enemyIndex
+    ].player.name;
 
   setGamePlayers((prev) => {
     const copy = [...prev];
@@ -1126,8 +1213,11 @@ function swapPlayers() {
       owned: [...copy[enemyIndex].owned],
     };
 
-    const userPlayer = user.owned[stealChallenge.ownIndex!];
-    const enemyPlayer = enemy.owned[stealChallenge.enemyIndex!];
+    const userPlayer =
+      user.owned[stealChallenge.ownIndex!];
+
+    const enemyPlayer =
+      enemy.owned[stealChallenge.enemyIndex!];
 
     user.owned[stealChallenge.ownIndex!] = {
       ...enemyPlayer,
@@ -1157,8 +1247,13 @@ function swapPlayers() {
 }
 
 useEffect(() => {
-  if (!started || !timerActive || showEndModal) return;
+  if (!started) return;
+  if (!timerActive) return;
+  if (showEndModal) return;
   if (!selectedSlot) return;
+
+  // No Timer Mode
+  if (selectedTime === null) return;
 
   if (timer <= 0) {
     autoPickFromSelectedSlot();
@@ -1176,6 +1271,7 @@ useEffect(() => {
   selectedSlot,
   started,
   showEndModal,
+  selectedTime,
 ]);
 
 function newsClass(tone: NewsItem["tone"]) {
@@ -1211,49 +1307,32 @@ function renderNewsFeed() {
               : "border-gray-600 bg-black/40"
           }`}
         >
-          <p className="font-bold">
-            Current Event
-          </p>
-
+          <p className="font-bold">Current Event</p>
           <p>{seasonEvent.title}</p>
-
           <p className="text-sm text-gray-300">
             {seasonEvent.description}
           </p>
         </div>
       ) : (
         <div className="border border-gray-600 bg-black/40 rounded-xl p-3 mb-4">
-          <p className="font-bold">
-            Current Event
-          </p>
-
-          <p>
-            No active event this season.
-          </p>
+          <p className="font-bold">Current Event</p>
+          <p>No active event this season.</p>
         </div>
       )}
 
       <div className="max-h-96 overflow-y-auto space-y-3">
         {news.length === 0 ? (
-          <p className="text-gray-400">
-            No news yet.
-          </p>
+          <p className="text-gray-400">No news yet.</p>
         ) : (
           news.map((item) => (
             <div
               key={item.id}
-              className={`border rounded-xl p-3 ${newsClass(
-                item.tone
-              )}`}
+              className={`border rounded-xl p-3 ${newsClass(item.tone)}`}
             >
               <p className="text-sm text-gray-400">
                 Season {item.season}
               </p>
-
-              <p className="font-bold">
-                {item.title}
-              </p>
-
+              <p className="font-bold">{item.title}</p>
               <p className="text-sm text-gray-200">
                 {item.description}
               </p>
@@ -1340,10 +1419,12 @@ function renderCards(playerIndex: number) {
 
 function renderFormation(playerIndex: number) {
   const isActive =
-    mode === "single" || playerIndex === activePlayerIndex;
+    mode === "single" ||
+    playerIndex === activePlayerIndex;
 
   const gp = gamePlayers[playerIndex];
-  const frozen = gp.frozenSeason === season;
+  const frozen =
+    gp.frozenSeason === season;
 
   return (
     <div
@@ -1355,11 +1436,21 @@ function renderFormation(playerIndex: number) {
     >
       <div className="flex justify-between items-start gap-4">
         <div>
-          <h2 className="text-2xl font-bold">{gp.name}</h2>
+          <h2 className="text-2xl font-bold">
+            {gp.name}
+          </h2>
+
           <p>Cash: €{gp.budget}M</p>
-          <p>🎟️ Purchase Chances: {gp.purchaseChances}</p>
+
+          <p>
+            🎟️ Purchase Chances:
+            {gp.purchaseChances}
+          </p>
+
           {frozen && (
-            <p className="text-blue-300">🧊 Frozen This Season</p>
+            <p className="text-blue-300">
+              🧊 Frozen This Season
+            </p>
           )}
         </div>
       </div>
@@ -1373,7 +1464,9 @@ function renderFormation(playerIndex: number) {
             : undefined;
 
           const ownedIndex = slot
-            ? gp.owned.findIndex((item) => item.slot === slot)
+            ? gp.owned.findIndex(
+                (item) => item.slot === slot
+              )
             : -1;
 
           return slot ? (
@@ -1382,8 +1475,14 @@ function renderFormation(playerIndex: number) {
               onClick={() => {
                 if (!isActive) return;
 
-                if (ownedPlayer && ownedIndex !== -1) {
-                  selectOwnedPlayer(playerIndex, ownedIndex);
+                if (
+                  ownedPlayer &&
+                  ownedIndex !== -1
+                ) {
+                  selectOwnedPlayer(
+                    playerIndex,
+                    ownedIndex
+                  );
                   return;
                 }
 
@@ -1395,16 +1494,28 @@ function renderFormation(playerIndex: number) {
                   : "bg-black/40 border-green-500"
               }`}
             >
-              <div className="font-bold">{slot}</div>
+              <div className="font-bold">
+                {slot}
+              </div>
 
               <div className="text-xs mt-2">
-                {ownedPlayer ? ownedPlayer.player.name : "Choose"}
+                {ownedPlayer
+                  ? ownedPlayer.player.name
+                  : "Choose"}
               </div>
 
               {ownedPlayer && (
-                <div className="text-[11px] mt-1 text-gray-300">
-                  Bought €{ownedPlayer.buyPrice}M
-                </div>
+                <>
+                  <div className="text-[11px] mt-1 text-gray-300">
+                    Bought €{ownedPlayer.buyPrice}M
+                  </div>
+
+                  <div className="text-[11px] text-yellow-300">
+                    {season -
+                      ownedPlayer.buySeason}
+                    /{MAX_OWN_SEASONS} Seasons
+                  </div>
+                </>
               )}
             </button>
           ) : (
@@ -1418,7 +1529,9 @@ function renderFormation(playerIndex: number) {
 
 const selectedOwned =
   selectedOwnedAction !== null
-    ? gamePlayers[selectedOwnedAction.playerIndex]?.owned[
+    ? gamePlayers[
+        selectedOwnedAction.playerIndex
+      ]?.owned[
         selectedOwnedAction.ownedIndex
       ]
     : null;
@@ -1426,6 +1539,7 @@ const selectedOwned =
 if (!started) {
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-8">
+
       <p
         onClick={() => {
           const next = easterClicks + 1;
@@ -1437,7 +1551,7 @@ if (!started) {
         }}
         className="text-yellow-400 mb-2 cursor-pointer"
       >
-        عمو يوسف المطور المستقل AKA 7GE
+        ‎عمو يوسف المطور المستقل AKA 7GE
       </p>
 
       <h1 className="text-5xl font-bold mb-4">
@@ -1458,7 +1572,14 @@ if (!started) {
         Formation: 4-3-3
       </p>
 
+      {/* Game Mode */}
+
+      <h2 className="text-2xl font-bold mb-3">
+        Game Mode
+      </h2>
+
       <div className="flex flex-col md:flex-row gap-4 mb-8">
+
         <button
           onClick={() => setMode("single")}
           className={`px-8 py-4 rounded-xl text-xl ${
@@ -1480,23 +1601,54 @@ if (!started) {
         >
           Play vs Friend
         </button>
+
       </div>
 
       {mode && (
         <>
+          <h2 className="text-2xl font-bold mb-3">
+            Season Mode
+          </h2>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <button
+              onClick={() => setGameLengthMode("classic")}
+              className={`px-8 py-4 rounded-xl text-xl ${
+                gameLengthMode === "classic"
+                  ? "bg-yellow-700"
+                  : "bg-zinc-800"
+              }`}
+            >
+              Classic 2008-2028
+            </button>
+
+            <button
+              onClick={() => setGameLengthMode("infinite")}
+              className={`px-8 py-4 rounded-xl text-xl ${
+                gameLengthMode === "infinite"
+                  ? "bg-purple-700"
+                  : "bg-zinc-800"
+              }`}
+            >
+              Infinite Mode
+            </button>
+          </div>
+
           <h2 className="text-2xl font-bold mb-4">
             Choose Timer
           </h2>
 
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             {[
+              { label: "No Timer", value: null },
               { label: "15 sec", value: 15 },
               { label: "30 sec", value: 30 },
               { label: "45 sec", value: 45 },
               { label: "1 min", value: 60 },
             ].map((t) => (
+
               <button
-                key={t.value}
+                key={String(t.value)}
                 onClick={() => setSelectedTime(t.value)}
                 className={`px-5 py-3 rounded-xl ${
                   selectedTime === t.value
@@ -1511,7 +1663,10 @@ if (!started) {
 
           <button
             onClick={startGame}
-            disabled={!selectedTime}
+            disabled={
+              !gameLengthMode ||
+              selectedTime === undefined
+            }
             className="bg-white text-black px-8 py-4 rounded-xl text-xl disabled:bg-gray-500"
           >
             Start Game
@@ -1531,7 +1686,6 @@ return (
       </div>
     )}
 
-    {/* نافذة بيع اللاعب الجديدة */}
     {selectedOwned && (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
         <div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 text-center max-w-md w-full">
@@ -1540,17 +1694,27 @@ return (
             {selectedOwned.player.name}
           </h2>
 
+          <p className="mb-2 text-yellow-300">
+            Current Age: {currentAge(selectedOwned.player)}
+          </p>
+
           <p className="mb-2">
             Current Value:
             €{currentValue(selectedOwned.player)}M
           </p>
 
-          <p className="mb-6">
+          <p className="mb-2">
             Bought For:
             €{selectedOwned.buyPrice}M
           </p>
 
+          <p className="mb-6 text-gray-300">
+            Owned Seasons:
+            {season - selectedOwned.buySeason}/{MAX_OWN_SEASONS}
+          </p>
+
           <div className="flex gap-4 justify-center">
+
             <button
               onClick={() => {
                 sellPlayer(
@@ -1571,7 +1735,9 @@ return (
             >
               Keep Player
             </button>
+
           </div>
+
         </div>
       </div>
     )}
@@ -1607,318 +1773,381 @@ return (
     {stealChallenge && (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
 
-<div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 max-w-3xl w-full mx-4 text-center">
+        <div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 max-w-3xl w-full mx-4 text-center">
 
-  {!stealChallenge.success ? (
-    <>
-      <h2 className="text-3xl font-bold mb-4">
-        3-2-1 Challenge
-      </h2>
+          {!stealChallenge.success ? (
+            <>
+              <h2 className="text-3xl font-bold mb-4">
+                3-2-1 Challenge
+              </h2>
 
-      <button
-        onClick={() =>
-          setStealChallenge({
-            ...stealChallenge,
-            showHelp: !stealChallenge.showHelp,
-          })
-        }
-        className="bg-gray-700 px-4 py-2 rounded-lg mb-4"
-      >
-        شرح اللعبة
-      </button>
-
-      {stealChallenge.showHelp && (
-        <p className="bg-black/40 p-4 rounded-xl mb-4 text-right">
-          كل لاعب يقول نادي بعد العد 3، 2، 1.
-          بعدها أول شخص يقول اسم لاعب لعب
-          للناديين يفوز.
-          مثال:
-          Everton + Manchester United
-          = Wayne Rooney
-        </p>
-      )}
-
-      <p className="mb-6">
-        حدد مين فاز بالتحدي:
-      </p>
-
-      <div className="flex gap-4 justify-center">
-
-        <button
-          onClick={() => {
-            if (stealChallenge.userIndex === 0) {
-              setStealChallenge({
-                ...stealChallenge,
-                success: true,
-              });
-            } else {
-              setStealChallenge(null);
-              notify("خسرت التحدي وضاع الكرت");
-            }
-          }}
-          className="bg-blue-600 px-5 py-3 rounded-xl"
-        >
-          Player 1 Won
-        </button>
-
-        <button
-          onClick={() => {
-            if (stealChallenge.userIndex === 1) {
-              setStealChallenge({
-                ...stealChallenge,
-                success: true,
-              });
-            } else {
-              setStealChallenge(null);
-              notify("خسرت التحدي وضاع الكرت");
-            }
-          }}
-          className="bg-green-600 px-5 py-3 rounded-xl"
-        >
-          Player 2 Won
-        </button>
-
-      </div>
-    </>
-  ) : (
-    <>
-      <h2 className="text-3xl font-bold mb-4">
-        Swap Players
-      </h2>
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-
-  <div>
-    <h3 className="font-bold mb-2">
-      Your Player
-    </h3>
-
-    {gamePlayers[stealChallenge.userIndex].owned.map(
-      (item, index) => (
-        <button
-          key={index}
-          onClick={() =>
-            setStealChallenge({
-              ...stealChallenge,
-              ownIndex: index,
-            })
-          }
-          className={`block w-full text-left p-3 rounded-lg mb-2 ${
-            stealChallenge.ownIndex === index
-              ? "bg-blue-700"
-              : "bg-black/40"
-          }`}
-        >
-          {item.player.name} - {item.slot}
-        </button>
-      )
-    )}
-  </div>
-
-  <div>
-    <h3 className="font-bold mb-2">
-      Enemy Player
-    </h3>
-
-    {gamePlayers[
-      stealChallenge.userIndex === 0 ? 1 : 0
-    ].owned.map((item, index) => (
-      <button
-        key={index}
-        onClick={() =>
-          setStealChallenge({
-            ...stealChallenge,
-            enemyIndex: index,
-          })
-        }
-        className={`block w-full text-left p-3 rounded-lg mb-2 ${
-          stealChallenge.enemyIndex === index
-            ? "bg-red-700"
-            : "bg-black/40"
-        }`}
-      >
-        {item.player.name} - {item.slot}
-      </button>
-    ))}
-  </div>
-
-</div>
-
-<div className="flex gap-4 justify-center mt-6">
-
-  <button
-    onClick={swapPlayers}
-    className="bg-purple-700 px-5 py-3 rounded-xl"
-  >
-    Confirm Swap
-  </button>
-
-  <button
-    onClick={() => setStealChallenge(null)}
-    className="bg-gray-700 px-5 py-3 rounded-xl"
-  >
-    Cancel
-  </button>
-
-</div>
-
-</>
-)}
-
-</div>
-</div>
-)}
-
-{showEndModal && (
-  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-40">
-    <div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 max-w-4xl w-full mx-4 text-center">
-
-      {!showStats ? (
-        <>
-          <h1 className="text-4xl font-bold mb-4">
-            هذا آخر موسم
-          </h1>
-
-          <p className="text-xl mb-4">
-            القادم في التحديثات القادمة
-          </p>
-
-          <p className="text-3xl font-bold mb-8">
-            {getWinnerText()}
-          </p>
-
-          <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button
-              onClick={() => setShowStats(true)}
-              className="bg-blue-600 px-6 py-3 rounded-xl text-xl"
-            >
-              الإحصائيات
-            </button>
-
-            <button
-              onClick={restartGame}
-              className="bg-green-600 px-6 py-3 rounded-xl text-xl"
-            >
-              إعادة اللعبة
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <h1 className="text-4xl font-bold mb-4">
-            الإحصائيات
-          </h1>
-
-          <p className="text-2xl mb-2">
-            {getWinnerText()}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {gamePlayers.map((gp, playerIndex) => (
-              <div
-                key={gp.name}
-                className="bg-black/40 border border-gray-700 rounded-xl p-4"
+              <button
+                onClick={() =>
+                  setStealChallenge({
+                    ...stealChallenge,
+                    showHelp: !stealChallenge.showHelp,
+                  })
+                }
+                className="bg-gray-700 px-4 py-2 rounded-lg mb-4"
               >
-                <h2 className="text-2xl font-bold mb-2">
-                  {gp.name}
-                </h2>
+                شرح اللعبة
+              </button>
 
-                <p>
-                  Final Cash: €{gp.budget}M
+              {stealChallenge.showHelp && (
+                <p className="bg-black/40 p-4 rounded-xl mb-4 text-right">
+                  كل لاعب يقول نادي بعد العد 3، 2، 1.
+                  بعدها أول شخص يقول اسم لاعب لعب
+                  للناديين يفوز.
+
+                  مثال:
+
+                  Everton + Manchester United
+                  = Wayne Rooney
                 </p>
+              )}
 
-                <p
-                  className={
-                    totalProfit(playerIndex) >= 0
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }
-                >
-                  Total Profit / Loss: €{totalProfit(playerIndex)}M
-                </p>
-              </div>
-            ))}
-          </div>
+              <p className="mb-6">
+                حدد مين فاز بالتحدي:
+              </p>
 
-          <div className="max-h-96 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-left">
-            {gamePlayers
-              .flatMap((gp) => gp.sold)
-              .map((s, index) => (
-                <div
-                  key={index}
-                  className="bg-black/40 border border-gray-700 rounded-xl p-4"
-                >
-                  <p className="text-xl font-bold">
-                    {s.name}
-                  </p>
+              <div className="flex gap-4 justify-center">
 
-                  <p>Owner: {s.owner}</p>
-                  <p>Bought in: {s.buySeason}</p>
-                  <p>Sold in: {s.sellSeason}</p>
-                  <p>Bought: €{s.buyPrice}M</p>
-                  <p>Sold: €{s.sellPrice}M</p>
-
-                  <p
-                    className={
-                      s.profit >= 0
-                        ? "text-green-400"
-                        : "text-red-400"
+                <button
+                  onClick={() => {
+                    if (stealChallenge.userIndex === 0) {
+                      setStealChallenge({
+                        ...stealChallenge,
+                        success: true,
+                      });
+                    } else {
+                      setStealChallenge(null);
+                      notify("خسرت التحدي وضاع الكرت");
                     }
-                  >
-                    {s.profit >= 0 ? "Profit" : "Loss"}: €{s.profit}M
-                  </p>
+                  }}
+                  className="bg-blue-600 px-5 py-3 rounded-xl"
+                >
+                  Player 1 Won
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (stealChallenge.userIndex === 1) {
+                      setStealChallenge({
+                        ...stealChallenge,
+                        success: true,
+                      });
+                    } else {
+                      setStealChallenge(null);
+                      notify("خسرت التحدي وضاع الكرت");
+                    }
+                  }}
+                  className="bg-green-600 px-5 py-3 rounded-xl"
+                >
+                  Player 2 Won
+                </button>
+
+              </div>
+            </>
+          ) : (
+
+            <>
+              <h2 className="text-3xl font-bold mb-4">
+                Swap Players
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+
+                <div>
+                  <h3 className="font-bold mb-2">
+                    Your Player
+                  </h3>
+
+                  {gamePlayers[
+                    stealChallenge.userIndex
+                  ].owned.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() =>
+                        setStealChallenge({
+                          ...stealChallenge,
+                          ownIndex: index,
+                        })
+                      }
+                      className={`block w-full text-left p-3 rounded-lg mb-2 ${
+                        stealChallenge.ownIndex === index
+                          ? "bg-blue-700"
+                          : "bg-black/40"
+                      }`}
+                    >
+                      {item.player.name} - {item.slot}
+                    </button>
+                  ))}
                 </div>
-              ))}
-          </div>
 
-          <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button
-              onClick={() => setShowStats(false)}
-              className="bg-gray-700 px-6 py-3 rounded-xl text-xl"
-            >
-              رجوع
-            </button>
+                <div>
+                  <h3 className="font-bold mb-2">
+                    Enemy Player
+                  </h3>
 
-            <button
-              onClick={restartGame}
-              className="bg-green-600 px-6 py-3 rounded-xl text-xl"
-            >
-              إعادة اللعبة
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  </div>
-)}
+                  {gamePlayers[
+                    stealChallenge.userIndex === 0 ? 1 : 0
+                  ].owned.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() =>
+                        setStealChallenge({
+                          ...stealChallenge,
+                          enemyIndex: index,
+                        })
+                      }
+                      className={`block w-full text-left p-3 rounded-lg mb-2 ${
+                        stealChallenge.enemyIndex === index
+                          ? "bg-red-700"
+                          : "bg-black/40"
+                      }`}
+                    >
+                      {item.player.name} - {item.slot}
+                    </button>
+                  ))}
+                </div>
+
+              </div>
+
+              <div className="flex gap-4 justify-center mt-6">
+
+                <button
+                  onClick={swapPlayers}
+                  className="bg-purple-700 px-5 py-3 rounded-xl"
+                >
+                  Confirm Swap
+                </button>
+
+                <button
+                  onClick={() => setStealChallenge(null)}
+                  className="bg-gray-700 px-5 py-3 rounded-xl"
+                >
+                  Cancel
+                </button>
+
+              </div>
+
+            </>
+          )}
+
+        </div>
+      </div>
+    )}
+
+    {showEndModal && (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-40">
+
+        <div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 max-w-4xl w-full mx-4 text-center">
+
+          {!showStats ? (
+            <>
+              <h1 className="text-4xl font-bold mb-4">
+                Game Finished
+              </h1>
+
+              <p className="text-xl mb-4">
+                Season {season}
+              </p>
+
+              <p className="text-3xl font-bold mb-8">
+                {getWinnerText()}
+              </p>
+
+              <div className="flex flex-col md:flex-row gap-4 justify-center">
+
+                <button
+                  onClick={() => setShowStats(true)}
+                  className="bg-blue-600 px-6 py-3 rounded-xl text-xl"
+                >
+                  Statistics
+                </button>
+
+                <button
+                  onClick={restartGame}
+                  className="bg-green-600 px-6 py-3 rounded-xl text-xl"
+                >
+                  Restart Game
+                </button>
+
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold mb-4">
+                Statistics
+              </h1>
+
+              <p className="text-2xl mb-2">
+                {getWinnerText()}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+                {gamePlayers.map((gp, playerIndex) => (
+                  <div
+                    key={gp.name}
+                    className="bg-black/40 border border-gray-700 rounded-xl p-4"
+                  >
+                    <h2 className="text-2xl font-bold mb-2">
+                      {gp.name}
+                    </h2>
+
+                    <p>
+                      Final Cash: €{gp.budget}M
+                    </p>
+
+                    <p
+                      className={
+                        totalProfit(playerIndex) >= 0
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }
+                    >
+                      Total Profit / Loss:
+                      €{totalProfit(playerIndex)}M
+                    </p>
+                  </div>
+                ))}
+
+              </div>
+
+              <div className="max-h-96 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-left">
+
+                {gamePlayers
+                  .flatMap((gp) => gp.sold)
+                  .map((s, index) => (
+                    <div
+                      key={index}
+                      className="bg-black/40 border border-gray-700 rounded-xl p-4"
+                    >
+                      <p className="text-xl font-bold">
+                        {s.name}
+                      </p>
+
+                      <p>Owner: {s.owner}</p>
+
+                      <p>
+                        Bought in:
+                        {s.buySeason}
+                      </p>
+
+                      <p>
+                        Sold in:
+                        {s.sellSeason}
+                      </p>
+
+                      <p>
+                        Bought:
+                        €{s.buyPrice}M
+                      </p>
+
+                      <p>
+                        Sold:
+                        €{s.sellPrice}M
+                      </p>
+
+                      <p
+                        className={
+                          s.profit >= 0
+                            ? "text-green-400"
+                            : "text-red-400"
+                        }
+                      >
+                        {s.profit >= 0
+                          ? "Profit"
+                          : "Loss"}
+                        : €{s.profit}M
+                      </p>
+                    </div>
+                  ))}
+
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-4 justify-center">
+
+                <button
+                  onClick={() =>
+                    setShowStats(false)
+                  }
+                  className="bg-gray-700 px-6 py-3 rounded-xl text-xl"
+                >
+                  Back
+                </button>
+
+                <button
+                  onClick={restartGame}
+                  className="bg-green-600 px-6 py-3 rounded-xl text-xl"
+                >
+                  Restart Game
+                </button>
+
+              </div>
+
+            </>
+          )}
+
+        </div>
+      </div>
+    )}
 
 <h1 className="text-4xl font-bold mb-2">
   Season {season}
 </h1>
 
+<p className="text-lg text-gray-400 mb-2">
+  Mode:
+  {gameLengthMode === "classic"
+    ? " Classic 2008-2028"
+    : " Infinite"}
+</p>
+
 {mode === "versus" && (
   <p className="text-2xl mb-2">
-    Turn: {activePlayer.name} | Timer:{" "}
-    {selectedSlot ? `${timer}s` : "Waiting"}
+    Turn: {activePlayer.name} |{" "}
+    {selectedTime === null
+      ? "No Timer"
+      : selectedSlot
+      ? `${timer}s`
+      : "Waiting"}
   </p>
 )}
 
-{mode === "single" && selectedSlot && (
+{mode === "single" && (
   <p className="text-2xl mb-2">
-    Timer: {timer}s
+    {selectedTime === null
+      ? "No Timer"
+      : selectedSlot
+      ? `Timer: ${timer}s`
+      : ""}
   </p>
 )}
 
-<button
-onClick={() => nextSeason()}
-  className="mb-6 bg-yellow-600 px-5 py-3 rounded-lg"
->
-  {season >= 2021
-    ? "Finish Game"
-    : "Continue Next Season"}
-</button>
+<div className="flex flex-wrap gap-3 mb-6">
+
+  <button
+    onClick={() => nextSeason()}
+    className="bg-yellow-600 px-5 py-3 rounded-lg"
+  >
+    Continue Next Season
+  </button>
+
+  {gameLengthMode === "infinite" && (
+    <button
+      onClick={finishGame}
+      className="bg-red-700 px-5 py-3 rounded-lg"
+    >
+      End Game
+    </button>
+  )}
+
+</div>
 
 {mode === "single" ? (
+
   <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
 
     <section className="xl:col-span-2">
@@ -1926,6 +2155,7 @@ onClick={() => nextSeason()}
     </section>
 
     <aside className="bg-zinc-900 border border-gray-700 rounded-2xl p-5">
+
       <h2 className="text-3xl font-bold mb-4">
         Portfolio
       </h2>
@@ -1949,11 +2179,14 @@ onClick={() => nextSeason()}
         </p>
       ) : (
         <div className="space-y-3 mb-6">
+
           {gamePlayers[0].owned.map((item, index) => (
+
             <div
               key={index}
               className="bg-black/40 p-3 rounded-xl"
             >
+
               <p className="font-bold">
                 {item.player.name}
               </p>
@@ -1972,6 +2205,11 @@ onClick={() => nextSeason()}
                 €{item.buyPrice}M in {item.buySeason}
               </p>
 
+              <p className="text-yellow-400">
+                Seasons Owned:
+                {season - item.buySeason}/{MAX_OWN_SEASONS}
+              </p>
+
               <button
                 onClick={() =>
                   selectOwnedPlayer(0, index)
@@ -1980,16 +2218,22 @@ onClick={() => nextSeason()}
               >
                 Manage Player
               </button>
+
             </div>
+
           ))}
+
         </div>
       )}
+
     </aside>
 
     {renderNewsFeed()}
 
   </div>
+
 ) : (
+
   <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
     <div className="xl:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -2003,46 +2247,62 @@ onClick={() => nextSeason()}
 )}
 
 {selectedSlot && (
+
   <div className="mt-8">
+
     <h2 className="text-3xl font-bold mb-4">
       Choose {selectedSlot} Player for {activePlayer.name}
     </h2>
 
     {options.length === 0 ? (
+
       <p className="text-red-400">
         No players available for this position in {season}.
       </p>
+
     ) : (
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
         {options.map((player) => (
+
           <div
             key={player.name}
             className="border border-gray-700 rounded-xl p-4 bg-zinc-900"
           >
-            <p>Age: {currentAge(player)}</p>
 
             <p>
-              Nationality: {player.nationality}
+              Age: {currentAge(player)}
             </p>
 
             <p>
-              Height: {player.height} cm
+              Nationality:
+              {player.nationality}
             </p>
 
             <p>
-              League: {player.league}
+              Height:
+              {player.height} cm
             </p>
 
             <p>
-              Games: {player.games ?? 0}
+              League:
+              {player.league}
             </p>
 
             <p>
-              Goals: {player.goals ?? 0}
+              Games:
+              {player.games ?? 0}
             </p>
 
             <p>
-              Assists: {player.assists ?? 0}
+              Goals:
+              {player.goals ?? 0}
+            </p>
+
+            <p>
+              Assists:
+              {player.assists ?? 0}
             </p>
 
             {player.position === "GK" && (
@@ -2069,11 +2329,13 @@ onClick={() => nextSeason()}
             )}
 
             <p>
-              Rating: {player.rating ?? "-"}
+              Rating:
+              {player.rating ?? "-"}
             </p>
 
             <p>
-              Value: €{currentValue(player)}M
+              Value:
+              €{currentValue(player)}M
             </p>
 
             {seasonEvent?.playerMultipliers?.[
@@ -2096,10 +2358,15 @@ onClick={() => nextSeason()}
             >
               Buy
             </button>
+
           </div>
+
         ))}
+
       </div>
+
     )}
+
   </div>
 )}
 
