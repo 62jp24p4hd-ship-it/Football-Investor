@@ -1,7 +1,5 @@
 
 
-
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -532,7 +530,7 @@ function createRandomSeasonEvent(
   };
 }
 
-function endVersusTurn() {
+function endVersusTurn(updatedList?: GamePlayer[]) {
   setSelectedSlot("");
   setTimerActive(false);
   setTimer(selectedTime ?? 15);
@@ -541,14 +539,11 @@ function endVersusTurn() {
     setTurnIndex(1);
   } else {
     setTurnIndex(0);
-    setTimeout(() => nextSeason(), 400);
+    nextSeason(updatedList);
   }
 }
 
-function buyPlayer(
-  player: Player,
-  slot: string = selectedSlot
-) {
+function buyPlayer(player: Player, slot: string = selectedSlot) {
   const gp = gamePlayers[activePlayerIndex];
   const price = currentValue(player);
 
@@ -570,13 +565,9 @@ function buyPlayer(
     return notify("هذا المركز مشغول بالفعل");
   }
 
-  const alreadyOwned =
-    gamePlayers[0].owned.some(
-      (x) => x.player.name === player.name
-    ) ||
-    gamePlayers[1].owned.some(
-      (x) => x.player.name === player.name
-    );
+  const alreadyOwned = gamePlayers.some((team) =>
+    team.owned.some((x) => x.player.name === player.name)
+  );
 
   if (alreadyOwned) {
     return notify("اللاعب مملوك بالفعل");
@@ -585,8 +576,7 @@ function buyPlayer(
   const updatedPlayer: GamePlayer = {
     ...gp,
     budget: gp.budget - price,
-    purchaseChances:
-      gp.purchaseChances - 1,
+    purchaseChances: gp.purchaseChances - 1,
     owned: [
       ...gp.owned,
       {
@@ -598,20 +588,19 @@ function buyPlayer(
     ],
   };
 
-  updateGamePlayer(
-    activePlayerIndex,
-    updatedPlayer
+  const updatedList = gamePlayers.map((p, i) =>
+    i === activePlayerIndex ? updatedPlayer : p
   );
 
-  notify(
-    `تم شراء ${player.name} مقابل €${price}M`
-  );
+  setGamePlayers(updatedList);
+
+  notify(`تم شراء ${player.name} مقابل €${price}M`);
 
   setSelectedSlot("");
   setTimerActive(false);
 
   if (mode === "versus") {
-    endVersusTurn();
+    endVersusTurn(updatedList);
   }
 }
 
@@ -842,16 +831,26 @@ function setupSeason(
   });
 }
 
-function nextSeason() {
+function nextSeason(listOverride?: GamePlayer[]) {
+  const currentList = listOverride ?? gamePlayers;
+
   if (season >= 2021) {
     finishGame();
     return;
   }
 
   const newSeason = season + 1;
-  const resetPlayers = setupSeason(newSeason, gamePlayers);
+
+  const resetPlayers = setupSeason(
+    newSeason,
+    currentList
+  );
+
   const generated =
-    createRandomSeasonEvent(newSeason, resetPlayers);
+    createRandomSeasonEvent(
+      newSeason,
+      resetPlayers
+    );
 
   setSeason(newSeason);
   setTurnIndex(0);
@@ -860,7 +859,11 @@ function nextSeason() {
   setTimer(selectedTime ?? 15);
   setSeasonEvent(generated.event);
   setGamePlayers(generated.updatedPlayers);
-  setNews((prev) => [generated.newsItem, ...prev]);
+
+  setNews((prev) => [
+    generated.newsItem,
+    ...prev,
+  ]);
 }
 
 function restartGame() {
@@ -1907,7 +1910,7 @@ return (
 )}
 
 <button
-  onClick={nextSeason}
+onClick={() => nextSeason()}
   className="mb-6 bg-yellow-600 px-5 py-3 rounded-lg"
 >
   {season >= 2021
