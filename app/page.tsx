@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -11,6 +12,17 @@ import { players2014 } from "./data/players2014";
 import { players2015 } from "./data/players2015";
 import { players2016 } from "./data/players2016";
 import { players2017 } from "./data/players2017";
+import { players2018 } from "./data/players2018";
+import { players2019 } from "./data/players2019";
+import { players2020 } from "./data/players2020";
+import { players2021 } from "./data/players2021";
+import { players2022 } from "./data/players2022";
+import { players2023 } from "./data/players2023";
+import { players2024 } from "./data/players2024";
+import { players2025 } from "./data/players2025";
+import { players2026 } from "./data/players2026";
+import { players2027 } from "./data/players2027";
+import { players2028 } from "./data/players2028";
 
 type Player = {
   name: string;
@@ -74,6 +86,8 @@ type GamePlayer = {
 type RewardCard = "freeze" | "triple" | "steal";
 type GameLengthMode = "classic" | "infinite";
 type GeneratedPlayerType = "talent" | "normal" | "flop";
+type BudgetMode = "lucky" | "balanced" | "rich" | "billionaire";
+type EventType = "all" | "positive" | "negative";
 
 type NewsItem = {
   id: number;
@@ -86,31 +100,108 @@ type NewsItem = {
 type SeasonEvent = {
   title: string;
   description: string;
-  tone: "good" | "bad" | "neutral";
+  tone: "good" | "bad" | "neutral" | "special";
   marketMultiplier?: number;
   playerMultipliers?: Record<string, number>;
 };
 
-const START_BUDGET = 30;
 const CLASSIC_END_SEASON = 2028;
 const MAX_OWN_SEASONS = 5;
 
+const budgetSettings: Record<
+  BudgetMode,
+  {
+    label: string;
+    budget: number;
+    badEventMultiplier: number;
+    goodEventMultiplier: number;
+  }
+> = {
+  lucky: {
+    label: "€10M Lucky Investor",
+    budget: 10,
+    badEventMultiplier: 0.75,
+    goodEventMultiplier: 1.15,
+  },
+  balanced: {
+    label: "€30M Balanced",
+    budget: 30,
+    badEventMultiplier: 1,
+    goodEventMultiplier: 1,
+  },
+  rich: {
+    label: "€100M Rich Investor",
+    budget: 100,
+    badEventMultiplier: 1.25,
+    goodEventMultiplier: 0.95,
+  },
+  billionaire: {
+    label: "€200M Billionaire",
+    budget: 200,
+    badEventMultiplier: 1.5,
+    goodEventMultiplier: 0.9,
+  },
+};
+
 const generatedFirstNames = [
-  "Luca", "Mateo", "Noah", "Rayan", "Elias", "Adam",
-  "Nico", "Leo", "Milan", "Ilyas", "Dario", "Kian",
-  "Yanis", "Amir", "Tiago", "Enzo", "Omar", "Sami",
+  "Luca",
+  "Mateo",
+  "Noah",
+  "Rayan",
+  "Elias",
+  "Adam",
+  "Nico",
+  "Leo",
+  "Milan",
+  "Ilyas",
+  "Dario",
+  "Kian",
+  "Yanis",
+  "Amir",
+  "Tiago",
+  "Enzo",
+  "Omar",
+  "Sami",
 ];
 
 const generatedLastNames = [
-  "Moretti", "Silva", "Kovacs", "Diallo", "Martinez", "Haddad",
-  "Fernandes", "Santos", "Novak", "Mensah", "Benali", "Costa",
-  "Bakker", "Romero", "Demir", "Fischer", "Mendes", "Vargas",
+  "Moretti",
+  "Silva",
+  "Kovacs",
+  "Diallo",
+  "Martinez",
+  "Haddad",
+  "Fernandes",
+  "Santos",
+  "Novak",
+  "Mensah",
+  "Benali",
+  "Costa",
+  "Bakker",
+  "Romero",
+  "Demir",
+  "Fischer",
+  "Mendes",
+  "Vargas",
 ];
 
 const generatedNationalities = [
-  "Brazil", "Argentina", "France", "Spain", "Portugal",
-  "Netherlands", "Germany", "Italy", "England", "Belgium",
-  "Morocco", "Senegal", "Nigeria", "Turkey", "Croatia", "Uruguay",
+  "Brazil",
+  "Argentina",
+  "France",
+  "Spain",
+  "Portugal",
+  "Netherlands",
+  "Germany",
+  "Italy",
+  "England",
+  "Belgium",
+  "Morocco",
+  "Senegal",
+  "Nigeria",
+  "Turkey",
+  "Croatia",
+  "Uruguay",
 ];
 
 const generatedLeagues = [
@@ -129,18 +220,100 @@ const generatedLeagues = [
 ];
 
 function pickRandom<T>(list: T[]) {
-  return list[Math.floor(Math.random() * list.length)];
+  return list[
+    Math.floor(
+      Math.random() * list.length
+    )
+  ];
 }
 
-function randomBetween(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function randomBetween(
+  min: number,
+  max: number
+) {
+  return (
+    Math.floor(
+      Math.random() *
+        (max - min + 1)
+    ) + min
+  );
+}
+
+function getStartingBudget(
+  budgetMode: BudgetMode
+) {
+  return budgetSettings[
+    budgetMode
+  ].budget;
+}
+
+function emptyCards(): Cards {
+  return {
+    freeze: {
+      unlocked: false,
+      used: false,
+    },
+
+    triple: {
+      unlocked: false,
+      used: false,
+    },
+
+    steal: {
+      unlocked: false,
+      used: false,
+    },
+  };
+}
+
+function createPlayers(
+  budgetMode: BudgetMode
+): GamePlayer[] {
+  const startingBudget =
+    getStartingBudget(
+      budgetMode
+    );
+
+  return [
+    {
+      name: "Player 1",
+      budget: startingBudget,
+      owned: [],
+      sold: [],
+      purchaseChances: 1,
+      soldBonusUsedThisSeason: false,
+      cards: emptyCards(),
+      tripleNextSeason: false,
+      frozenSeason: null,
+    },
+
+    {
+      name: "Player 2",
+      budget: startingBudget,
+      owned: [],
+      sold: [],
+      purchaseChances: 1,
+      soldBonusUsedThisSeason: false,
+      cards: emptyCards(),
+      tripleNextSeason: false,
+      frozenSeason: null,
+    },
+  ];
+}
+
+function randomId() {
+  return (
+    Date.now() +
+    Math.floor(
+      Math.random() * 100000
+    )
+  );
 }
 
 function createGeneratedPlayer(
   season: number,
   position: string
 ): Player {
-
   const typeRoll = Math.random();
 
   let hiddenType: GeneratedPlayerType;
@@ -153,14 +326,17 @@ function createGeneratedPlayer(
     hiddenType = "normal";
   }
 
-  const name =
-    `${pickRandom(generatedFirstNames)} ${pickRandom(generatedLastNames)}`;
+  const name = `${pickRandom(
+    generatedFirstNames
+  )} ${pickRandom(generatedLastNames)}`;
 
-  const nationality =
-    pickRandom(generatedNationalities);
+  const nationality = pickRandom(
+    generatedNationalities
+  );
 
-  const league =
-    pickRandom(generatedLeagues);
+  const league = pickRandom(
+    generatedLeagues
+  );
 
   const startAge =
     randomBetween(17, 22);
@@ -191,27 +367,26 @@ function createGeneratedPlayer(
     s <= season + 10;
     s++
   ) {
-
     if (hiddenType === "talent") {
       current = Math.round(
-        current *
-          randomBetween(110, 180) /
+        (current *
+          randomBetween(110, 180)) /
           100
       );
     }
 
     if (hiddenType === "normal") {
       current = Math.round(
-        current *
-          randomBetween(95, 125) /
+        (current *
+          randomBetween(95, 125)) /
           100
       );
     }
 
     if (hiddenType === "flop") {
       current = Math.round(
-        current *
-          randomBetween(60, 95) /
+        (current *
+          randomBetween(60, 95)) /
           100
       );
     }
@@ -226,7 +401,7 @@ function createGeneratedPlayer(
       ? randomBetween(70, 84)
       : randomBetween(55, 75);
 
-  let games = randomBetween(15, 38);
+  const games = randomBetween(15, 38);
 
   let goals = 0;
   let assists = 0;
@@ -362,6 +537,17 @@ const basePlayers: Player[] = [
   ...players2015,
   ...players2016,
   ...players2017,
+  ...players2018,
+  ...players2019,
+  ...players2020,
+  ...players2021,
+  ...players2022,
+  ...players2023,
+  ...players2024,
+  ...players2025,
+  ...players2026,
+  ...players2027,
+  ...players2028,
 ];
 
 const formation433 = [
@@ -372,53 +558,30 @@ const formation433 = [
   ["", "", "GK", "", ""],
 ];
 
-function slotToPosition(slot: string) {
-  if (slot === "LCM" || slot === "RCM") return "CM";
-  if (slot === "LCB" || slot === "RCB") return "CB";
+function slotToPosition(
+  slot: string
+) {
+  if (
+    slot === "LCM" ||
+    slot === "RCM"
+  ) {
+    return "CM";
+  }
+
+  if (
+    slot === "LCB" ||
+    slot === "RCB"
+  ) {
+    return "CB";
+  }
+
   return slot;
 }
 
 function shuffle<T>(list: T[]) {
-  return [...list].sort(() => Math.random() - 0.5);
-}
-
-function emptyCards(): Cards {
-  return {
-    freeze: { unlocked: false, used: false },
-    triple: { unlocked: false, used: false },
-    steal: { unlocked: false, used: false },
-  };
-}
-
-function createPlayers(): GamePlayer[] {
-  return [
-    {
-      name: "Player 1",
-      budget: START_BUDGET,
-      owned: [],
-      sold: [],
-      purchaseChances: 1,
-      soldBonusUsedThisSeason: false,
-      cards: emptyCards(),
-      tripleNextSeason: false,
-      frozenSeason: null,
-    },
-    {
-      name: "Player 2",
-      budget: START_BUDGET,
-      owned: [],
-      sold: [],
-      purchaseChances: 1,
-      soldBonusUsedThisSeason: false,
-      cards: emptyCards(),
-      tripleNextSeason: false,
-      frozenSeason: null,
-    },
-  ];
-}
-
-function randomId() {
-  return Date.now() + Math.floor(Math.random() * 100000);
+  return [...list].sort(
+    () => Math.random() - 0.5
+  );
 }
 
 export default function Home() {
@@ -428,6 +591,18 @@ export default function Home() {
   const [gameLengthMode, setGameLengthMode] =
     useState<GameLengthMode | null>(null);
 
+  const [budgetMode, setBudgetMode] =
+    useState<BudgetMode>("balanced");
+
+  const [eventsEnabled, setEventsEnabled] =
+    useState(true);
+
+  const [eventType, setEventType] =
+    useState<EventType>("all");
+
+  const [showHowToPlay, setShowHowToPlay] =
+    useState(false);
+
   const [started, setStarted] =
     useState(false);
 
@@ -435,10 +610,14 @@ export default function Home() {
     useState(2008);
 
   const [gamePlayers, setGamePlayers] =
-    useState<GamePlayer[]>(createPlayers());
+    useState<GamePlayer[]>(
+      createPlayers("balanced")
+    );
 
-  const [generatedPlayersBySeason,
-    setGeneratedPlayersBySeason] =
+  const [
+    generatedPlayersBySeason,
+    setGeneratedPlayersBySeason,
+  ] =
     useState<Record<number, Player[]>>({});
 
   const [selectedSlot, setSelectedSlot] =
@@ -471,26 +650,32 @@ export default function Home() {
   const [message, setMessage] =
     useState("");
 
-  const [selectedOwnedAction, setSelectedOwnedAction] =
-    useState<{
-      playerIndex: number;
-      ownedIndex: number;
-    } | null>(null);
+  const [
+    selectedOwnedAction,
+    setSelectedOwnedAction,
+  ] = useState<{
+    playerIndex: number;
+    ownedIndex: number;
+  } | null>(null);
 
-  const [rewardChoice, setRewardChoice] =
-    useState<{
-      playerIndex: number;
-      cards: RewardCard[];
-    } | null>(null);
+  const [
+    rewardChoice,
+    setRewardChoice,
+  ] = useState<{
+    playerIndex: number;
+    cards: RewardCard[];
+  } | null>(null);
 
-  const [stealChallenge, setStealChallenge] =
-    useState<{
-      userIndex: number;
-      showHelp: boolean;
-      success: boolean;
-      ownIndex: number | null;
-      enemyIndex: number | null;
-    } | null>(null);
+  const [
+    stealChallenge,
+    setStealChallenge,
+  ] = useState<{
+    userIndex: number;
+    showHelp: boolean;
+    success: boolean;
+    ownIndex: number | null;
+    enemyIndex: number | null;
+  } | null>(null);
 
   const [seasonEvent, setSeasonEvent] =
     useState<SeasonEvent | null>(null);
@@ -499,24 +684,41 @@ export default function Home() {
     useState<NewsItem[]>([]);
 
   const activePlayerIndex =
-    mode === "versus" ? turnIndex : 0;
+    mode === "versus"
+      ? turnIndex
+      : 0;
 
   const activePlayer =
-    gamePlayers[activePlayerIndex];
+    gamePlayers[
+      activePlayerIndex
+    ];
 
   const isFrozen =
-    activePlayer?.frozenSeason === season;
+    activePlayer?.frozenSeason ===
+    season;
+
+  const currentBudgetSetting =
+    budgetSettings[
+      budgetMode
+    ];
+
+  const eventSystemActive =
+    eventsEnabled;
 
   useEffect(() => {
-
     if (
-      gameLengthMode !== "infinite" ||
+      gameLengthMode !==
+        "infinite" ||
       season <= 2028
     ) {
       return;
     }
 
-    if (generatedPlayersBySeason[season]) {
+    if (
+      generatedPlayersBySeason[
+        season
+      ]
+    ) {
       return;
     }
 
@@ -532,28 +734,33 @@ export default function Home() {
       "ST",
     ];
 
-    const generated: Player[] = [];
+    const generated: Player[] =
+      [];
 
-    positions.forEach((position) => {
-
-      for (let i = 0; i < 12; i++) {
-
-        generated.push(
-          createGeneratedPlayer(
-            season,
-            position
-          )
-        );
-
+    positions.forEach(
+      (position) => {
+        for (
+          let i = 0;
+          i < 12;
+          i++
+        ) {
+          generated.push(
+            createGeneratedPlayer(
+              season,
+              position
+            )
+          );
+        }
       }
+    );
 
-    });
-
-    setGeneratedPlayersBySeason((prev) => ({
-      ...prev,
-      [season]: generated,
-    }));
-
+    setGeneratedPlayersBySeason(
+      (prev) => ({
+        ...prev,
+        [season]:
+          generated,
+      })
+    );
   }, [
     season,
     gameLengthMode,
@@ -564,11 +771,16 @@ export default function Home() {
 
     const normalPlayers =
       easterUnlocked
-        ? [...basePlayers, ...secretPlayers]
+        ? [
+            ...basePlayers,
+            ...secretPlayers,
+          ]
         : basePlayers;
 
     const generated =
-      generatedPlayersBySeason[season] ?? [];
+      generatedPlayersBySeason[
+        season
+      ] ?? [];
 
     return [
       ...normalPlayers,
@@ -585,42 +797,69 @@ export default function Home() {
     player: Player,
     targetSeason: number
   ) {
-    if (player.values[targetSeason]) {
-      return player.values[targetSeason];
+
+    if (
+      player.values[
+        targetSeason
+      ]
+    ) {
+      return player.values[
+        targetSeason
+      ];
     }
 
-    const seasons = Object.keys(player.values)
-      .map(Number)
-      .sort((a, b) => b - a);
+    const seasons =
+      Object.keys(
+        player.values
+      )
+        .map(Number)
+        .sort(
+          (a, b) => b - a
+        );
 
-    const latestPastSeason = seasons.find(
-      (s) => s <= targetSeason
-    );
+    const latestPastSeason =
+      seasons.find(
+        (s) =>
+          s <= targetSeason
+      );
 
-    if (latestPastSeason) {
-      return player.values[latestPastSeason];
+    if (
+      latestPastSeason
+    ) {
+      return player.values[
+        latestPastSeason
+      ];
     }
 
     return 1;
   }
 
-  function currentValue(player: Player) {
-    let value = getLastKnownValue(
-      player,
-      season
-    );
+  function currentValue(
+    player: Player
+  ) {
 
-    if (seasonEvent?.marketMultiplier) {
-      value *= seasonEvent.marketMultiplier;
+    let value =
+      getLastKnownValue(
+        player,
+        season
+      );
+
+    if (
+      seasonEvent?.marketMultiplier
+    ) {
+      value *=
+        seasonEvent.marketMultiplier;
     }
 
     if (
-      seasonEvent?.playerMultipliers?.[
+      seasonEvent
+        ?.playerMultipliers?.[
         player.name
       ]
     ) {
       value *=
-        seasonEvent.playerMultipliers[
+        seasonEvent
+          .playerMultipliers[
           player.name
         ];
     }
@@ -641,10 +880,15 @@ export default function Home() {
     );
   }
 
-  function currentAge(player: Player) {
+  function currentAge(
+    player: Player
+  ) {
     return (
       player.startAge +
-      (season - player.availableSeason)
+      (
+        season -
+        player.availableSeason
+      )
     );
   }
 
@@ -652,10 +896,12 @@ export default function Home() {
     playerIndex: number,
     slot: string
   ) {
+
     return gamePlayers[
       playerIndex
     ].owned.find(
-      (item) => item.slot === slot
+      (item) =>
+        item.slot === slot
     );
   }
 
@@ -663,57 +909,86 @@ export default function Home() {
     playerIndex: number,
     slot: string
   ) {
+
     return gamePlayers[
       playerIndex
     ].owned.findIndex(
-      (item) => item.slot === slot
+      (item) =>
+        item.slot === slot
     );
   }
 
   function getAllOwnedPlayers(
     list: GamePlayer[]
   ) {
-    return list.flatMap((gp, playerIndex) =>
-      gp.owned.map((item, ownedIndex) => ({
-        owner: gp.name,
-        playerIndex,
-        ownedIndex,
-        item,
-      }))
+
+    return list.flatMap(
+      (
+        gp,
+        playerIndex
+      ) =>
+        gp.owned.map(
+          (
+            item,
+            ownedIndex
+          ) => ({
+            owner: gp.name,
+            playerIndex,
+            ownedIndex,
+            item,
+          })
+        )
     );
   }
 
-  function getOptions(slot: string): Player[] {
+  function getOptions(
+    slot: string
+  ): Player[] {
+
     const realPosition =
       slotToPosition(slot);
 
     return shuffle(
       players.filter(
         (p) =>
-          p.position === realPosition &&
-          p.availableSeason === season &&
-          !gamePlayers.some((team) =>
-            team.owned.some(
-              (item) =>
-                item.player.name === p.name
-            )
+          p.position ===
+            realPosition &&
+          p.availableSeason ===
+            season &&
+          !gamePlayers.some(
+            (team) =>
+              team.owned.some(
+                (item) =>
+                  item.player
+                    .name ===
+                  p.name
+              )
           )
       )
     ).slice(0, 5);
   }
 
-  const options = useMemo<Player[]>(() => {
-    if (!selectedSlot) return [];
-    return getOptions(selectedSlot);
-  }, [
-    selectedSlot,
-    season,
-    gamePlayers,
-    players,
-    seasonEvent,
-  ]);
+  const options =
+    useMemo<Player[]>(() => {
 
-  function notify(text: string) {
+      if (!selectedSlot)
+        return [];
+
+      return getOptions(
+        selectedSlot
+      );
+
+    }, [
+      selectedSlot,
+      season,
+      gamePlayers,
+      players,
+      seasonEvent,
+    ]);
+
+  function notify(
+    text: string
+  ) {
     setMessage(text);
 
     setTimeout(() => {
@@ -722,7 +997,10 @@ export default function Home() {
   }
 
   function addNews(
-    item: Omit<NewsItem, "id">
+    item: Omit<
+      NewsItem,
+      "id"
+    >
   ) {
     setNews((prev) => [
       {
@@ -739,127 +1017,174 @@ export default function Home() {
   ) {
     setGamePlayers((prev) =>
       prev.map((p, i) =>
-        i === index ? newData : p
+        i === index
+          ? newData
+          : p
       )
     );
   }
 
-  function createRandomSeasonEvent(
+  function canRunPositiveEvents() {
+    return (
+      eventSystemActive &&
+      (
+        eventType === "all" ||
+        eventType === "positive"
+      )
+    );
+  }
+
+  function canRunNegativeEvents() {
+    return (
+      eventSystemActive &&
+      (
+        eventType === "all" ||
+        eventType === "negative"
+      )
+    );
+  }
+
+  function createQuietSeason(
     newSeason: number,
     list: GamePlayer[]
   ) {
+    return {
+      event: null as SeasonEvent | null,
+      updatedPlayers: list,
+      newsItem: {
+        id: randomId(),
+        season: newSeason,
+        title: "📰 Quiet Season",
+        description:
+          eventSystemActive
+            ? "No major football news this season."
+            : "Events are turned off this season.",
+        tone: "neutral" as const,
+      },
+    };
+  }
 
-    const roll = Math.random();
-
-    if (roll >= 0.3) {
-      return {
-        event: null as SeasonEvent | null,
-        updatedPlayers: list,
-        newsItem: {
-          id: randomId(),
-          season: newSeason,
-          title: "📰 Quiet Season",
-          description:
-            "No major football news this season.",
-          tone: "neutral" as const,
-        },
-      };
-    }
-
+  function createPositiveEvent(
+    newSeason: number,
+    list: GamePlayer[]
+  ) {
     const owned =
       getAllOwnedPlayers(list).filter(
         (o) => !o.item.player.secret
       );
 
-    if (roll < 0.15) {
+    const roll =
+      Math.random() *
+      currentBudgetSetting.goodEventMultiplier;
 
-      if (owned.length === 0) {
-        return {
-          event: {
-            title: "🔥 Hot Market",
-            description:
-              "The market is hot. All player values increased this season.",
-            tone: "good" as const,
-            marketMultiplier: 1.2,
-          },
+    if (owned.length === 0) {
+      return {
+        event: {
+          title: "🔥 Hot Market",
+          description:
+            "The market is hot. All player values increased this season.",
+          tone: "good" as const,
+          marketMultiplier: 1.2,
+        },
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🔥 Hot Market",
+          description:
+            "All player values increased by 20% this season.",
+          tone: "good" as const,
+        },
+      };
+    }
 
-          updatedPlayers: list,
+    const picked =
+      owned[
+        Math.floor(
+          Math.random() * owned.length
+        )
+      ];
 
-          newsItem: {
-            id: randomId(),
-            season: newSeason,
-            title: "🔥 Hot Market",
-            description:
-              "All player values increased by 20% this season.",
-            tone: "good" as const,
-          },
-        };
-      }
-
-      const picked =
-        owned[Math.floor(Math.random() * owned.length)];
-
-      const eventRoll = Math.random();
-
-      const oldValue = baseValue(
+    const oldValue =
+      baseValue(
         picked.item.player,
         newSeason
       );
 
-      if (eventRoll < 0.45) {
-        return {
-          event: {
-            title: "💰 Saudi Offer",
-            description: `${picked.item.player.name} received a Saudi offer. Value +50% this season.`,
-            tone: "good" as const,
-            playerMultipliers: {
-              [picked.item.player.name]: 1.5,
-            },
-          },
-
-          updatedPlayers: list,
-
-          newsItem: {
-            id: randomId(),
-            season: newSeason,
-            title: "💰 Saudi Offer",
-            description: `${picked.item.player.name} value increased from €${oldValue}M to €${Math.round(
-              oldValue * 1.5
-            )}M`,
-            tone: "good" as const,
-          },
-        };
-      }
-
-      if (eventRoll < 0.85) {
-        return {
-          event: {
-            title: "⭐ Breakout Season",
-            description: `${picked.item.player.name} exploded this season.`,
-            tone: "good" as const,
-            playerMultipliers: {
-              [picked.item.player.name]: 1.3,
-            },
-          },
-
-          updatedPlayers: list,
-
-          newsItem: {
-            id: randomId(),
-            season: newSeason,
-            title: "⭐ Breakout Season",
-            description: `${picked.item.player.name} value increased from €${oldValue}M to €${Math.round(
-              oldValue * 1.3
-            )}M`,
-            tone: "good" as const,
-          },
-        };
-      }
-
+    if (roll < 0.18) {
       return {
         event: {
-          title: "🤑 Unexpected Bid",
-          description: `${picked.item.player.name} received a massive bid.`,
+          title: "🏆 Ballon d'Or Winner",
+          description: `${picked.item.player.name} won the Ballon d'Or. Value +40% this season.`,
+          tone: "good" as const,
+          playerMultipliers: {
+            [picked.item.player.name]: 1.4,
+          },
+        },
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🏆 Ballon d'Or Winner",
+          description: `${picked.item.player.name} value increased from €${oldValue}M to €${Math.round(
+            oldValue * 1.4
+          )}M`,
+          tone: "good" as const,
+        },
+      };
+    }
+
+    if (roll < 0.35) {
+      return {
+        event: {
+          title: "🌟 Golden Boy",
+          description: `${picked.item.player.name} won the Golden Boy award.`,
+          tone: "good" as const,
+          playerMultipliers: {
+            [picked.item.player.name]: 1.6,
+          },
+        },
+
+        updatedPlayers: list,
+
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🌟 Golden Boy",
+          description: `${picked.item.player.name} value increased by 60%.`,
+          tone: "good" as const,
+        },
+      };
+    }
+
+    if (roll < 0.55) {
+      return {
+        event: {
+          title: "💰 Record Transfer",
+          description: `${picked.item.player.name} completed a record transfer.`,
+          tone: "good" as const,
+          playerMultipliers: {
+            [picked.item.player.name]: 1.75,
+          },
+        },
+
+        updatedPlayers: list,
+
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "💰 Record Transfer",
+          description: `${picked.item.player.name} became the most expensive transfer.`,
+          tone: "good" as const,
+        },
+      };
+    }
+
+    if (roll < 0.75) {
+      return {
+        event: {
+          title: "🚀 Wonderkid Explosion",
+          description: `${picked.item.player.name} exploded this season.`,
           tone: "good" as const,
           playerMultipliers: {
             [picked.item.player.name]: 2,
@@ -871,12 +1196,44 @@ export default function Home() {
         newsItem: {
           id: randomId(),
           season: newSeason,
-          title: "🤑 Unexpected Bid",
+          title: "🚀 Wonderkid Explosion",
           description: `${picked.item.player.name} value doubled.`,
           tone: "good" as const,
         },
       };
     }
+
+    return {
+      event: {
+        title: "💰 Saudi Offer",
+        description: `${picked.item.player.name} received a Saudi offer.`,
+        tone: "good" as const,
+        playerMultipliers: {
+          [picked.item.player.name]: 1.5,
+        },
+      },
+
+      updatedPlayers: list,
+
+      newsItem: {
+        id: randomId(),
+        season: newSeason,
+        title: "💰 Saudi Offer",
+        description: `${picked.item.player.name} value increased by 50%.`,
+        tone: "good" as const,
+      },
+    };
+  }
+
+  function createNegativeEvent(
+    newSeason: number,
+    list: GamePlayer[]
+  ) {
+
+    const owned =
+      getAllOwnedPlayers(list).filter(
+        (o) => !o.item.player.secret
+      );
 
     if (owned.length === 0) {
       return {
@@ -901,53 +1258,68 @@ export default function Home() {
       };
     }
 
-    const disasterRoll = Math.random();
+    const picked =
+      owned[
+        Math.floor(
+          Math.random() * owned.length
+        )
+      ];
 
-    if (disasterRoll < 0.2) {
-      const picked =
-        owned[Math.floor(Math.random() * owned.length)];
+    const roll =
+      Math.random() *
+      currentBudgetSetting.badEventMultiplier;
 
-      const updatedPlayers = list.map(
-        (gp, gpIndex) => {
-          if (gpIndex !== picked.playerIndex)
-            return gp;
-
-          return {
-            ...gp,
-            owned: gp.owned.filter(
-              (_, i) => i !== picked.ownedIndex
-            ),
-          };
-        }
-      );
-
+    if (roll < 0.2) {
       return {
         event: {
-          title: "💔 Free Transfer Exit",
-          description: `${picked.item.player.name} left for free.`,
+          title: "🤕 ACL Injury",
+          description: `${picked.item.player.name} suffered a serious ACL injury.`,
           tone: "bad" as const,
+          playerMultipliers: {
+            [picked.item.player.name]: 0.5,
+          },
         },
 
-        updatedPlayers,
+        updatedPlayers: list,
 
         newsItem: {
           id: randomId(),
           season: newSeason,
-          title: "💔 Free Transfer Exit",
-          description: `${picked.item.player.name} left the club for free.`,
+          title: "🤕 ACL Injury",
+          description: `${picked.item.player.name} value dropped by 50%.`,
           tone: "bad" as const,
         },
       };
     }
 
-    if (disasterRoll < 0.65) {
-      const picked =
-        owned[Math.floor(Math.random() * owned.length)];
-
+    if (roll < 0.35) {
       return {
         event: {
-          title: "🤕 Injury",
-          description: `${picked.item.player.name} injured.`,
+          title: "🚑 Major Injury",
+          description: `${picked.item.player.name} suffered a career threatening injury.`,
+          tone: "bad" as const,
+          playerMultipliers: {
+            [picked.item.player.name]: 0.2,
+          },
+        },
+
+        updatedPlayers: list,
+
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🚑 Major Injury",
+          description: `${picked.item.player.name} value dropped by 80%.`,
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    if (roll < 0.5) {
+      return {
+        event: {
+          title: "🪑 Bench Warmer",
+          description: `${picked.item.player.name} spent the season on the bench.`,
           tone: "bad" as const,
           playerMultipliers: {
             [picked.item.player.name]: 0.7,
@@ -959,8 +1331,71 @@ export default function Home() {
         newsItem: {
           id: randomId(),
           season: newSeason,
-          title: "🤕 Injury",
+          title: "🪑 Bench Warmer",
           description: `${picked.item.player.name} value dropped by 30%.`,
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    if (roll < 0.65) {
+      return {
+        event: {
+          title: "📉 Failed Transfer",
+          description: `${picked.item.player.name} failed after a big transfer.`,
+          tone: "bad" as const,
+          playerMultipliers: {
+            [picked.item.player.name]: 0.6,
+          },
+        },
+
+        updatedPlayers: list,
+
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "📉 Failed Transfer",
+          description: `${picked.item.player.name} value dropped by 40%.`,
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    if (roll < 0.8) {
+      const updatedPlayers =
+        list.map((gp, gpIndex) => {
+          if (
+            gpIndex !==
+            picked.playerIndex
+          ) {
+            return gp;
+          }
+
+          return {
+            ...gp,
+            owned:
+              gp.owned.filter(
+                (_, i) =>
+                  i !==
+                  picked.ownedIndex
+              ),
+          };
+        });
+
+      return {
+        event: {
+          title: "💔 Free Transfer Exit",
+          description: `${picked.item.player.name} left the club for free.`,
+          tone: "bad" as const,
+        },
+
+        updatedPlayers,
+
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "💔 Free Transfer Exit",
+          description: `${picked.item.player.name} left for free. No money received.`,
           tone: "bad" as const,
         },
       };
@@ -988,6 +1423,98 @@ export default function Home() {
     };
   }
 
+  function createRandomSeasonEvent(
+    newSeason: number,
+    list: GamePlayer[]
+  ) {
+    if (!eventSystemActive) {
+      return createQuietSeason(
+        newSeason,
+        list
+      );
+    }
+
+    const positiveAllowed =
+      canRunPositiveEvents();
+
+    const negativeAllowed =
+      canRunNegativeEvents();
+
+    if (
+      !positiveAllowed &&
+      !negativeAllowed
+    ) {
+      return createQuietSeason(
+        newSeason,
+        list
+      );
+    }
+
+    const baseEventChance = 0.35;
+
+    const eventRoll =
+      Math.random();
+
+    if (
+      eventRoll >
+      baseEventChance
+    ) {
+      return createQuietSeason(
+        newSeason,
+        list
+      );
+    }
+
+    if (
+      positiveAllowed &&
+      !negativeAllowed
+    ) {
+      return createPositiveEvent(
+        newSeason,
+        list
+      );
+    }
+
+    if (
+      negativeAllowed &&
+      !positiveAllowed
+    ) {
+      return createNegativeEvent(
+        newSeason,
+        list
+      );
+    }
+
+    const badChance =
+      0.5 *
+      currentBudgetSetting
+        .badEventMultiplier;
+
+    const normalizedBadChance =
+      Math.min(
+        0.75,
+        Math.max(
+          0.25,
+          badChance
+        )
+      );
+
+    if (
+      Math.random() <
+      normalizedBadChance
+    ) {
+      return createNegativeEvent(
+        newSeason,
+        list
+      );
+    }
+
+    return createPositiveEvent(
+      newSeason,
+      list
+    );
+  }
+
   function endVersusTurn(
     updatedList?: GamePlayer[]
   ) {
@@ -1011,7 +1538,9 @@ export default function Home() {
     slot: string = selectedSlot
   ) {
     const gp =
-      gamePlayers[activePlayerIndex];
+      gamePlayers[
+        activePlayerIndex
+      ];
 
     const price =
       currentValue(player);
@@ -1024,7 +1553,9 @@ export default function Home() {
       );
     }
 
-    if (gp.purchaseChances <= 0) {
+    if (
+      gp.purchaseChances <= 0
+    ) {
       return notify(
         "ما عندك فرص شراء متبقية"
       );
@@ -1048,11 +1579,13 @@ export default function Home() {
     }
 
     const alreadyOwned =
-      gamePlayers.some((team) =>
-        team.owned.some(
-          (x) =>
-            x.player.name === player.name
-        )
+      gamePlayers.some(
+        (team) =>
+          team.owned.some(
+            (x) =>
+              x.player.name ===
+              player.name
+          )
       );
 
     if (alreadyOwned) {
@@ -1063,7 +1596,8 @@ export default function Home() {
 
     const updatedPlayer: GamePlayer = {
       ...gp,
-      budget: gp.budget - price,
+      budget:
+        gp.budget - price,
       purchaseChances:
         gp.purchaseChances - 1,
       owned: [
@@ -1078,13 +1612,17 @@ export default function Home() {
     };
 
     const updatedList =
-      gamePlayers.map((p, i) =>
-        i === activePlayerIndex
-          ? updatedPlayer
-          : p
+      gamePlayers.map(
+        (p, i) =>
+          i ===
+          activePlayerIndex
+            ? updatedPlayer
+            : p
       );
 
-    setGamePlayers(updatedList);
+    setGamePlayers(
+      updatedList
+    );
 
     notify(
       `تم شراء ${player.name} مقابل €${price}M`
@@ -1094,7 +1632,9 @@ export default function Home() {
     setTimerActive(false);
 
     if (mode === "versus") {
-      endVersusTurn(updatedList);
+      endVersusTurn(
+        updatedList
+      );
     }
   }
 
@@ -1136,16 +1676,23 @@ export default function Home() {
     ownedIndex: number
   ) {
     const gp =
-      gamePlayers[playerIndex];
+      gamePlayers[
+        playerIndex
+      ];
 
     const item =
-      gp.owned[ownedIndex];
+      gp.owned[
+        ownedIndex
+      ];
 
     const sellPrice =
-      currentValue(item.player);
+      currentValue(
+        item.player
+      );
 
     const profit =
-      sellPrice - item.buyPrice;
+      sellPrice -
+      item.buyPrice;
 
     const extraChances =
       gp.soldBonusUsedThisSeason
@@ -1155,16 +1702,20 @@ export default function Home() {
     const soldItem: Sold = {
       owner: gp.name,
       name: item.player.name,
-      buySeason: item.buySeason,
+      buySeason:
+        item.buySeason,
       sellSeason: season,
-      buyPrice: item.buyPrice,
+      buyPrice:
+        item.buyPrice,
       sellPrice,
       profit,
     };
 
     const updatedPlayer: GamePlayer = {
       ...gp,
-      budget: gp.budget + sellPrice,
+      budget:
+        gp.budget +
+        sellPrice,
       purchaseChances:
         gp.purchaseChances +
         extraChances,
@@ -1173,9 +1724,11 @@ export default function Home() {
         soldItem,
         ...gp.sold,
       ],
-      owned: gp.owned.filter(
-        (_, i) => i !== ownedIndex
-      ),
+      owned:
+        gp.owned.filter(
+          (_, i) =>
+            i !== ownedIndex
+        ),
     };
 
     updateGamePlayer(
@@ -1183,7 +1736,9 @@ export default function Home() {
       updatedPlayer
     );
 
-    setSelectedOwnedAction(null);
+    setSelectedOwnedAction(
+      null
+    );
 
     addNews({
       season,
@@ -1205,7 +1760,9 @@ export default function Home() {
         sellPrice
       );
 
-    if (cards.length > 0) {
+    if (
+      cards.length > 0
+    ) {
       setRewardChoice({
         playerIndex,
         cards,
@@ -1213,7 +1770,9 @@ export default function Home() {
     }
   }
 
-  function chooseReward(card: RewardCard) {
+  function chooseReward(
+    card: RewardCard
+  ) {
     if (!rewardChoice) return;
 
     const ownerName =
@@ -1224,7 +1783,8 @@ export default function Home() {
     setGamePlayers((prev) =>
       prev.map((gp, i) => {
         if (
-          i !== rewardChoice.playerIndex
+          i !==
+          rewardChoice.playerIndex
         ) {
           return gp;
         }
@@ -1244,36 +1804,45 @@ export default function Home() {
 
     addNews({
       season,
-      title: "🎴 Special Card Unlocked",
+      title:
+        "🎴 Special Card Unlocked",
       description: `${ownerName} unlocked ${cardName(card)}.`,
       tone: "special",
     });
 
     setRewardChoice(null);
 
-    notify("تم فتح كرت خاص ✅");
+    notify(
+      "تم فتح كرت خاص ✅"
+    );
   }
 
   function autoPickFromSelectedSlot() {
-
     const gp =
-      gamePlayers[activePlayerIndex];
+      gamePlayers[
+        activePlayerIndex
+      ];
 
     if (!selectedSlot) return;
 
-    if (gp.purchaseChances <= 0)
+    if (
+      gp.purchaseChances <= 0
+    ) {
       return;
+    }
 
     if (isFrozen) return;
 
     const affordable =
       options.filter(
         (p) =>
-          currentValue(p) <= gp.budget
+          currentValue(p) <=
+          gp.budget
       );
 
-    if (affordable.length === 0) {
-
+    if (
+      affordable.length === 0
+    ) {
       setSelectedSlot("");
       setTimerActive(false);
 
@@ -1299,13 +1868,10 @@ export default function Home() {
   }
 
   function finishGame() {
-
     const finalPlayers =
       gamePlayers.map((gp) => {
-
         const autoSold: Sold[] =
           gp.owned.map((item) => {
-
             const sellPrice =
               currentValue(
                 item.player
@@ -1316,8 +1882,7 @@ export default function Home() {
               name: item.player.name,
               buySeason:
                 item.buySeason,
-              sellSeason:
-                season,
+              sellSeason: season,
               buyPrice:
                 item.buyPrice,
               sellPrice,
@@ -1358,19 +1923,19 @@ export default function Home() {
     newSeason: number,
     list: GamePlayer[]
   ) {
-
     return list.map((gp) => {
-
       const chances =
         gp.tripleNextSeason
           ? 3
           : 1;
 
-      const autoSold: Sold[] = [];
-      const keptOwned: Owned[] = [];
+      const autoSold: Sold[] =
+        [];
+
+      const keptOwned: Owned[] =
+        [];
 
       gp.owned.forEach((item) => {
-
         const yearsOwned =
           newSeason -
           item.buySeason;
@@ -1379,7 +1944,6 @@ export default function Home() {
           yearsOwned >=
           MAX_OWN_SEASONS
         ) {
-
           const sellPrice =
             getLastKnownValue(
               item.player,
@@ -1388,7 +1952,8 @@ export default function Home() {
 
           autoSold.push({
             owner: gp.name,
-            name: item.player.name,
+            name:
+              item.player.name,
             buySeason:
               item.buySeason,
             sellSeason:
@@ -1400,11 +1965,9 @@ export default function Home() {
               sellPrice -
               item.buyPrice,
           });
-
         } else {
           keptOwned.push(item);
         }
-
       });
 
       const autoMoney =
@@ -1429,20 +1992,18 @@ export default function Home() {
           newSeason
             ? 0
             : chances,
-        soldBonusUsedThisSeason: false,
+        soldBonusUsedThisSeason:
+          false,
         tripleNextSeason: false,
       };
-
     });
   }
 
   function nextSeason(
     listOverride?: GamePlayer[]
   ) {
-
     const currentList =
-      listOverride ??
-      gamePlayers;
+      listOverride ?? gamePlayers;
 
     if (
       gameLengthMode === "classic" &&
@@ -1515,9 +2076,15 @@ export default function Home() {
     setStarted(false);
     setMode(null);
     setGameLengthMode(null);
+    setBudgetMode("balanced");
+    setEventsEnabled(true);
+    setEventType("all");
+    setShowHowToPlay(false);
     setSeason(2008);
     setTurnIndex(0);
-    setGamePlayers(createPlayers());
+    setGamePlayers(
+      createPlayers("balanced")
+    );
     setGeneratedPlayersBySeason({});
     setSelectedSlot("");
     setSelectedOwnedAction(null);
@@ -1532,16 +2099,24 @@ export default function Home() {
     setNews([]);
   }
 
-  function totalProfit(playerIndex: number) {
-    return gamePlayers[playerIndex].sold.reduce(
-      (sum, s) => sum + s.profit,
+  function totalProfit(
+    playerIndex: number
+  ) {
+    return gamePlayers[
+      playerIndex
+    ].sold.reduce(
+      (sum, s) =>
+        sum + s.profit,
       0
     );
   }
 
   function getWinnerText() {
-    const p1Profit = totalProfit(0);
-    const p2Profit = totalProfit(1);
+    const p1Profit =
+      totalProfit(0);
+
+    const p2Profit =
+      totalProfit(1);
 
     if (mode === "single") {
       return `Total Profit / Loss: €${p1Profit}M`;
@@ -1559,12 +2134,19 @@ export default function Home() {
   }
 
   function startGame() {
-    if (!mode || !gameLengthMode) return;
+    if (
+      !mode ||
+      !gameLengthMode
+    ) {
+      return;
+    }
 
     setStarted(true);
     setSeason(2008);
     setTurnIndex(0);
-    setGamePlayers(createPlayers());
+    setGamePlayers(
+      createPlayers(budgetMode)
+    );
     setGeneratedPlayersBySeason({});
     setSelectedSlot("");
     setSelectedOwnedAction(null);
@@ -1581,14 +2163,15 @@ export default function Home() {
         id: randomId(),
         season: 2008,
         title: "📰 Game Started",
-        description:
-          "Football Investor has started. Build your portfolio.",
+        description: `Football Investor started with ${budgetSettings[budgetMode].label}.`,
         tone: "neutral",
       },
     ]);
   }
 
-  function selectSlot(slot: string) {
+  function selectSlot(
+    slot: string
+  ) {
     if (isFrozen) {
       return notify(
         "أنت مجمد هذا الموسم 🧊"
@@ -1596,21 +2179,34 @@ export default function Home() {
     }
 
     if (
-      activePlayer.purchaseChances <= 0
+      activePlayer
+        .purchaseChances <= 0
     ) {
       return notify(
         "ما عندك فرص شراء"
       );
     }
 
-    setSelectedOwnedAction(null);
+    setSelectedOwnedAction(
+      null
+    );
+
     setSelectedSlot(slot);
 
-    if (selectedTime !== null) {
-      setTimer(selectedTime);
-      setTimerActive(true);
+    if (
+      selectedTime !== null
+    ) {
+      setTimer(
+        selectedTime
+      );
+
+      setTimerActive(
+        true
+      );
     } else {
-      setTimerActive(false);
+      setTimerActive(
+        false
+      );
     }
   }
 
@@ -1620,7 +2216,8 @@ export default function Home() {
   ) {
     const canControl =
       mode === "single" ||
-      playerIndex === activePlayerIndex;
+      playerIndex ===
+        activePlayerIndex;
 
     if (!canControl) {
       return notify(
@@ -1629,7 +2226,10 @@ export default function Home() {
     }
 
     setSelectedSlot("");
-    setTimerActive(false);
+
+    setTimerActive(
+      false
+    );
 
     setSelectedOwnedAction({
       playerIndex,
@@ -1638,145 +2238,201 @@ export default function Home() {
   }
 
   function keepOwnedPlayer() {
-    setSelectedOwnedAction(null);
+    setSelectedOwnedAction(
+      null
+    );
   }
 
-  function cardName(card: RewardCard) {
-    if (card === "freeze") {
+  function cardName(
+    card: RewardCard
+  ) {
+    if (
+      card === "freeze"
+    ) {
       return "🧊 Freeze Card";
     }
 
-    if (card === "triple") {
+    if (
+      card === "triple"
+    ) {
       return "⚡ Triple Buy Card";
     }
 
     return "🕵️ Steal Card";
   }
 
-  function lockedMessage(card: RewardCard) {
-    if (card === "freeze") {
+  function lockedMessage(
+    card: RewardCard
+  ) {
+    if (
+      card === "freeze"
+    ) {
       return "لفتح Freeze Card: بع لاعب بقيمة €20M أو أكثر";
     }
 
-    if (card === "triple") {
+    if (
+      card === "triple"
+    ) {
       return "لفتح Triple Buy Card: بع لاعب بقيمة €40M أو أكثر";
     }
 
     return "لفتح Steal Card: بع لاعب بقيمة €50M أو أكثر";
   }
 
-  function useFreezeCard(playerIndex: number) {
-    if (mode !== "versus") {
+  function useFreezeCard(
+    playerIndex: number
+  ) {
+    if (
+      mode !== "versus"
+    ) {
       return notify(
         "كرت التجميد يعمل ضد صديق فقط"
       );
     }
 
     const enemyIndex =
-      playerIndex === 0 ? 1 : 0;
+      playerIndex === 0
+        ? 1
+        : 0;
 
-    setGamePlayers((prev) =>
-      prev.map((gp, i) => {
-        if (i === playerIndex) {
-          return {
-            ...gp,
-            cards: {
-              ...gp.cards,
-              freeze: {
-                unlocked: true,
-                used: true,
-              },
-            },
-          };
-        }
+    setGamePlayers(
+      (prev) =>
+        prev.map(
+          (
+            gp,
+            i
+          ) => {
+            if (
+              i ===
+              playerIndex
+            ) {
+              return {
+                ...gp,
+                cards: {
+                  ...gp.cards,
+                  freeze: {
+                    unlocked: true,
+                    used: true,
+                  },
+                },
+              };
+            }
 
-        if (i === enemyIndex) {
-          return {
-            ...gp,
-            frozenSeason: season + 1,
-          };
-        }
+            if (
+              i ===
+              enemyIndex
+            ) {
+              return {
+                ...gp,
+                frozenSeason:
+                  season + 1,
+              };
+            }
 
-        return gp;
-      })
+            return gp;
+          }
+        )
     );
 
     addNews({
       season,
-      title: "🧊 Freeze Card Used",
+      title:
+        "🧊 Freeze Card Used",
       description: `${gamePlayers[playerIndex].name} froze ${gamePlayers[enemyIndex].name} for next season.`,
       tone: "special",
     });
 
     notify(
-      "تم استخدام كرت التجميد 🧊 الخصم سيتجمد الموسم القادم"
+      "تم استخدام كرت التجميد 🧊"
     );
   }
 
-  function useTripleCard(playerIndex: number) {
-    setGamePlayers((prev) =>
-      prev.map((gp, i) =>
-        i === playerIndex
-          ? {
-              ...gp,
-              tripleNextSeason: true,
-              cards: {
-                ...gp.cards,
-                triple: {
-                  unlocked: true,
-                  used: true,
-                },
-              },
-            }
-          : gp
-      )
+  function useTripleCard(
+    playerIndex: number
+  ) {
+    setGamePlayers(
+      (prev) =>
+        prev.map(
+          (
+            gp,
+            i
+          ) =>
+            i ===
+            playerIndex
+              ? {
+                  ...gp,
+                  tripleNextSeason:
+                    true,
+                  cards: {
+                    ...gp.cards,
+                    triple: {
+                      unlocked: true,
+                      used: true,
+                    },
+                  },
+                }
+              : gp
+        )
     );
 
     addNews({
       season,
-      title: "⚡ Triple Buy Card Used",
+      title:
+        "⚡ Triple Buy Card Used",
       description: `${gamePlayers[playerIndex].name} will have 3 purchase chances next season.`,
       tone: "special",
     });
 
     notify(
-      "تم استخدام Triple Buy ⚡ الموسم القادم عندك 3 فرص شراء"
+      "تم استخدام Triple Buy ⚡"
     );
   }
 
-  function useStealCard(playerIndex: number) {
-    if (mode !== "versus") {
+  function useStealCard(
+    playerIndex: number
+  ) {
+    if (
+      mode !== "versus"
+    ) {
       return notify(
         "كرت السرقة يعمل ضد صديق فقط"
       );
     }
 
-    setGamePlayers((prev) =>
-      prev.map((gp, i) =>
-        i === playerIndex
-          ? {
-              ...gp,
-              cards: {
-                ...gp.cards,
-                steal: {
-                  unlocked: true,
-                  used: true,
-                },
-              },
-            }
-          : gp
-      )
+    setGamePlayers(
+      (prev) =>
+        prev.map(
+          (
+            gp,
+            i
+          ) =>
+            i ===
+            playerIndex
+              ? {
+                  ...gp,
+                  cards: {
+                    ...gp.cards,
+                    steal: {
+                      unlocked: true,
+                      used: true,
+                    },
+                  },
+                }
+              : gp
+        )
     );
 
     addNews({
       season,
-      title: "🕵️ Steal Card Activated",
+      title:
+        "🕵️ Steal Card Activated",
       description: `${gamePlayers[playerIndex].name} activated the Steal Card challenge.`,
       tone: "special",
     });
 
     setStealChallenge({
-      userIndex: playerIndex,
+      userIndex:
+        playerIndex,
       showHelp: false,
       success: false,
       ownIndex: null,
@@ -1785,17 +2441,25 @@ export default function Home() {
   }
 
   function swapPlayers() {
-    if (!stealChallenge) return;
+    if (
+      !stealChallenge
+    ) {
+      return;
+    }
 
     const userIndex =
       stealChallenge.userIndex;
 
     const enemyIndex =
-      userIndex === 0 ? 1 : 0;
+      userIndex === 0
+        ? 1
+        : 0;
 
     if (
-      stealChallenge.ownIndex === null ||
-      stealChallenge.enemyIndex === null
+      stealChallenge.ownIndex ===
+        null ||
+      stealChallenge.enemyIndex ===
+        null
     ) {
       return notify(
         "اختر لاعب منك ولاعب من الخصم"
@@ -1803,70 +2467,101 @@ export default function Home() {
     }
 
     const userPlayerName =
-      gamePlayers[userIndex].owned[
-        stealChallenge.ownIndex
+      gamePlayers[
+        userIndex
+      ].owned[
+        stealChallenge
+          .ownIndex
       ].player.name;
 
     const enemyPlayerName =
-      gamePlayers[enemyIndex].owned[
-        stealChallenge.enemyIndex
+      gamePlayers[
+        enemyIndex
+      ].owned[
+        stealChallenge
+          .enemyIndex
       ].player.name;
 
-    setGamePlayers((prev) => {
-      const copy = [...prev];
+    setGamePlayers(
+      (prev) => {
+        const copy =
+          [...prev];
 
-      const user = {
-        ...copy[userIndex],
-        owned: [
-          ...copy[userIndex].owned,
-        ],
-      };
+        const user = {
+          ...copy[
+            userIndex
+          ],
+          owned: [
+            ...copy[
+              userIndex
+            ].owned,
+          ],
+        };
 
-      const enemy = {
-        ...copy[enemyIndex],
-        owned: [
-          ...copy[enemyIndex].owned,
-        ],
-      };
+        const enemy = {
+          ...copy[
+            enemyIndex
+          ],
+          owned: [
+            ...copy[
+              enemyIndex
+            ].owned,
+          ],
+        };
 
-      const userPlayer =
+        const userPlayer =
+          user.owned[
+            stealChallenge
+              .ownIndex!
+          ];
+
+        const enemyPlayer =
+          enemy.owned[
+            stealChallenge
+              .enemyIndex!
+          ];
+
         user.owned[
-          stealChallenge.ownIndex!
-        ];
+          stealChallenge
+            .ownIndex!
+        ] = {
+          ...enemyPlayer,
+          slot:
+            userPlayer.slot,
+        };
 
-      const enemyPlayer =
         enemy.owned[
-          stealChallenge.enemyIndex!
-        ];
+          stealChallenge
+            .enemyIndex!
+        ] = {
+          ...userPlayer,
+          slot:
+            enemyPlayer.slot,
+        };
 
-      user.owned[
-        stealChallenge.ownIndex!
-      ] = {
-        ...enemyPlayer,
-        slot: userPlayer.slot,
-      };
+        copy[
+          userIndex
+        ] = user;
 
-      enemy.owned[
-        stealChallenge.enemyIndex!
-      ] = {
-        ...userPlayer,
-        slot: enemyPlayer.slot,
-      };
+        copy[
+          enemyIndex
+        ] = enemy;
 
-      copy[userIndex] = user;
-      copy[enemyIndex] = enemy;
-
-      return copy;
-    });
+        return copy;
+      }
+    );
 
     addNews({
       season,
-      title: "🕵️ Player Swap",
+      title:
+        "🕵️ Player Swap",
       description: `${gamePlayers[userIndex].name} swapped ${userPlayerName} for ${enemyPlayerName}.`,
       tone: "special",
     });
 
-    setStealChallenge(null);
+    setStealChallenge(
+      null
+    );
 
     notify(
       "تم تبديل اللاعبين بنجاح 🕵️"
@@ -1874,23 +2569,48 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (!started) return;
-    if (!timerActive) return;
-    if (showEndModal) return;
-    if (!selectedSlot) return;
+    if (!started)
+      return;
 
-    if (selectedTime === null) return;
+    if (!timerActive)
+      return;
+
+    if (
+      showEndModal
+    )
+      return;
+
+    if (
+      !selectedSlot
+    )
+      return;
+
+    if (
+      selectedTime ===
+      null
+    )
+      return;
 
     if (timer <= 0) {
       autoPickFromSelectedSlot();
       return;
     }
 
-    const interval = setTimeout(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
+    const interval =
+      setTimeout(
+        () => {
+          setTimer(
+            (prev) =>
+              prev - 1
+          );
+        },
+        1000
+      );
 
-    return () => clearTimeout(interval);
+    return () =>
+      clearTimeout(
+        interval
+      );
   }, [
     timer,
     timerActive,
@@ -1932,6 +2652,8 @@ export default function Home() {
                 ? "border-green-500 bg-green-950/40"
                 : seasonEvent.tone === "bad"
                 ? "border-red-500 bg-red-950/40"
+                : seasonEvent.tone === "special"
+                ? "border-purple-500 bg-purple-950/40"
                 : "border-gray-600 bg-black/40"
             }`}
           >
@@ -1991,8 +2713,13 @@ export default function Home() {
     );
   }
 
-  function renderCards(playerIndex: number) {
-    const gp = gamePlayers[playerIndex];
+  function renderCards(
+    playerIndex: number
+  ) {
+    const gp =
+      gamePlayers[
+        playerIndex
+      ];
 
     const cards: RewardCard[] = [
       "freeze",
@@ -2031,7 +2758,7 @@ export default function Home() {
                       lockedMessage(card)
                     )
                   }
-                  className="bg-zinc-800 border border-gray-600 px-3 py-2 rounded-lg text-sm"
+                  className="bg-zinc-800 border border-gray-600 px-3 py-2 rounded-lg text-sm transition-all duration-150 active:scale-95 active:translate-y-1"
                 >
                   🔒 {cardName(card)}
                 </button>
@@ -2054,7 +2781,7 @@ export default function Home() {
                     useStealCard(playerIndex);
                   }
                 }}
-                className="bg-purple-700 px-3 py-2 rounded-lg text-sm"
+                className="bg-purple-700 px-3 py-2 rounded-lg text-sm transition-all duration-150 active:scale-95 active:translate-y-1"
               >
                 {cardName(card)} Ready
               </button>
@@ -2065,16 +2792,22 @@ export default function Home() {
     );
   }
 
-  function renderFormation(playerIndex: number) {
+  function renderFormation(
+    playerIndex: number
+  ) {
     const isActive =
       mode === "single" ||
-      playerIndex === activePlayerIndex;
+      playerIndex ===
+        activePlayerIndex;
 
     const gp =
-      gamePlayers[playerIndex];
+      gamePlayers[
+        playerIndex
+      ];
 
     const frozen =
-      gp.frozenSeason === season;
+      gp.frozenSeason ===
+      season;
 
     return (
       <div
@@ -2107,90 +2840,129 @@ export default function Home() {
           </div>
         </div>
 
-        {renderCards(playerIndex)}
+        {renderCards(
+          playerIndex
+        )}
 
         <div className="grid grid-cols-5 gap-3 text-center mt-4">
-          {formation433.flat().map(
-            (slot, index) => {
-              const ownedPlayer = slot
-                ? getOwnedBySlot(
-                    playerIndex,
-                    slot
-                  )
-                : undefined;
 
-              const ownedIndex = slot
-                ? gp.owned.findIndex(
-                    (item) =>
-                      item.slot === slot
-                  )
-                : -1;
+          {formation433
+            .flat()
+            .map(
+              (
+                slot,
+                index
+              ) => {
 
-              return slot ? (
-                <button
-                  key={index}
-                  onClick={() => {
-                    if (!isActive) return;
-
-                    if (
-                      ownedPlayer &&
-                      ownedIndex !== -1
-                    ) {
-                      selectOwnedPlayer(
+                const ownedPlayer =
+                  slot
+                    ? getOwnedBySlot(
                         playerIndex,
-                        ownedIndex
+                        slot
+                      )
+                    : undefined;
+
+                const ownedIndex =
+                  slot
+                    ? gp.owned.findIndex(
+                        (
+                          item
+                        ) =>
+                          item.slot ===
+                          slot
+                      )
+                    : -1;
+
+                return slot ? (
+                  <button
+                    key={index}
+                    onClick={() => {
+
+                      if (
+                        !isActive
+                      ) {
+                        return;
+                      }
+
+                      if (
+                        ownedPlayer &&
+                        ownedIndex !== -1
+                      ) {
+                        selectOwnedPlayer(
+                          playerIndex,
+                          ownedIndex
+                        );
+
+                        return;
+                      }
+
+                      selectSlot(
+                        slot
                       );
-                      return;
-                    }
+                    }}
+                    className={`border rounded-xl p-3 min-h-24 transition-all duration-150 active:scale-95 active:translate-y-1 ${
+                      ownedPlayer
+                        ? "bg-blue-900 border-blue-400 shadow-lg shadow-blue-500/20"
+                        : "bg-black/40 border-green-500 hover:bg-green-800/40 hover:shadow-lg hover:shadow-green-500/20"
+                    }`}
+                  >
 
-                    selectSlot(slot);
-                  }}
-                  className={`border rounded-xl p-3 min-h-24 transition-all duration-150 active:scale-95 active:translate-y-1 ${
-                    ownedPlayer
-                      ? "bg-blue-900 border-blue-400 shadow-lg shadow-blue-500/20"
-                      : "bg-black/40 border-green-500 hover:bg-green-800/40 hover:shadow-lg hover:shadow-green-500/20"
-                  }`}
-                >
-                  <div className="font-bold">
-                    {slot}
-                  </div>
+                    <div className="font-bold">
+                      {slot}
+                    </div>
 
-                  <div className="text-xs mt-2">
-                    {ownedPlayer
-                      ? ownedPlayer.player.name
-                      : "Choose"}
-                  </div>
+                    <div className="text-xs mt-2">
+                      {ownedPlayer
+                        ? ownedPlayer.player.name
+                        : "Choose"}
+                    </div>
 
-                  {ownedPlayer && (
-                    <>
-                      <div className="text-[11px] mt-1 text-gray-300">
-                        Bought €{ownedPlayer.buyPrice}M
-                      </div>
+                    {ownedPlayer && (
+                      <>
+                        <div className="text-[11px] mt-1 text-gray-300">
+                          Bought €
+                          {ownedPlayer.buyPrice}
+                          M
+                        </div>
 
-                      <div className="text-[11px] text-yellow-300">
-                        {season -
-                          ownedPlayer.buySeason}
-                        /{MAX_OWN_SEASONS} Seasons
-                      </div>
-                    </>
-                  )}
-                </button>
-              ) : (
-                <div key={index}></div>
-              );
-            }
-          )}
+                        <div className="text-[11px] text-yellow-300">
+                          {
+                            season -
+                            ownedPlayer.buySeason
+                          }
+                          /
+                          {
+                            MAX_OWN_SEASONS
+                          }
+                          {" "}
+                          Seasons
+                        </div>
+                      </>
+                    )}
+
+                  </button>
+                ) : (
+                  <div
+                    key={index}
+                  ></div>
+                );
+              }
+            )}
+
         </div>
       </div>
     );
   }
 
   const selectedOwned =
-    selectedOwnedAction !== null
+    selectedOwnedAction !==
+    null
       ? gamePlayers[
-          selectedOwnedAction.playerIndex
+          selectedOwnedAction
+            .playerIndex
         ]?.owned[
-          selectedOwnedAction.ownedIndex
+          selectedOwnedAction
+            .ownedIndex
         ]
       : null;
 
@@ -2203,10 +2975,16 @@ export default function Home() {
             const next =
               easterClicks + 1;
 
-            setEasterClicks(next);
+            setEasterClicks(
+              next
+            );
 
-            if (next >= 5) {
-              setEasterUnlocked(true);
+            if (
+              next >= 5
+            ) {
+              setEasterUnlocked(
+                true
+              );
             }
           }}
           className="text-yellow-400 mb-2 cursor-pointer"
@@ -2215,7 +2993,7 @@ export default function Home() {
         </p>
 
         <h1 className="text-5xl font-bold mb-4">
-          Football Investor
+          Football Investor 1.5
         </h1>
 
         {easterUnlocked && (
@@ -2224,13 +3002,146 @@ export default function Home() {
           </p>
         )}
 
-        <p className="text-2xl mb-2">
-          Budget: €{START_BUDGET}M
-        </p>
+        <button
+          onClick={() =>
+            setShowHowToPlay(
+              true
+            )
+          }
+          className="mb-8 bg-blue-700 px-6 py-3 rounded-xl text-lg transition-all duration-150 hover:scale-105"
+        >
+          📖 How To Play
+        </button>
 
-        <p className="text-xl mb-8">
-          Formation: 4-3-3
-        </p>
+        <h2 className="text-2xl font-bold mb-4">
+          Starting Budget
+        </h2>
+
+        <div className="grid grid-cols-2 gap-4 mb-8">
+
+          {(
+            Object.keys(
+              budgetSettings
+            ) as BudgetMode[]
+          ).map(
+            (
+              budget
+            ) => (
+              <button
+                key={
+                  budget
+                }
+                onClick={() =>
+                  setBudgetMode(
+                    budget
+                  )
+                }
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  budgetMode ===
+                  budget
+                    ? "bg-green-700 border-green-300"
+                    : "bg-zinc-800 border-gray-700"
+                }`}
+              >
+                {
+                  budgetSettings[
+                    budget
+                  ].label
+                }
+              </button>
+            )
+          )}
+
+        </div>
+
+        <h2 className="text-2xl font-bold mb-4">
+          Events
+        </h2>
+
+        <div className="flex items-center gap-4 mb-4">
+
+          <button
+            onClick={() =>
+              setEventsEnabled(
+                !eventsEnabled
+              )
+            }
+            className={`w-24 h-12 rounded-full relative transition-all ${
+              eventsEnabled
+                ? "bg-green-600"
+                : "bg-zinc-700"
+            }`}
+          >
+            <div
+              className={`absolute top-1 w-10 h-10 bg-white rounded-full transition-all ${
+                eventsEnabled
+                  ? "left-12"
+                  : "left-1"
+              }`}
+            />
+          </button>
+
+          <span>
+            {eventsEnabled
+              ? "ON"
+              : "OFF"}
+          </span>
+
+        </div>
+
+        {eventsEnabled && (
+          <div className="flex gap-3 mb-8">
+
+            <button
+              onClick={() =>
+                setEventType(
+                  "all"
+                )
+              }
+              className={`px-4 py-2 rounded-lg ${
+                eventType ===
+                "all"
+                  ? "bg-green-600"
+                  : "bg-zinc-700"
+              }`}
+            >
+              All
+            </button>
+
+            <button
+              onClick={() =>
+                setEventType(
+                  "positive"
+                )
+              }
+              className={`px-4 py-2 rounded-lg ${
+                eventType ===
+                "positive"
+                  ? "bg-green-600"
+                  : "bg-zinc-700"
+              }`}
+            >
+              Positive
+            </button>
+
+            <button
+              onClick={() =>
+                setEventType(
+                  "negative"
+                )
+              }
+              className={`px-4 py-2 rounded-lg ${
+                eventType ===
+                "negative"
+                  ? "bg-red-600"
+                  : "bg-zinc-700"
+              }`}
+            >
+              Negative
+            </button>
+
+          </div>
+        )}
 
         <h2 className="text-2xl font-bold mb-3">
           Game Mode
@@ -2239,7 +3150,9 @@ export default function Home() {
         <div className="flex flex-col md:flex-row gap-4 mb-8">
 
           <button
-            onClick={() => setMode("single")}
+            onClick={() =>
+              setMode("single")
+            }
             className={`px-8 py-4 rounded-xl text-xl border-2 transition-all duration-150 active:scale-95 active:translate-y-1 ${
               mode === "single"
                 ? "bg-green-700 border-green-300 shadow-lg shadow-green-500/30"
@@ -2250,7 +3163,9 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setMode("versus")}
+            onClick={() =>
+              setMode("versus")
+            }
             className={`px-8 py-4 rounded-xl text-xl border-2 transition-all duration-150 active:scale-95 active:translate-y-1 ${
               mode === "versus"
                 ? "bg-blue-700 border-blue-300 shadow-lg shadow-blue-500/30"
@@ -2271,9 +3186,14 @@ export default function Home() {
             <div className="flex flex-col md:flex-row gap-4 mb-8">
 
               <button
-                onClick={() => setGameLengthMode("classic")}
+                onClick={() =>
+                  setGameLengthMode(
+                    "classic"
+                  )
+                }
                 className={`px-8 py-4 rounded-xl text-xl border-2 transition-all duration-150 active:scale-95 active:translate-y-1 ${
-                  gameLengthMode === "classic"
+                  gameLengthMode ===
+                  "classic"
                     ? "bg-yellow-700 border-yellow-300 shadow-lg shadow-yellow-500/30"
                     : "bg-zinc-800 border-yellow-700 hover:bg-yellow-700"
                 }`}
@@ -2282,9 +3202,14 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setGameLengthMode("infinite")}
+                onClick={() =>
+                  setGameLengthMode(
+                    "infinite"
+                  )
+                }
                 className={`px-8 py-4 rounded-xl text-xl border-2 transition-all duration-150 active:scale-95 active:translate-y-1 ${
-                  gameLengthMode === "infinite"
+                  gameLengthMode ===
+                  "infinite"
                     ? "bg-purple-700 border-purple-300 shadow-lg shadow-purple-500/30"
                     : "bg-zinc-800 border-purple-700 hover:bg-purple-700"
                 }`}
@@ -2322,9 +3247,10 @@ export default function Home() {
                   value: 60,
                 },
               ].map((t) => (
-
                 <button
-                  key={String(t.value)}
+                  key={String(
+                    t.value
+                  )}
                   onClick={() =>
                     setSelectedTime(
                       t.value
@@ -2339,13 +3265,14 @@ export default function Home() {
                 >
                   {t.label}
                 </button>
-
               ))}
 
             </div>
 
             <button
-              onClick={startGame}
+              onClick={
+                startGame
+              }
               disabled={
                 !gameLengthMode
               }
@@ -2353,8 +3280,54 @@ export default function Home() {
             >
               Start Game
             </button>
-
           </>
+        )}
+
+        {showHowToPlay && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div className="bg-zinc-900 border border-gray-700 rounded-2xl p-8 max-w-2xl w-full mx-4 text-right">
+
+              <h2 className="text-3xl font-bold mb-4 text-center">
+                شرح اللعبة
+              </h2>
+
+              <p className="mb-3">
+                Football Investor هي لعبة استثمار في لاعبي كرة القدم.
+              </p>
+
+              <p className="mb-3">
+                كل موسم تحصل على فرصة شراء واحدة. اختر مركزًا ثم اشتر لاعبًا مناسبًا.
+              </p>
+
+              <p className="mb-3">
+                إذا بعت لاعبًا تحصل على فرصة شراء إضافية واحدة فقط في نفس الموسم.
+              </p>
+
+              <p className="mb-3">
+                اللاعب يبقى معك 5 مواسم فقط، وبعدها يتم بيعه تلقائيًا.
+              </p>
+
+              <p className="mb-3">
+                تستطيع اختيار الميزانية، تشغيل أو إيقاف الأحداث، واختيار نوع الأحداث.
+              </p>
+
+              <p className="mb-6">
+                الهدف هو تحقيق أكبر ربح ممكن قبل نهاية اللعبة.
+              </p>
+
+              <button
+                onClick={() =>
+                  setShowHowToPlay(
+                    false
+                  )
+                }
+                className="bg-blue-700 px-6 py-3 rounded-xl w-full transition-all duration-150 active:scale-95 active:translate-y-1"
+              >
+                إغلاق
+              </button>
+
+            </div>
+          </div>
         )}
 
       </main>
@@ -2444,7 +3417,9 @@ export default function Home() {
               {rewardChoice.cards.map((card) => (
                 <button
                   key={card}
-                  onClick={() => chooseReward(card)}
+                  onClick={() =>
+                    chooseReward(card)
+                  }
                   className="bg-purple-700 px-5 py-3 rounded-xl text-xl transition-all duration-150 active:scale-95 active:translate-y-1"
                 >
                   {cardName(card)}
@@ -2471,8 +3446,7 @@ export default function Home() {
                   onClick={() =>
                     setStealChallenge({
                       ...stealChallenge,
-                      showHelp:
-                        !stealChallenge.showHelp,
+                      showHelp: !stealChallenge.showHelp,
                     })
                   }
                   className="bg-gray-700 px-4 py-2 rounded-lg mb-4 transition-all duration-150 active:scale-95 active:translate-y-1"
@@ -2709,6 +3683,7 @@ export default function Home() {
                             playerIndex
                           )}M
                         </p>
+
                       </div>
                     )
                   )}
@@ -2718,54 +3693,59 @@ export default function Home() {
                 <div className="max-h-96 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-left">
 
                   {gamePlayers
-                    .flatMap((gp) => gp.sold)
-                    .map((s, index) => (
-                      <div
-                        key={index}
-                        className="bg-black/40 border border-gray-700 rounded-xl p-4"
-                      >
-                        <p className="text-xl font-bold">
-                          {s.name}
-                        </p>
-
-                        <p>
-                          Owner: {s.owner}
-                        </p>
-
-                        <p>
-                          Bought in:
-                          {s.buySeason}
-                        </p>
-
-                        <p>
-                          Sold in:
-                          {s.sellSeason}
-                        </p>
-
-                        <p>
-                          Bought:
-                          €{s.buyPrice}M
-                        </p>
-
-                        <p>
-                          Sold:
-                          €{s.sellPrice}M
-                        </p>
-
-                        <p
-                          className={
-                            s.profit >= 0
-                              ? "text-green-400"
-                              : "text-red-400"
-                          }
+                    .flatMap(
+                      (gp) => gp.sold
+                    )
+                    .map(
+                      (s, index) => (
+                        <div
+                          key={index}
+                          className="bg-black/40 border border-gray-700 rounded-xl p-4"
                         >
-                          {s.profit >= 0
-                            ? "Profit"
-                            : "Loss"}
-                          : €{s.profit}M
-                        </p>
-                      </div>
-                    ))}
+                          <p className="text-xl font-bold">
+                            {s.name}
+                          </p>
+
+                          <p>
+                            Owner: {s.owner}
+                          </p>
+
+                          <p>
+                            Bought in:
+                            {s.buySeason}
+                          </p>
+
+                          <p>
+                            Sold in:
+                            {s.sellSeason}
+                          </p>
+
+                          <p>
+                            Bought:
+                            €{s.buyPrice}M
+                          </p>
+
+                          <p>
+                            Sold:
+                            €{s.sellPrice}M
+                          </p>
+
+                          <p
+                            className={
+                              s.profit >= 0
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            {s.profit >= 0
+                              ? "Profit"
+                              : "Loss"}
+                            : €{s.profit}M
+                          </p>
+
+                        </div>
+                      )
+                    )}
 
                 </div>
 
@@ -2773,7 +3753,9 @@ export default function Home() {
 
                   <button
                     onClick={() =>
-                      setShowStats(false)
+                      setShowStats(
+                        false
+                      )
                     }
                     className="bg-gray-700 px-6 py-3 rounded-xl text-xl"
                   >
@@ -2781,7 +3763,9 @@ export default function Home() {
                   </button>
 
                   <button
-                    onClick={restartGame}
+                    onClick={
+                      restartGame
+                    }
                     className="bg-green-600 px-6 py-3 rounded-xl text-xl"
                   >
                     Restart Game
@@ -2790,6 +3774,7 @@ export default function Home() {
                 </div>
 
               </>
+
             )}
 
           </div>
@@ -2807,16 +3792,30 @@ export default function Home() {
           : " Infinite"}
       </p>
 
-      {gameLengthMode === "infinite" &&
+      <p className="text-lg text-gray-400 mb-4">
+        Budget:
+        {" "}
+        {
+          budgetSettings[
+            budgetMode
+          ].label
+        }
+      </p>
+
+      {gameLengthMode ===
+        "infinite" &&
         season > 2028 && (
           <p className="text-purple-300 mb-2">
             🧬 Generated Players Active
           </p>
-        )}
+      )}
 
       {mode === "versus" && (
         <p className="text-2xl mb-2">
-          Turn: {activePlayer.name} |{" "}
+          Turn:
+          {" "}
+          {activePlayer.name}
+          {" | "}
           {selectedTime === null
             ? "No Timer"
             : selectedSlot
@@ -2838,15 +3837,20 @@ export default function Home() {
       <div className="flex flex-wrap gap-3 mb-6">
 
         <button
-          onClick={() => nextSeason()}
+          onClick={() =>
+            nextSeason()
+          }
           className="bg-yellow-600 px-5 py-3 rounded-lg transition-all duration-150 active:scale-95 active:translate-y-1"
         >
           Continue Next Season
         </button>
 
-        {gameLengthMode === "infinite" && (
+        {gameLengthMode ===
+          "infinite" && (
           <button
-            onClick={finishGame}
+            onClick={
+              finishGame
+            }
             className="bg-red-700 px-5 py-3 rounded-lg transition-all duration-150 active:scale-95 active:translate-y-1"
           >
             End Game
@@ -2870,67 +3874,86 @@ export default function Home() {
             </h2>
 
             <p className="text-xl mb-2">
-              Cash: €{gamePlayers[0].budget}M
+              Cash:
+              €{gamePlayers[0].budget}M
             </p>
 
             <p className="text-xl mb-4">
               🎟️ Purchase Chances:
-              {gamePlayers[0].purchaseChances}
+              {
+                gamePlayers[0]
+                  .purchaseChances
+              }
             </p>
 
             <h3 className="text-xl font-bold mb-2">
               Owned Players
             </h3>
 
-            {gamePlayers[0].owned.length === 0 ? (
+            {gamePlayers[0]
+              .owned.length === 0 ? (
               <p className="text-gray-400 mb-6">
                 No players owned.
               </p>
             ) : (
               <div className="space-y-3 mb-6">
 
-                {gamePlayers[0].owned.map((item, index) => (
+                {gamePlayers[0].owned.map(
+                  (item, index) => (
 
-                  <div
-                    key={index}
-                    className="bg-black/40 border border-gray-700 p-3 rounded-xl"
-                  >
-
-                    <p className="font-bold">
-                      {item.player.name}
-                    </p>
-
-                    <p>
-                      Slot: {item.slot}
-                    </p>
-
-                    <p>
-                      Nationality:
-                      {item.player.nationality}
-                    </p>
-
-                    <p>
-                      Bought:
-                      €{item.buyPrice}M in {item.buySeason}
-                    </p>
-
-                    <p className="text-yellow-400">
-                      Seasons Owned:
-                      {season - item.buySeason}/{MAX_OWN_SEASONS}
-                    </p>
-
-                    <button
-                      onClick={() =>
-                        selectOwnedPlayer(0, index)
-                      }
-                      className="mt-2 bg-red-700 px-3 py-2 rounded-lg transition-all duration-150 active:scale-95 active:translate-y-1"
+                    <div
+                      key={index}
+                      className="bg-black/40 border border-gray-700 p-3 rounded-xl"
                     >
-                      Manage Player
-                    </button>
 
-                  </div>
+                      <p className="font-bold">
+                        {item.player.name}
+                      </p>
 
-                ))}
+                      <p>
+                        Slot: {item.slot}
+                      </p>
+
+                      <p>
+                        Nationality:
+                        {" "}
+                        {item.player.nationality}
+                      </p>
+
+                      <p>
+                        Bought:
+                        €{item.buyPrice}M
+                        {" "}
+                        in
+                        {" "}
+                        {item.buySeason}
+                      </p>
+
+                      <p className="text-yellow-400">
+                        Seasons Owned:
+                        {" "}
+                        {season -
+                          item.buySeason}
+                        /
+                        {MAX_OWN_SEASONS}
+                      </p>
+
+                      <button
+                        onClick={() =>
+                          selectOwnedPlayer(
+                            0,
+                            index
+                          )
+                        }
+                        className="mt-2 bg-red-700 px-3 py-2 rounded-lg transition-all duration-150 active:scale-95 active:translate-y-1"
+                      >
+                        Manage Player
+                      </button>
+
+                    </div>
+
+                  )
+                )}
 
               </div>
             )}
@@ -2946,8 +3969,11 @@ export default function Home() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
           <div className="xl:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
+
             {renderFormation(0)}
+
             {renderFormation(1)}
+
           </div>
 
           {renderNewsFeed()}
@@ -2961,7 +3987,11 @@ export default function Home() {
         <div className="mt-8">
 
           <h2 className="text-3xl font-bold mb-4">
-            Choose {selectedSlot} Player for {activePlayer.name}
+            Choose {selectedSlot}
+            {" "}
+            Player for
+            {" "}
+            {activePlayer.name}
           </h2>
 
           {options.length === 0 ? (
@@ -2981,100 +4011,107 @@ export default function Home() {
                   className="border border-gray-700 rounded-xl p-4 bg-zinc-900"
                 >
 
+                  <h3 className="text-xl font-bold mb-2">
+                    {player.name}
+                  </h3>
+
                   <p>
-                    Age: {currentAge(player)}
+                    Position:
+                    {" "}
+                    {player.position}
+                  </p>
+
+                  <p>
+                    Age:
+                    {" "}
+                    {currentAge(player)}
                   </p>
 
                   <p>
                     Nationality:
+                    {" "}
                     {player.nationality}
                   </p>
 
                   <p>
                     Height:
+                    {" "}
                     {player.height} cm
                   </p>
 
                   <p>
                     League:
+                    {" "}
                     {player.league}
                   </p>
 
                   <p>
                     Games:
+                    {" "}
                     {player.games ?? 0}
                   </p>
 
                   <p>
                     Goals:
+                    {" "}
                     {player.goals ?? 0}
                   </p>
 
                   <p>
                     Assists:
+                    {" "}
                     {player.assists ?? 0}
                   </p>
 
                   {player.position === "GK" && (
                     <p>
                       Clean Sheets:
+                      {" "}
                       {player.cleanSheets ?? 0}
                     </p>
                   )}
 
-                  {["LB", "CB", "RB"].includes(
-                    player.position
-                  ) && (
-                    <>
-                      <p>
-                        Yellow Cards:
-                        {player.yellowCards ?? 0}
-                      </p>
-
-                      <p>
-                        Red Cards:
-                        {player.redCards ?? 0}
-                      </p>
-                    </>
-                  )}
-
                   <p>
                     Rating:
+                    {" "}
                     {player.rating ?? "-"}
                   </p>
 
-                  <p>
+                  <p className="text-yellow-300 font-bold">
                     Value:
+                    {" "}
                     €{currentValue(player)}M
                   </p>
 
-                  {gameLengthMode === "infinite" &&
-                    season > 2028 &&
-                    player.availableSeason === season && (
-                      <p className="text-purple-300 font-bold">
-                        New Market Player 🧬
-                      </p>
-                    )}
+                  {player.secret && (
+                    <p className="text-yellow-400 font-bold">
+                      ⭐ Secret Player
+                    </p>
+                  )}
 
                   {seasonEvent?.playerMultipliers?.[
                     player.name
                   ] && (
-                    <p className="text-yellow-400 font-bold">
+                    <p className="text-green-400">
                       Event Boost Active
                     </p>
                   )}
 
-                  {player.secret && (
-                    <p className="text-yellow-400 font-bold">
-                      Secret Player ⭐
-                    </p>
+                  {gameLengthMode === "infinite" &&
+                    season > 2028 &&
+                    player.availableSeason === season && (
+                      <p className="text-purple-400">
+                        🧬 Generated Player
+                      </p>
                   )}
 
                   <button
-                    onClick={() => buyPlayer(player)}
-                    className="mt-4 bg-blue-600 px-4 py-2 rounded-lg transition-all duration-150 active:scale-95 active:translate-y-1"
+                    onClick={() =>
+                      buyPlayer(player)
+                    }
+                    className="mt-4 w-full bg-blue-600 px-4 py-2 rounded-lg transition-all duration-150 active:scale-95 active:translate-y-1"
                   >
-                    Buy
+                    Buy Player
                   </button>
 
                 </div>
