@@ -319,7 +319,8 @@ export default function Home() {
         return {
           event: {
             title: "🔥 Hot Market",
-            description: "The market is hot. All player values increased this season.",
+            description:
+              "The market is hot. All player values increased this season.",
             tone: "good" as const,
             marketMultiplier: 1.2,
           },
@@ -351,9 +352,7 @@ export default function Home() {
             id: randomId(),
             season: newSeason,
             title: "💰 Saudi Offer",
-            description: `${picked.item.player.name} received a Saudi offer. Value increased from €${oldValue}M to around €${Math.round(
-              oldValue * 1.5
-            )}M.`,
+            description: `${picked.item.player.name} received a Saudi offer. Value increased from €${oldValue}M to around €${Math.round(oldValue * 1.5)}M.`,
             tone: "good" as const,
           },
         };
@@ -372,9 +371,7 @@ export default function Home() {
             id: randomId(),
             season: newSeason,
             title: "⭐ Breakout Season",
-            description: `${picked.item.player.name} exploded this season. Value increased from €${oldValue}M to around €${Math.round(
-              oldValue * 1.3
-            )}M.`,
+            description: `${picked.item.player.name} exploded this season. Value increased from €${oldValue}M to around €${Math.round(oldValue * 1.3)}M.`,
             tone: "good" as const,
           },
         };
@@ -392,9 +389,7 @@ export default function Home() {
           id: randomId(),
           season: newSeason,
           title: "🤑 Unexpected Bid",
-          description: `${picked.item.player.name} received a crazy offer. Value jumped from €${oldValue}M to around €${
-            oldValue * 2
-          }M.`,
+          description: `${picked.item.player.name} received a crazy offer. Value jumped from €${oldValue}M to around €${oldValue * 2}M.`,
           tone: "good" as const,
         },
       };
@@ -404,7 +399,8 @@ export default function Home() {
       return {
         event: {
           title: "📉 Market Crash",
-          description: "The market crashed. All player values dropped this season.",
+          description:
+            "The market crashed. All player values dropped this season.",
           tone: "bad" as const,
           marketMultiplier: 0.8,
         },
@@ -466,9 +462,7 @@ export default function Home() {
           id: randomId(),
           season: newSeason,
           title: "🤕 Injury",
-          description: `${picked.item.player.name} got injured. Value dropped from €${oldValue}M to around €${Math.round(
-            oldValue * 0.7
-          )}M.`,
+          description: `${picked.item.player.name} got injured. Value dropped from €${oldValue}M to around €${Math.round(oldValue * 0.7)}M.`,
           tone: "bad" as const,
         },
       };
@@ -490,9 +484,7 @@ export default function Home() {
           id: randomId(),
           season: newSeason,
           title: "🚨 Suspension",
-          description: `${picked.item.player.name} got suspended. Value dropped from €${oldValue}M to around €${Math.round(
-            oldValue * 0.85
-          )}M.`,
+          description: `${picked.item.player.name} got suspended. Value dropped from €${oldValue}M to around €${Math.round(oldValue * 0.85)}M.`,
           tone: "bad" as const,
         },
       };
@@ -501,7 +493,8 @@ export default function Home() {
     return {
       event: {
         title: "📉 Market Crash",
-        description: "The market crashed. All player values dropped this season.",
+        description:
+          "The market crashed. All player values dropped this season.",
         tone: "bad" as const,
         marketMultiplier: 0.8,
       },
@@ -785,7 +778,8 @@ export default function Home() {
         id: randomId(),
         season: 2008,
         title: "📰 Game Started",
-        description: "Football Investor has started. Build your portfolio.",
+        description:
+          "Football Investor has started. Build your portfolio and beat your rival.",
         tone: "neutral",
       },
     ]);
@@ -1598,7 +1592,7 @@ export default function Home() {
 
                   {seasonEvent?.playerMultipliers?.[player.name] && (
                     <p className="text-yellow-400 font-bold">
-                      Event Boost Active
+                      Event Boost/Drop Active
                     </p>
                   )}
 
