@@ -72,6 +72,22 @@ type GamePlayer = {
 
 type RewardCard = "freeze" | "triple" | "steal";
 
+type NewsItem = {
+  id: number;
+  season: number;
+  title: string;
+  description: string;
+  tone: "good" | "bad" | "neutral" | "special";
+};
+
+type SeasonEvent = {
+  title: string;
+  description: string;
+  tone: "good" | "bad" | "neutral";
+  marketMultiplier?: number;
+  playerMultipliers?: Record<string, number>;
+};
+
 const START_BUDGET = 30;
 
 const secretPlayers: Player[] = [
@@ -163,6 +179,10 @@ function createPlayers(): GamePlayer[] {
   ];
 }
 
+function randomId() {
+  return Date.now() + Math.floor(Math.random() * 100000);
+}
+
 export default function Home() {
   const [mode, setMode] = useState<"single" | "versus" | null>(null);
   const [started, setStarted] = useState(false);
@@ -194,6 +214,9 @@ export default function Home() {
     enemyIndex: number | null;
   } | null>(null);
 
+  const [seasonEvent, setSeasonEvent] = useState<SeasonEvent | null>(null);
+  const [news, setNews] = useState<NewsItem[]>([]);
+
   const activePlayerIndex = mode === "versus" ? turnIndex : 0;
   const activePlayer = gamePlayers[activePlayerIndex];
   const isFrozen = activePlayer?.frozenSeason === season;
@@ -203,7 +226,21 @@ export default function Home() {
   }, [easterUnlocked]);
 
   function currentValue(player: Player) {
-    return player.values[season] ?? player.values[2021] ?? 1;
+    let value = player.values[season] ?? player.values[2021] ?? 1;
+
+    if (seasonEvent?.marketMultiplier) {
+      value *= seasonEvent.marketMultiplier;
+    }
+
+    if (seasonEvent?.playerMultipliers?.[player.name]) {
+      value *= seasonEvent.playerMultipliers[player.name];
+    }
+
+    return Math.max(1, Math.round(value));
+  }
+
+  function baseValue(player: Player, targetSeason: number) {
+    return player.values[targetSeason] ?? player.values[2021] ?? 1;
   }
 
   function currentAge(player: Player) {
@@ -212,6 +249,17 @@ export default function Home() {
 
   function getOwnedBySlot(playerIndex: number, slot: string) {
     return gamePlayers[playerIndex].owned.find((item) => item.slot === slot);
+  }
+
+  function getAllOwnedPlayers(list: GamePlayer[]) {
+    return list.flatMap((gp, playerIndex) =>
+      gp.owned.map((item, ownedIndex) => ({
+        owner: gp.name,
+        playerIndex,
+        ownedIndex,
+        item,
+      }))
+    );
   }
 
   function getOptions(slot: string, playerIndex: number): Player[] {
@@ -232,15 +280,240 @@ export default function Home() {
   const options = useMemo<Player[]>(() => {
     if (!selectedSlot) return [];
     return getOptions(selectedSlot, activePlayerIndex);
-  }, [selectedSlot, activePlayerIndex, season, gamePlayers, players]);
+  }, [selectedSlot, activePlayerIndex, season, gamePlayers, players, seasonEvent]);
 
   function notify(text: string) {
     setMessage(text);
     setTimeout(() => setMessage(""), 3000);
   }
 
+  function addNews(item: Omit<NewsItem, "id">) {
+    setNews((prev) => [{ ...item, id: randomId() }, ...prev]);
+  }
+
   function updateGamePlayer(index: number, newData: GamePlayer) {
     setGamePlayers((prev) => prev.map((p, i) => (i === index ? newData : p)));
+  }
+
+  function createRandomSeasonEvent(newSeason: number, list: GamePlayer[]) {
+    const roll = Math.random();
+
+    if (roll >= 0.3) {
+      return {
+        event: null as SeasonEvent | null,
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "📰 Quiet Season",
+          description: "No major football news this season.",
+          tone: "neutral" as const,
+        },
+      };
+    }
+
+    const owned = getAllOwnedPlayers(list).filter((o) => !o.item.player.secret);
+
+    if (roll < 0.15) {
+      if (owned.length === 0) {
+        return {
+          event: {
+            title: "🔥 Hot Market",
+            description: "The market is hot. All player values increased this season.",
+            tone: "good" as const,
+            marketMultiplier: 1.2,
+          },
+          updatedPlayers: list,
+          newsItem: {
+            id: randomId(),
+            season: newSeason,
+            title: "🔥 Hot Market",
+            description: "All player values increased by 20% this season.",
+            tone: "good" as const,
+          },
+        };
+      }
+
+      const picked = owned[Math.floor(Math.random() * owned.length)];
+      const eventRoll = Math.random();
+      const oldValue = baseValue(picked.item.player, newSeason);
+
+      if (eventRoll < 0.45) {
+        return {
+          event: {
+            title: "💰 Saudi Offer",
+            description: `${picked.item.player.name} received a Saudi offer. Value +50% this season.`,
+            tone: "good" as const,
+            playerMultipliers: { [picked.item.player.name]: 1.5 },
+          },
+          updatedPlayers: list,
+          newsItem: {
+            id: randomId(),
+            season: newSeason,
+            title: "💰 Saudi Offer",
+            description: `${picked.item.player.name} received a Saudi offer. Value increased from €${oldValue}M to around €${Math.round(
+              oldValue * 1.5
+            )}M.`,
+            tone: "good" as const,
+          },
+        };
+      }
+
+      if (eventRoll < 0.85) {
+        return {
+          event: {
+            title: "⭐ Breakout Season",
+            description: `${picked.item.player.name} is having a breakout season. Value +30% this season.`,
+            tone: "good" as const,
+            playerMultipliers: { [picked.item.player.name]: 1.3 },
+          },
+          updatedPlayers: list,
+          newsItem: {
+            id: randomId(),
+            season: newSeason,
+            title: "⭐ Breakout Season",
+            description: `${picked.item.player.name} exploded this season. Value increased from €${oldValue}M to around €${Math.round(
+              oldValue * 1.3
+            )}M.`,
+            tone: "good" as const,
+          },
+        };
+      }
+
+      return {
+        event: {
+          title: "🤑 Unexpected Bid",
+          description: `${picked.item.player.name} received a massive bid. Value doubled this season.`,
+          tone: "good" as const,
+          playerMultipliers: { [picked.item.player.name]: 2 },
+        },
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🤑 Unexpected Bid",
+          description: `${picked.item.player.name} received a crazy offer. Value jumped from €${oldValue}M to around €${
+            oldValue * 2
+          }M.`,
+          tone: "good" as const,
+        },
+      };
+    }
+
+    if (owned.length === 0) {
+      return {
+        event: {
+          title: "📉 Market Crash",
+          description: "The market crashed. All player values dropped this season.",
+          tone: "bad" as const,
+          marketMultiplier: 0.8,
+        },
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "📉 Market Crash",
+          description: "All player values dropped by 20% this season.",
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    const disasterRoll = Math.random();
+
+    if (disasterRoll < 0.2) {
+      const picked = owned[Math.floor(Math.random() * owned.length)];
+
+      const updatedPlayers = list.map((gp, gpIndex) => {
+        if (gpIndex !== picked.playerIndex) return gp;
+
+        return {
+          ...gp,
+          owned: gp.owned.filter((_, i) => i !== picked.ownedIndex),
+        };
+      });
+
+      return {
+        event: {
+          title: "💔 Free Transfer Exit",
+          description: `${picked.item.player.name} left ${picked.owner} for free. Compensation: €0M.`,
+          tone: "bad" as const,
+        },
+        updatedPlayers,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "💔 Free Transfer Exit",
+          description: `${picked.item.player.name} shocked everyone and left ${picked.owner} for free. Compensation received: €0M.`,
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    if (disasterRoll < 0.65) {
+      const picked = owned[Math.floor(Math.random() * owned.length)];
+      const oldValue = baseValue(picked.item.player, newSeason);
+
+      return {
+        event: {
+          title: "🤕 Injury",
+          description: `${picked.item.player.name} suffered an injury. Value -30% this season.`,
+          tone: "bad" as const,
+          playerMultipliers: { [picked.item.player.name]: 0.7 },
+        },
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🤕 Injury",
+          description: `${picked.item.player.name} got injured. Value dropped from €${oldValue}M to around €${Math.round(
+            oldValue * 0.7
+          )}M.`,
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    if (disasterRoll < 0.85) {
+      const picked = owned[Math.floor(Math.random() * owned.length)];
+      const oldValue = baseValue(picked.item.player, newSeason);
+
+      return {
+        event: {
+          title: "🚨 Suspension",
+          description: `${picked.item.player.name} got suspended. Value -15% this season.`,
+          tone: "bad" as const,
+          playerMultipliers: { [picked.item.player.name]: 0.85 },
+        },
+        updatedPlayers: list,
+        newsItem: {
+          id: randomId(),
+          season: newSeason,
+          title: "🚨 Suspension",
+          description: `${picked.item.player.name} got suspended. Value dropped from €${oldValue}M to around €${Math.round(
+            oldValue * 0.85
+          )}M.`,
+          tone: "bad" as const,
+        },
+      };
+    }
+
+    return {
+      event: {
+        title: "📉 Market Crash",
+        description: "The market crashed. All player values dropped this season.",
+        tone: "bad" as const,
+        marketMultiplier: 0.8,
+      },
+      updatedPlayers: list,
+      newsItem: {
+        id: randomId(),
+        season: newSeason,
+        title: "📉 Market Crash",
+        description: "All player values dropped by 20% this season.",
+        tone: "bad" as const,
+      },
+    };
   }
 
   function endVersusTurn() {
@@ -334,6 +607,13 @@ export default function Home() {
         : "تم البيع ✅ حصلت على فرصة شراء إضافية 🎟️"
     );
 
+    addNews({
+      season,
+      title: "💸 Player Sold",
+      description: `${item.player.name} was sold by ${gp.name} for €${sellPrice}M. Profit/Loss: €${profit}M.`,
+      tone: profit >= 0 ? "good" : "bad",
+    });
+
     const cards = eligibleCards(gp, sellPrice);
     if (cards.length > 0) {
       setRewardChoice({ playerIndex, cards });
@@ -342,6 +622,8 @@ export default function Home() {
 
   function chooseReward(card: RewardCard) {
     if (!rewardChoice) return;
+
+    const ownerName = gamePlayers[rewardChoice.playerIndex].name;
 
     setGamePlayers((prev) =>
       prev.map((gp, i) => {
@@ -356,6 +638,13 @@ export default function Home() {
         };
       })
     );
+
+    addNews({
+      season,
+      title: "🎴 Special Card Unlocked",
+      description: `${ownerName} unlocked ${cardName(card)}.`,
+      tone: "special",
+    });
 
     setRewardChoice(null);
     notify("تم فتح كرت خاص ✅");
@@ -417,18 +706,16 @@ export default function Home() {
     setShowEndModal(true);
   }
 
-  function setupSeason(newSeason: number) {
-    setGamePlayers((prev) =>
-      prev.map((gp) => {
-        const chances = gp.tripleNextSeason ? 3 : 1;
+  function setupSeason(newSeason: number, list: GamePlayer[]) {
+    return list.map((gp) => {
+      const chances = gp.tripleNextSeason ? 3 : 1;
 
-        return {
-          ...gp,
-          purchaseChances: gp.frozenSeason === newSeason ? 0 : chances,
-          tripleNextSeason: false,
-        };
-      })
-    );
+      return {
+        ...gp,
+        purchaseChances: gp.frozenSeason === newSeason ? 0 : chances,
+        tripleNextSeason: false,
+      };
+    });
   }
 
   function nextSeason() {
@@ -438,13 +725,17 @@ export default function Home() {
     }
 
     const newSeason = season + 1;
+    const resetPlayers = setupSeason(newSeason, gamePlayers);
+    const generated = createRandomSeasonEvent(newSeason, resetPlayers);
 
     setSeason(newSeason);
     setTurnIndex(0);
     setSelectedSlot("");
     setTimerActive(false);
     setTimer(selectedTime ?? 15);
-    setupSeason(newSeason);
+    setSeasonEvent(generated.event);
+    setGamePlayers(generated.updatedPlayers);
+    setNews((prev) => [generated.newsItem, ...prev]);
   }
 
   function restartGame() {
@@ -461,6 +752,8 @@ export default function Home() {
     setTimerActive(false);
     setRewardChoice(null);
     setStealChallenge(null);
+    setSeasonEvent(null);
+    setNews([]);
   }
 
   function totalProfit(playerIndex: number) {
@@ -486,6 +779,16 @@ export default function Home() {
     setGamePlayers(createPlayers());
     setTimer(selectedTime);
     setTimerActive(false);
+    setSeasonEvent(null);
+    setNews([
+      {
+        id: randomId(),
+        season: 2008,
+        title: "📰 Game Started",
+        description: "Football Investor has started. Build your portfolio.",
+        tone: "neutral",
+      },
+    ]);
   }
 
   function selectSlot(slot: string) {
@@ -537,6 +840,13 @@ export default function Home() {
       })
     );
 
+    addNews({
+      season,
+      title: "🧊 Freeze Card Used",
+      description: `${gamePlayers[playerIndex].name} froze ${gamePlayers[enemyIndex].name} for next season.`,
+      tone: "special",
+    });
+
     notify("تم استخدام كرت التجميد 🧊 الخصم سيتجمد الموسم القادم");
   }
 
@@ -555,6 +865,13 @@ export default function Home() {
           : gp
       )
     );
+
+    addNews({
+      season,
+      title: "⚡ Triple Buy Card Used",
+      description: `${gamePlayers[playerIndex].name} will have 3 purchase chances next season.`,
+      tone: "special",
+    });
 
     notify("تم استخدام Triple Buy ⚡ الموسم القادم عندك 3 فرص شراء");
   }
@@ -576,6 +893,13 @@ export default function Home() {
       )
     );
 
+    addNews({
+      season,
+      title: "🕵️ Steal Card Activated",
+      description: `${gamePlayers[playerIndex].name} activated the Steal Card challenge.`,
+      tone: "special",
+    });
+
     setStealChallenge({
       userIndex: playerIndex,
       showHelp: false,
@@ -594,6 +918,11 @@ export default function Home() {
     if (stealChallenge.ownIndex === null || stealChallenge.enemyIndex === null) {
       return notify("اختر لاعب منك ولاعب من الخصم");
     }
+
+    const userPlayerName =
+      gamePlayers[userIndex].owned[stealChallenge.ownIndex].player.name;
+    const enemyPlayerName =
+      gamePlayers[enemyIndex].owned[stealChallenge.enemyIndex].player.name;
 
     setGamePlayers((prev) => {
       const copy = [...prev];
@@ -627,6 +956,13 @@ export default function Home() {
       return copy;
     });
 
+    addNews({
+      season,
+      title: "🕵️ Player Swap",
+      description: `${gamePlayers[userIndex].name} swapped ${userPlayerName} for ${enemyPlayerName}.`,
+      tone: "special",
+    });
+
     setStealChallenge(null);
     notify("تم تبديل اللاعبين بنجاح 🕵️");
   }
@@ -646,6 +982,59 @@ export default function Home() {
 
     return () => clearTimeout(interval);
   }, [timer, timerActive, selectedSlot, started, showEndModal]);
+
+  function newsClass(tone: NewsItem["tone"]) {
+    if (tone === "good") return "border-green-500 bg-green-950/40";
+    if (tone === "bad") return "border-red-500 bg-red-950/40";
+    if (tone === "special") return "border-purple-500 bg-purple-950/40";
+    return "border-gray-600 bg-black/40";
+  }
+
+  function renderNewsFeed() {
+    return (
+      <aside className="bg-zinc-900 border border-gray-700 rounded-2xl p-5">
+        <h2 className="text-2xl font-bold mb-3">📰 Football News</h2>
+
+        {seasonEvent ? (
+          <div
+            className={`border rounded-xl p-3 mb-4 ${
+              seasonEvent.tone === "good"
+                ? "border-green-500 bg-green-950/40"
+                : seasonEvent.tone === "bad"
+                ? "border-red-500 bg-red-950/40"
+                : "border-gray-600 bg-black/40"
+            }`}
+          >
+            <p className="font-bold">Current Event</p>
+            <p>{seasonEvent.title}</p>
+            <p className="text-sm text-gray-300">{seasonEvent.description}</p>
+          </div>
+        ) : (
+          <div className="border border-gray-600 bg-black/40 rounded-xl p-3 mb-4">
+            <p className="font-bold">Current Event</p>
+            <p>No active event this season.</p>
+          </div>
+        )}
+
+        <div className="max-h-96 overflow-y-auto space-y-3">
+          {news.length === 0 ? (
+            <p className="text-gray-400">No news yet.</p>
+          ) : (
+            news.map((item) => (
+              <div
+                key={item.id}
+                className={`border rounded-xl p-3 ${newsClass(item.tone)}`}
+              >
+                <p className="text-sm text-gray-400">Season {item.season}</p>
+                <p className="font-bold">{item.title}</p>
+                <p className="text-sm text-gray-200">{item.description}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </aside>
+    );
+  }
 
   function renderCards(playerIndex: number) {
     const gp = gamePlayers[playerIndex];
@@ -1118,8 +1507,8 @@ export default function Home() {
       </button>
 
       {mode === "single" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <section className="lg:col-span-2">{renderFormation(0)}</section>
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+          <section className="xl:col-span-2">{renderFormation(0)}</section>
 
           <aside className="bg-zinc-900 border border-gray-700 rounded-2xl p-5">
             <h2 className="text-3xl font-bold mb-4">Portfolio</h2>
@@ -1154,11 +1543,17 @@ export default function Home() {
               </div>
             )}
           </aside>
+
+          {renderNewsFeed()}
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {renderFormation(0)}
-          {renderFormation(1)}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {renderFormation(0)}
+            {renderFormation(1)}
+          </div>
+
+          {renderNewsFeed()}
         </div>
       )}
 
@@ -1200,6 +1595,12 @@ export default function Home() {
 
                   <p>Rating: {player.rating ?? "-"}</p>
                   <p>Value: €{currentValue(player)}M</p>
+
+                  {seasonEvent?.playerMultipliers?.[player.name] && (
+                    <p className="text-yellow-400 font-bold">
+                      Event Boost Active
+                    </p>
+                  )}
 
                   {player.secret && (
                     <p className="text-yellow-400 font-bold">
