@@ -30,7 +30,7 @@ export default function NewsFeed({ news, seasonEvent }: Props) {
           <span className="text-base">📰</span>
           <h2 className="font-black text-white text-sm">Football News</h2>
           {news.length > 0 && (
-            <span className="ml-auto text-[10px] text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">
+            <span className="ml-auto text-xs text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">
               {news.length}
             </span>
           )}
@@ -39,7 +39,7 @@ export default function NewsFeed({ news, seasonEvent }: Props) {
 
       {/* Active Event */}
       <div className="px-4 py-3 border-b border-white/8">
-        <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Active Event</div>
+        <div className="text-xs uppercase tracking-widest text-gray-500 mb-2 font-bold">Active Event</div>
         {seasonEvent ? (
           <div className={`border rounded-xl p-3 ${toneStyle(seasonEvent.tone)}`}>
             <div className="font-black text-white text-sm">{seasonEvent.title}</div>
@@ -68,13 +68,13 @@ export default function NewsFeed({ news, seasonEvent }: Props) {
               <div className="flex items-start justify-between gap-2 mb-1">
                 <div className="flex items-center gap-1.5">
                   <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-0.5 ${toneDot(item.tone)}`} />
-                  <div className="font-black text-white text-xs leading-tight">{item.title}</div>
+                  <div className="font-black text-white text-sm leading-tight">{item.title}</div>
                 </div>
-                <div className="text-[10px] text-gray-600 whitespace-nowrap flex-shrink-0">{item.season}</div>
+                <div className="text-xs text-gray-600 whitespace-nowrap flex-shrink-0">{item.season}</div>
               </div>
-              <div className="text-[11px] text-gray-300 leading-relaxed pl-3">{item.description}</div>
+              <div className="text-xs text-gray-300 leading-relaxed pl-3">{item.description}</div>
               {item.journalist && (
-                <div className="text-[10px] text-gray-600 mt-1.5 pl-3">
+                <div className="text-xs text-gray-600 mt-1.5 pl-3">
                   ✍️ {item.journalist} • {item.source}
                 </div>
               )}

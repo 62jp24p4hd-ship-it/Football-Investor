@@ -73,7 +73,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
             </div>
           </div>
           {isActive && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/80 animate-pulse" />
               <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Active</span>
             </div>
@@ -83,7 +83,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         {/* Formation grid */}
         <div className="grid grid-cols-5 gap-2" style={{minHeight: "420px"}}>
           {FORMATION_433.flat().map((slot, index) => {
-            if (!slot) return <div key={index} className="h-[95px]" style={{}} />;
+            if (!slot) return <div key={index} className="h-[120px]" style={{}} />;
 
             const owned = getOwnedBySlot(slot);
             const ownedIndex = getOwnedIndexBySlot(slot);
@@ -98,21 +98,21 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
                 <button
                   key={index}
                   onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
-                  className={`border-2 rounded-2xl p-1.5 h-[95px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
+                  className={`border-2 rounded-2xl p-1.5 h-[120px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
                     isActive ? "hover:brightness-125 hover:scale-105 cursor-pointer" : "cursor-default"
                   }`}
                 >
-                  <div className={`text-[9px] font-black mb-0.5 inline-block px-1 rounded-md ${positionBg(slot)}`}>
+                  <div className={`text-[10px] font-black mb-1 inline-block px-1 rounded-md ${positionBg(slot)}`}>
                     {slot}
                   </div>
-                  <div className="text-[10px] font-black text-white leading-tight truncate">
+                  <div className="text-xs font-black text-white leading-tight truncate">
                     {owned.player.name.split(" ").pop()}
                   </div>
-                  <div className={`text-[9px] font-black px-1 rounded mt-0.5 inline-block ${getRatingBg(stats.rating)}`}>
+                  <div className={`text-[10px] font-black px-1.5 rounded mt-0.5 inline-block ${getRatingBg(stats.rating)}`}>
                     {stats.rating}
                   </div>
-                  <div className="text-[9px] text-yellow-300 font-bold mt-0.5">€{value}M</div>
-                  <div className={`text-[9px] font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  <div className="text-[10px] text-yellow-300 font-bold mt-1">€{value}M</div>
+                  <div className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {profit >= 0 ? "↑" : "↓"}{Math.abs(profit)}M
                   </div>
                 </button>
@@ -123,7 +123,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
               <button
                 key={index}
                 onClick={() => { if (!isActive) return; onSlotClick(slot); }}
-                className={`border-2 rounded-2xl p-1.5 h-[95px] transition-all duration-200 active:scale-95 ${
+                className={`border-2 rounded-2xl p-1.5 h-[120px] transition-all duration-200 active:scale-95 ${
                   isPending
                     ? "border-yellow-500/80 bg-yellow-900/40 shadow-lg shadow-yellow-500/20"
                     : isActive

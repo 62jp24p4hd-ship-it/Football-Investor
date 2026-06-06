@@ -246,40 +246,45 @@ export function guaranteeAffordablePlayer(
 ): import("./types").Player[] {
   if (players.length === 0) return players;
 
-  const getVal = (p: import("./types").Player) =>
-    p.values?.[season] ?? p.values?.[p.availableSeason] ?? 1;
-
-  const affordable = players.filter((p) => getVal(p) <= budget);
-
-  // Already has 2+ affordable players
-  if (affordable.length >= 2) return players;
-
-  // Sort by price ascending
-  const sorted = [...players].sort((a, b) => getVal(a) - getVal(b));
+  const getVal = (p: import("./types").Player): number =>
+    p.statsBySeason?.[season]?.value ??
+    p.values?.[season] ??
+    p.values?.[p.availableSeason] ??
+    1;
 
   const result = [...players];
 
-  // Force cheapest to 60% of budget
-  const cheapest = sorted[0];
-  const price1 = Math.max(1, Math.round(budget * 0.6));
-  const idx1 = result.findIndex((p) => p.name === cheapest.name);
-  if (idx1 !== -1) {
-    result[idx1] = {
-      ...result[idx1],
-      values: { ...(result[idx1].values ?? {}), [season]: price1 },
-    };
-  }
+  // Sort indices by price
+  const indices = result.map((_, i) => i).sort((a, b) => getVal(result[a]) - getVal(result[b]));
 
-  // If still only 1 affordable, force second cheapest to 80% of budget
-  const stillAffordable = result.filter((p) => getVal(p) <= budget);
-  if (stillAffordable.length < 2 && sorted[1]) {
-    const second = sorted[1];
-    const price2 = Math.max(price1 + 1, Math.round(budget * 0.82));
-    const idx2 = result.findIndex((p) => p.name === second.name);
-    if (idx2 !== -1 && price2 <= budget) {
-      result[idx2] = {
-        ...result[idx2],
-        values: { ...(result[idx2].values ?? {}), [season]: price2 },
+  // Force player at index 0 (cheapest) to be 50% of budget
+  const i0 = indices[0];
+  const price0 = Math.max(1, Math.round(budget * 0.5));
+  result[i0] = {
+    ...result[i0],
+    statsBySeason: result[i0].statsBySeason ? {
+      ...result[i0].statsBySeason,
+      [season]: result[i0].statsBySeason[season]
+        ? { ...result[i0].statsBySeason[season], value: price0 }
+        : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: 70, value: price0 }
+    } : result[i0].statsBySeason,
+    values: { ...(result[i0].values ?? {}), [season]: price0 },
+  };
+
+  // Force player at index 1 (second cheapest) to be 80% of budget
+  if (indices.length > 1) {
+    const i1 = indices[1];
+    const price1 = Math.max(price0 + 1, Math.round(budget * 0.82));
+    if (price1 <= budget) {
+      result[i1] = {
+        ...result[i1],
+        statsBySeason: result[i1].statsBySeason ? {
+          ...result[i1].statsBySeason,
+          [season]: result[i1].statsBySeason[season]
+            ? { ...result[i1].statsBySeason[season], value: price1 }
+            : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: 70, value: price1 }
+        } : result[i1].statsBySeason,
+        values: { ...(result[i1].values ?? {}), [season]: price1 },
       };
     }
   }

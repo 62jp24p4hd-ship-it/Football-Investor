@@ -46,7 +46,7 @@ export default function PlayerSelectionModal({
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-40 p-4"
       style={{ background: "rgba(0,0,0,0.88)" }}>
-      <div className="rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl"
+      <div className="rounded-3xl w-full max-w-7xl overflow-hidden shadow-2xl"
         style={{ background: "#0a0914", border: "2px solid rgba(168,85,247,0.4)" }}>
 
         {/* Header */}
@@ -100,7 +100,7 @@ export default function PlayerSelectionModal({
                     <button
                       key={i}
                       onClick={() => setSelected(player)}
-                      className="rounded-2xl p-4 text-left transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-lg relative overflow-hidden"
+                      className="rounded-2xl p-5 text-left transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-lg relative overflow-hidden"
                       style={{
                         border: `2px solid`,
                         borderColor: affordable ? (player.hiddenType === "talent" ? "#34d399" : player.hiddenType === "trap" ? "#fb923c" : "#7c3aed") : "#991b1b",
@@ -130,18 +130,18 @@ export default function PlayerSelectionModal({
                       </div>
 
                       {/* Name */}
-                      <div className="font-black text-white text-sm leading-tight mb-1 truncate">{player.name}</div>
+                      <div className="font-black text-white text-base leading-tight mb-1.5 truncate">{player.name}</div>
 
                       {/* Flag + Age */}
-                      <div className="text-xs mb-2" style={{ color: "#9ca3af" }}>
+                      <div className="text-sm mb-2" style={{ color: "#9ca3af" }}>
                         {nationalityFlag(player.nationality)} {age}y
                       </div>
 
                       {/* League */}
-                      <div className="text-[10px] mb-3 truncate" style={{ color: "#6b7280" }}>{player.league}</div>
+                      <div className="text-xs mb-3 truncate" style={{ color: "#6b7280" }}>{player.league}</div>
 
                       {/* Rating */}
-                      <div className={`text-[10px] font-black px-1.5 py-0.5 rounded-md inline-block mb-2 ${getRatingBg(stats.rating)}`}>
+                      <div className={`text-xs font-black px-2 py-1 rounded-md inline-block mb-2 ${getRatingBg(stats.rating)}`}>
                         {stats.rating} RTG
                       </div>
 
@@ -150,20 +150,20 @@ export default function PlayerSelectionModal({
                         style={{ background: "rgba(0,0,0,0.3)" }}>
                         {player.position === "GK" ? (
                           <>
-                            <div><div className="text-white font-bold text-xs">{stats.games}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>GM</div></div>
-                            <div className="col-span-2"><div className="text-white font-bold text-xs">{stats.cleanSheets}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>CS</div></div>
+                            <div><div className="text-white font-bold text-sm">{stats.games}</div><div className="text-[10px]" style={{ color: "#6b7280" }}>GM</div></div>
+                            <div className="col-span-2"><div className="text-white font-bold text-sm">{stats.cleanSheets}</div><div className="text-[10px]" style={{ color: "#6b7280" }}>CS</div></div>
                           </>
                         ) : (
                           <>
-                            <div><div className="text-white font-bold text-xs">{stats.games}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>GM</div></div>
-                            <div><div className="text-white font-bold text-xs">{stats.goals}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>G</div></div>
-                            <div><div className="text-white font-bold text-xs">{stats.assists}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>A</div></div>
+                            <div><div className="text-white font-bold text-sm">{stats.games}</div><div className="text-[10px]" style={{ color: "#6b7280" }}>GM</div></div>
+                            <div><div className="text-white font-bold text-sm">{stats.goals}</div><div className="text-[10px]" style={{ color: "#6b7280" }}>G</div></div>
+                            <div><div className="text-white font-bold text-sm">{stats.assists}</div><div className="text-[10px]" style={{ color: "#6b7280" }}>A</div></div>
                           </>
                         )}
                       </div>
 
                       {/* Value */}
-                      <div className="font-black text-lg" style={{ color: affordable ? "#fbbf24" : "#f87171" }}>
+                      <div className="font-black text-xl mt-1" style={{ color: affordable ? "#fbbf24" : "#f87171" }}>
                         €{value}M
                       </div>
                     </button>
