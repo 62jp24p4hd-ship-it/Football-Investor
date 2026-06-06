@@ -73,6 +73,24 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
         </div>
       </div>
 
+      {/* Salary / Sponsorship / Net */}
+      <div className="px-4 py-2 grid grid-cols-3 gap-2 border-b border-white/8 text-center">
+        <div>
+          <div className="text-xs text-red-400 font-bold">-€{dashboard.totalSalaries}M</div>
+          <div className="text-[9px] text-gray-600 uppercase">Salaries</div>
+        </div>
+        <div>
+          <div className="text-xs text-emerald-400 font-bold">+€{dashboard.totalSponsorships}M</div>
+          <div className="text-[9px] text-gray-600 uppercase">Sponsors</div>
+        </div>
+        <div>
+          <div className={`text-xs font-bold ${dashboard.netIncome >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {dashboard.netIncome >= 0 ? "+" : ""}€{dashboard.netIncome}M
+          </div>
+          <div className="text-[9px] text-gray-600 uppercase">Net</div>
+        </div>
+      </div>
+
       {/* Chances */}
       <div className="px-4 py-2 flex items-center gap-4 border-b border-white/8">
         <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/20 rounded-lg px-2 py-1">

@@ -659,7 +659,8 @@ export default function Home() {
     return <StartScreen onStart={startGame} />;
   }
 
-  const canNextSeason = !pendingSlot && !auctionState && !investorOffer && !negotiation;
+  const canNextSeason = !pendingSlot && !auctionState && !investorOffer && !negotiation &&
+    gamePlayers.every((gp) => gp.purchaseChances <= 0);
 
   // ============================================
   // RENDER: GAME

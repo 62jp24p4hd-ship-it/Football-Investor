@@ -73,7 +73,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
             </div>
           </div>
           {isActive && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/80 animate-pulse" />
               <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Active</span>
             </div>
@@ -81,9 +81,9 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         </div>
 
         {/* Formation grid */}
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-5 gap-2">
           {FORMATION_433.flat().map((slot, index) => {
-            if (!slot) return <div key={index} className="h-[72px]" />;
+            if (!slot) return <div key={index} className="h-[88px]" />;
 
             const owned = getOwnedBySlot(slot);
             const ownedIndex = getOwnedIndexBySlot(slot);
@@ -98,7 +98,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
                 <button
                   key={index}
                   onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
-                  className={`border-2 rounded-2xl p-1.5 h-[72px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
+                  className={`border-2 rounded-2xl p-1.5 h-[88px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
                     isActive ? "hover:brightness-125 hover:scale-105 cursor-pointer" : "cursor-default"
                   }`}
                 >
@@ -123,7 +123,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
               <button
                 key={index}
                 onClick={() => { if (!isActive) return; onSlotClick(slot); }}
-                className={`border-2 rounded-2xl p-1.5 h-[72px] transition-all duration-200 active:scale-95 ${
+                className={`border-2 rounded-2xl p-1.5 h-[88px] transition-all duration-200 active:scale-95 ${
                   isPending
                     ? "border-yellow-500/80 bg-yellow-900/40 shadow-lg shadow-yellow-500/20"
                     : isActive
