@@ -81,9 +81,9 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         </div>
 
         {/* Formation grid */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-2" style={{minHeight: "420px"}}>
           {FORMATION_433.flat().map((slot, index) => {
-            if (!slot) return <div key={index} className="h-[88px]" />;
+            if (!slot) return <div key={index} className="h-[95px]" style={{}} />;
 
             const owned = getOwnedBySlot(slot);
             const ownedIndex = getOwnedIndexBySlot(slot);
@@ -98,7 +98,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
                 <button
                   key={index}
                   onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
-                  className={`border-2 rounded-2xl p-1.5 h-[88px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
+                  className={`border-2 rounded-2xl p-1.5 h-[95px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
                     isActive ? "hover:brightness-125 hover:scale-105 cursor-pointer" : "cursor-default"
                   }`}
                 >
@@ -123,7 +123,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
               <button
                 key={index}
                 onClick={() => { if (!isActive) return; onSlotClick(slot); }}
-                className={`border-2 rounded-2xl p-1.5 h-[88px] transition-all duration-200 active:scale-95 ${
+                className={`border-2 rounded-2xl p-1.5 h-[95px] transition-all duration-200 active:scale-95 ${
                   isPending
                     ? "border-yellow-500/80 bg-yellow-900/40 shadow-lg shadow-yellow-500/20"
                     : isActive

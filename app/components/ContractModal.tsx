@@ -55,6 +55,10 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
   }
 
   function handleSign() {
+    if (autoReject) {
+      setRejectionMsg(`🚫 ${player.name} رفض نهائياً — الرضا منخفض جداً`);
+      return;
+    }
     if (shouldReject(satisfaction)) {
       setRejectionMsg(`😤 ${player.name} رفض العرض — قدم عرضاً محسناً`);
       return;

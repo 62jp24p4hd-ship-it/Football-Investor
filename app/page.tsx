@@ -11,7 +11,7 @@ import type {
 // Game engines
 import { buildAllBasePlayers, getSecretPlayers } from "./game/playerDatabase";
 import { generateSeasonPlayerPool } from "./game/playerGenerator";
-import { getCurrentValue } from "./game/valueEngine";
+import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
@@ -107,12 +107,14 @@ export default function Home() {
   const slotOptions = useMemo<Player[]>(() => {
     if (!selectedSlot) return [];
     const ownedNames = new Set(gamePlayers.flatMap((gp) => gp.owned.map((o) => o.player.name)));
-    return shuffle(
+    const filtered = shuffle(
       allPlayers.filter(
         (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name)
       )
     ).slice(0, 5);
-  }, [selectedSlot, season, gamePlayers, allPlayers]);
+    const budget = gamePlayers[activePlayerIndex]?.budget ?? 0;
+    return guaranteeAffordablePlayer(filtered, budget, season);
+  }, [selectedSlot, season, gamePlayers, allPlayers, activePlayerIndex]);
 
   // ── Init base players ─────────────────────
   useEffect(() => {
@@ -507,7 +509,7 @@ export default function Home() {
   function handleSeasonClick() {
     const next = seasonSecretClicks + 1;
     setSeasonSecretClicks(next);
-    if (next >= 20) { setShowDeveloperPanel(true); notify("🔓 Developer Panel Unlocked"); }
+    if (next >= 20) { setShowDeveloperPanel(true); }
   }
 
   function handleDevEvent(eventId: DevEventId) {

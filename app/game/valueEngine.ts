@@ -234,3 +234,47 @@ export function getRatingBg(rating: number): string {
   if (rating >= 60) return "bg-orange-500";
   return "bg-red-500";
 }
+
+// ============================================
+// AFFORDABLE PLAYER GUARANTEE
+// ============================================
+
+export function guaranteeAffordablePlayer(
+  players: import("./types").Player[],
+  budget: number,
+  season: number
+): import("./types").Player[] {
+  if (players.length === 0) return players;
+
+  const affordable = players.filter(
+    (p) => (p.values?.[season] ?? p.values?.[p.availableSeason] ?? 1) <= budget
+  );
+
+  // Already has affordable player
+  if (affordable.length > 0) return players;
+
+  // Force cheapest player to be affordable (70% of budget)
+  const sorted = [...players].sort((a, b) => {
+    const aVal = a.values?.[season] ?? a.values?.[a.availableSeason] ?? 1;
+    const bVal = b.values?.[season] ?? b.values?.[b.availableSeason] ?? 1;
+    return aVal - bVal;
+  });
+
+  const cheapest = sorted[0];
+  const affordablePrice = Math.max(1, Math.round(budget * 0.7));
+
+  const updatedPlayer = {
+    ...cheapest,
+    values: { ...(cheapest.values ?? {}), [season]: affordablePrice },
+    statsBySeason: cheapest.statsBySeason
+      ? {
+          ...cheapest.statsBySeason,
+          [season]: cheapest.statsBySeason[season]
+            ? { ...cheapest.statsBySeason[season], value: affordablePrice }
+            : cheapest.statsBySeason[season],
+        }
+      : cheapest.statsBySeason,
+  };
+
+  return players.map((p) => (p.name === cheapest.name ? updatedPlayer : p));
+}
