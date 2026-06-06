@@ -37,9 +37,9 @@ export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex
 
             <div className="h-6 w-px bg-white/10" />
 
-            <button onClick={onSeasonClick} className="group flex items-center gap-2">
+            <button onClick={onSeasonClick} className="flex items-center gap-2">
               <div className="text-[10px] text-gray-500 uppercase tracking-widest">Season</div>
-              <div className="text-3xl font-black text-white group-hover:text-emerald-400 transition-colors leading-none">
+              <div className="text-3xl font-black text-white leading-none">
                 {season}
               </div>
               {gameLengthMode === "classic" && seasonsLeft > 0 && (

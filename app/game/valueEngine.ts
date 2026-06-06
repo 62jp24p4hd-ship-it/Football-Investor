@@ -246,35 +246,43 @@ export function guaranteeAffordablePlayer(
 ): import("./types").Player[] {
   if (players.length === 0) return players;
 
-  const affordable = players.filter(
-    (p) => (p.values?.[season] ?? p.values?.[p.availableSeason] ?? 1) <= budget
-  );
+  const getVal = (p: import("./types").Player) =>
+    p.values?.[season] ?? p.values?.[p.availableSeason] ?? 1;
 
-  // Already has affordable player
-  if (affordable.length > 0) return players;
+  const affordable = players.filter((p) => getVal(p) <= budget);
 
-  // Force cheapest player to be affordable (70% of budget)
-  const sorted = [...players].sort((a, b) => {
-    const aVal = a.values?.[season] ?? a.values?.[a.availableSeason] ?? 1;
-    const bVal = b.values?.[season] ?? b.values?.[b.availableSeason] ?? 1;
-    return aVal - bVal;
-  });
+  // Already has 2+ affordable players
+  if (affordable.length >= 2) return players;
 
+  // Sort by price ascending
+  const sorted = [...players].sort((a, b) => getVal(a) - getVal(b));
+
+  const result = [...players];
+
+  // Force cheapest to 60% of budget
   const cheapest = sorted[0];
-  const affordablePrice = Math.max(1, Math.round(budget * 0.7));
+  const price1 = Math.max(1, Math.round(budget * 0.6));
+  const idx1 = result.findIndex((p) => p.name === cheapest.name);
+  if (idx1 !== -1) {
+    result[idx1] = {
+      ...result[idx1],
+      values: { ...(result[idx1].values ?? {}), [season]: price1 },
+    };
+  }
 
-  const updatedPlayer = {
-    ...cheapest,
-    values: { ...(cheapest.values ?? {}), [season]: affordablePrice },
-    statsBySeason: cheapest.statsBySeason
-      ? {
-          ...cheapest.statsBySeason,
-          [season]: cheapest.statsBySeason[season]
-            ? { ...cheapest.statsBySeason[season], value: affordablePrice }
-            : cheapest.statsBySeason[season],
-        }
-      : cheapest.statsBySeason,
-  };
+  // If still only 1 affordable, force second cheapest to 80% of budget
+  const stillAffordable = result.filter((p) => getVal(p) <= budget);
+  if (stillAffordable.length < 2 && sorted[1]) {
+    const second = sorted[1];
+    const price2 = Math.max(price1 + 1, Math.round(budget * 0.82));
+    const idx2 = result.findIndex((p) => p.name === second.name);
+    if (idx2 !== -1 && price2 <= budget) {
+      result[idx2] = {
+        ...result[idx2],
+        values: { ...(result[idx2].values ?? {}), [season]: price2 },
+      };
+    }
+  }
 
-  return players.map((p) => (p.name === cheapest.name ? updatedPlayer : p));
+  return result;
 }

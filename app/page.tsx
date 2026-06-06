@@ -698,8 +698,8 @@ export default function Home() {
       {/* Main layout */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {mode === "single" ? (
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            <div className="xl:col-span-2">
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <div className="xl:col-span-2 xl:ml-4">
               <Formation
                 gamePlayer={gamePlayers[0]}
                 playerIndex={0}
@@ -729,8 +729,8 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-7 gap-4">
+            <div className="xl:col-span-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
               {gamePlayers.map((gp, i) => (
                 <div key={i} className="flex flex-col gap-4">
                   <Formation

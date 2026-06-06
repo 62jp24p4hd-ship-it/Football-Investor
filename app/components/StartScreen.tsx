@@ -125,7 +125,7 @@ export default function StartScreen({ onStart }: Props) {
             className="text-xl font-black mb-4 cursor-pointer tracking-wide"
             style={{ color: "#D4AF37", textShadow: "0 0 30px rgba(212,175,55,0.6)" }}
           >
-            👀 حجي المطور المستقل — 7GE
+            👀 حجي المطور المستقل
           </p>
 
           <div style={{ fontSize: "88px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg, #ffffff, #a8f5d0)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
