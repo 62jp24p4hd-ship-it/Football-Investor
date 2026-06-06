@@ -1,754 +1,188 @@
-export const players2008 = [
+export const players2008: any[] = [
+  // LW
+  { name: "Eden Hazard", position: "LW", availableSeason: 2008, startAge: 17, nationality: "Belgium", height: 173, league: "Ligue 1", rating: 76 },
+  { name: "Ryan Babel", position: "LW", availableSeason: 2008, startAge: 21, nationality: "Netherlands", height: 184, league: "Premier League", rating: 73 },
+  { name: "Nani", position: "LW", availableSeason: 2008, startAge: 21, nationality: "Portugal", height: 178, league: "Premier League", rating: 77 },
+  { name: "Franck Ribery", position: "LW", availableSeason: 2008, startAge: 25, nationality: "France", height: 170, league: "Bundesliga", rating: 84 },
+  { name: "Juan Mata", position: "LW", availableSeason: 2008, startAge: 20, nationality: "Spain", height: 170, league: "La Liga", rating: 75 },
+  { name: "Florent Malouda", position: "LW", availableSeason: 2008, startAge: 28, nationality: "France", height: 179, league: "Premier League", rating: 79 },
+  { name: "Dirk Kuyt", position: "LW", availableSeason: 2008, startAge: 27, nationality: "Netherlands", height: 184, league: "Premier League", rating: 78 },
+  { name: "Stewart Downing", position: "LW", availableSeason: 2008, startAge: 23, nationality: "England", height: 178, league: "Premier League", rating: 74 },
+  { name: "Robinho", position: "LW", availableSeason: 2008, startAge: 24, nationality: "Brazil", height: 172, league: "La Liga", rating: 81 },
+  { name: "Vladimir Weiss", position: "LW", availableSeason: 2008, startAge: 17, nationality: "Slovakia", height: 175, league: "Premier League", rating: 68 },
+  { name: "Joaquin", position: "LW", availableSeason: 2008, startAge: 26, nationality: "Spain", height: 180, league: "La Liga", rating: 77 },
+  { name: "Mikel Arteta", position: "LW", availableSeason: 2008, startAge: 26, nationality: "Spain", height: 180, league: "Premier League", rating: 76 },
+  { name: "Tuncay Sanli", position: "LW", availableSeason: 2008, startAge: 26, nationality: "Turkey", height: 181, league: "Premier League", rating: 72 },
+  { name: "Jose Antonio Reyes", position: "LW", availableSeason: 2008, startAge: 25, nationality: "Spain", height: 177, league: "La Liga", rating: 74 },
+  { name: "Shaun Wright-Phillips", position: "LW", availableSeason: 2008, startAge: 26, nationality: "England", height: 162, league: "Premier League", rating: 73 },
 
-  // ===== LW =====
+  // ST
+  { name: "Karim Benzema", position: "ST", availableSeason: 2008, startAge: 20, nationality: "France", height: 185, league: "Ligue 1", rating: 78 },
+  { name: "Sergio Aguero", position: "ST", availableSeason: 2008, startAge: 19, nationality: "Argentina", height: 172, league: "La Liga", rating: 79 },
+  { name: "Robert Lewandowski", position: "ST", availableSeason: 2008, startAge: 19, nationality: "Poland", height: 184, league: "Ekstraklasa", rating: 68 },
+  { name: "Mario Balotelli", position: "ST", availableSeason: 2008, startAge: 17, nationality: "Italy", height: 189, league: "Serie A", rating: 70 },
+  { name: "Bojan Krkic", position: "ST", availableSeason: 2008, startAge: 17, nationality: "Spain", height: 170, league: "La Liga", rating: 72 },
+  { name: "Fernando Torres", position: "ST", availableSeason: 2008, startAge: 24, nationality: "Spain", height: 183, league: "Premier League", rating: 88 },
+  { name: "Dimitar Berbatov", position: "ST", availableSeason: 2008, startAge: 27, nationality: "Bulgaria", height: 188, league: "Premier League", rating: 84 },
+  { name: "Wayne Rooney", position: "ST", availableSeason: 2008, startAge: 22, nationality: "England", height: 176, league: "Premier League", rating: 87 },
+  { name: "Nicolas Anelka", position: "ST", availableSeason: 2008, startAge: 29, nationality: "France", height: 185, league: "Premier League", rating: 81 },
+  { name: "Robbie Keane", position: "ST", availableSeason: 2008, startAge: 28, nationality: "Ireland", height: 176, league: "Premier League", rating: 78 },
+  { name: "Roque Santa Cruz", position: "ST", availableSeason: 2008, startAge: 27, nationality: "Paraguay", height: 188, league: "Premier League", rating: 76 },
+  { name: "Emile Heskey", position: "ST", availableSeason: 2008, startAge: 30, nationality: "England", height: 188, league: "Premier League", rating: 75 },
+  { name: "Darren Bent", position: "ST", availableSeason: 2008, startAge: 24, nationality: "England", height: 183, league: "Premier League", rating: 76 },
+  { name: "Afonso Alves", position: "ST", availableSeason: 2008, startAge: 26, nationality: "Brazil", height: 185, league: "Premier League", rating: 72 },
+  { name: "James Beattie", position: "ST", availableSeason: 2008, startAge: 30, nationality: "England", height: 188, league: "Premier League", rating: 70 },
 
-  {
-    name: "Eden Hazard",
-    position: "LW",
-    availableSeason: 2008,
-    startAge: 17,
-    nationality: "Belgium",
-    height: 175,
-    league: "Ligue 1",
-    goals: 4,
-    assists: 6,
-    rating: 7.1,
-    values: { 2008: 4, 2009: 8, 2010: 18, 2011: 30, 2012: 40, 2013: 55, 2014: 70, 2015: 75, 2016: 65, 2017: 80, 2018: 90, 2019: 100, 2020: 80, 2021: 40 }
-  },
+  // RW
+  { name: "Angel Di Maria", position: "RW", availableSeason: 2008, startAge: 20, nationality: "Argentina", height: 178, league: "Primeira Liga", rating: 76 },
+  { name: "Theo Walcott", position: "RW", availableSeason: 2008, startAge: 19, nationality: "England", height: 175, league: "Premier League", rating: 74 },
+  { name: "Alexis Sanchez", position: "RW", availableSeason: 2008, startAge: 19, nationality: "Chile", height: 169, league: "Serie A", rating: 74 },
+  { name: "Cristiano Ronaldo", position: "RW", availableSeason: 2008, startAge: 23, nationality: "Portugal", height: 187, league: "Premier League", rating: 90 },
+  { name: "Aaron Lennon", position: "RW", availableSeason: 2008, startAge: 21, nationality: "England", height: 165, league: "Premier League", rating: 74 },
+  { name: "Arjen Robben", position: "RW", availableSeason: 2008, startAge: 24, nationality: "Netherlands", height: 180, league: "La Liga", rating: 83 },
+  { name: "James Milner", position: "RW", availableSeason: 2008, startAge: 22, nationality: "England", height: 175, league: "Premier League", rating: 75 },
+  { name: "David Bentley", position: "RW", availableSeason: 2008, startAge: 23, nationality: "England", height: 178, league: "Premier League", rating: 73 },
+  { name: "Nicky Butt", position: "RW", availableSeason: 2008, startAge: 33, nationality: "England", height: 178, league: "Premier League", rating: 69 },
+  { name: "Martin Petrov", position: "RW", availableSeason: 2008, startAge: 28, nationality: "Bulgaria", height: 174, league: "Premier League", rating: 72 },
+  { name: "Morten Gamst Pedersen", position: "RW", availableSeason: 2008, startAge: 27, nationality: "Norway", height: 183, league: "Premier League", rating: 72 },
+  { name: "Elano", position: "RW", availableSeason: 2008, startAge: 27, nationality: "Brazil", height: 176, league: "Premier League", rating: 74 },
+  { name: "Benni McCarthy", position: "RW", availableSeason: 2008, startAge: 30, nationality: "South Africa", height: 181, league: "Premier League", rating: 71 },
+  { name: "Vedran Corluka", position: "RW", availableSeason: 2008, startAge: 22, nationality: "Croatia", height: 190, league: "Premier League", rating: 73 },
+  { name: "Junior Agogo", position: "RW", availableSeason: 2008, startAge: 28, nationality: "Ghana", height: 179, league: "Championship", rating: 68 },
 
-  {
-    name: "Ryan Babel",
-    position: "LW",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "Netherlands",
-    height: 185,
-    league: "Premier League",
-    goals: 10,
-    assists: 5,
-    rating: 7.2,
-    values: { 2008: 9, 2009: 10, 2010: 9, 2011: 7, 2012: 5, 2013: 4, 2014: 3, 2015: 2, 2016: 2, 2017: 2, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
+  // CAM
+  { name: "Mesut Ozil", position: "CAM", availableSeason: 2008, startAge: 19, nationality: "Germany", height: 182, league: "Bundesliga", rating: 74 },
+  { name: "Toni Kroos", position: "CAM", availableSeason: 2008, startAge: 18, nationality: "Germany", height: 183, league: "Bundesliga", rating: 72 },
+  { name: "Samir Nasri", position: "CAM", availableSeason: 2008, startAge: 21, nationality: "France", height: 177, league: "Premier League", rating: 77 },
+  { name: "Diego", position: "CAM", availableSeason: 2008, startAge: 23, nationality: "Brazil", height: 169, league: "Bundesliga", rating: 76 },
+  { name: "Anderson", position: "CAM", availableSeason: 2008, startAge: 20, nationality: "Brazil", height: 178, league: "Premier League", rating: 74 },
+  { name: "Cesc Fabregas", position: "CAM", availableSeason: 2008, startAge: 21, nationality: "Spain", height: 175, league: "Premier League", rating: 83 },
+  { name: "Steven Gerrard", position: "CAM", availableSeason: 2008, startAge: 28, nationality: "England", height: 183, league: "Premier League", rating: 87 },
+  { name: "Frank Lampard", position: "CAM", availableSeason: 2008, startAge: 29, nationality: "England", height: 184, league: "Premier League", rating: 86 },
+  { name: "Xavi Hernandez", position: "CAM", availableSeason: 2008, startAge: 28, nationality: "Spain", height: 170, league: "La Liga", rating: 89 },
+  { name: "Andres Iniesta", position: "CAM", availableSeason: 2008, startAge: 24, nationality: "Spain", height: 171, league: "La Liga", rating: 87 },
+  { name: "Luca Toni", position: "CAM", availableSeason: 2008, startAge: 31, nationality: "Italy", height: 193, league: "Bundesliga", rating: 79 },
+  { name: "Jose Bosingwa", position: "CAM", availableSeason: 2008, startAge: 25, nationality: "Portugal", height: 180, league: "Premier League", rating: 74 },
+  { name: "Nigel de Jong", position: "CAM", availableSeason: 2008, startAge: 23, nationality: "Netherlands", height: 177, league: "Premier League", rating: 76 },
+  { name: "Gareth Barry", position: "CAM", availableSeason: 2008, startAge: 27, nationality: "England", height: 181, league: "Premier League", rating: 77 },
+  { name: "Scott Parker", position: "CAM", availableSeason: 2008, startAge: 27, nationality: "England", height: 179, league: "Premier League", rating: 75 },
 
-  {
-    name: "Nani",
-    position: "LW",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "Portugal",
-    height: 177,
-    league: "Premier League",
-    goals: 8,
-    assists: 9,
-    rating: 7.3,
-    values: { 2008: 15, 2009: 16, 2010: 22, 2011: 30, 2012: 28, 2013: 22, 2014: 18, 2015: 14, 2016: 12, 2017: 10, 2018: 8, 2019: 6, 2020: 4, 2021: 3 }
-  },
+  // LCM
+  { name: "Luka Modric", position: "LCM", availableSeason: 2008, startAge: 22, nationality: "Croatia", height: 172, league: "Premier League", rating: 78 },
+  { name: "Sergio Busquets", position: "LCM", availableSeason: 2008, startAge: 19, nationality: "Spain", height: 189, league: "La Liga", rating: 74 },
+  { name: "Yaya Toure", position: "LCM", availableSeason: 2008, startAge: 25, nationality: "Ivory Coast", height: 188, league: "La Liga", rating: 81 },
+  { name: "Bastian Schweinsteiger", position: "LCM", availableSeason: 2008, startAge: 23, nationality: "Germany", height: 183, league: "Bundesliga", rating: 82 },
+  { name: "Michael Johnson", position: "LCM", availableSeason: 2008, startAge: 20, nationality: "England", height: 175, league: "Premier League", rating: 70 },
+  { name: "Joao Moutinho", position: "LCM", availableSeason: 2008, startAge: 21, nationality: "Portugal", height: 170, league: "Primeira Liga", rating: 76 },
+  { name: "Mousa Dembele", position: "LCM", availableSeason: 2008, startAge: 20, nationality: "Belgium", height: 186, league: "Eerste Divisie", rating: 72 },
+  { name: "Marouane Fellaini", position: "LCM", availableSeason: 2008, startAge: 20, nationality: "Belgium", height: 194, league: "Premier League", rating: 73 },
+  { name: "Denilson", position: "LCM", availableSeason: 2008, startAge: 20, nationality: "Brazil", height: 183, league: "Premier League", rating: 71 },
+  { name: "Barry Ferguson", position: "LCM", availableSeason: 2008, startAge: 30, nationality: "Scotland", height: 178, league: "Premier League", rating: 74 },
+  { name: "Didier Zokora", position: "LCM", availableSeason: 2008, startAge: 27, nationality: "Ivory Coast", height: 179, league: "Premier League", rating: 74 },
+  { name: "Lee Cattermole", position: "LCM", availableSeason: 2008, startAge: 20, nationality: "England", height: 179, league: "Premier League", rating: 70 },
+  { name: "Niko Kranjcar", position: "LCM", availableSeason: 2008, startAge: 23, nationality: "Croatia", height: 187, league: "Premier League", rating: 74 },
+  { name: "Jermaine Jenas", position: "LCM", availableSeason: 2008, startAge: 25, nationality: "England", height: 178, league: "Premier League", rating: 74 },
+  { name: "Tom Huddlestone", position: "LCM", availableSeason: 2008, startAge: 21, nationality: "England", height: 191, league: "Premier League", rating: 72 },
 
-  {
-    name: "Franck Ribery",
-    position: "LW",
-    availableSeason: 2008,
-    startAge: 25,
-    nationality: "France",
-    height: 170,
-    league: "Bundesliga",
-    goals: 11,
-    assists: 14,
-    rating: 8.2,
-    values: { 2008: 35, 2009: 40, 2010: 45, 2011: 50, 2012: 55, 2013: 60, 2014: 65, 2015: 70, 2016: 60, 2017: 45, 2018: 25, 2019: 12, 2020: 5, 2021: 2 }
-  },
+  // RCM
+  { name: "Cesc Fabregas RCM", position: "RCM", availableSeason: 2008, startAge: 21, nationality: "Spain", height: 175, league: "Premier League", rating: 83 },
+  { name: "Michael Essien", position: "RCM", availableSeason: 2008, startAge: 25, nationality: "Ghana", height: 181, league: "Premier League", rating: 84 },
+  { name: "Claude Makelele", position: "RCM", availableSeason: 2008, startAge: 35, nationality: "France", height: 169, league: "Premier League", rating: 78 },
+  { name: "Owen Hargreaves", position: "RCM", availableSeason: 2008, startAge: 27, nationality: "England", height: 178, league: "Premier League", rating: 77 },
+  { name: "Xabi Alonso", position: "RCM", availableSeason: 2008, startAge: 26, nationality: "Spain", height: 183, league: "Premier League", rating: 84 },
+  { name: "Emerson", position: "RCM", availableSeason: 2008, startAge: 32, nationality: "Brazil", height: 178, league: "La Liga", rating: 75 },
+  { name: "Stelios Giannakopoulos", position: "RCM", availableSeason: 2008, startAge: 33, nationality: "Greece", height: 172, league: "Premier League", rating: 71 },
+  { name: "Wilson Palacios", position: "RCM", availableSeason: 2008, startAge: 24, nationality: "Honduras", height: 179, league: "Premier League", rating: 73 },
+  { name: "Seun Olofinjana", position: "RCM", availableSeason: 2008, startAge: 26, nationality: "Nigeria", height: 190, league: "Premier League", rating: 69 },
+  { name: "Kevin Nolan", position: "RCM", availableSeason: 2008, startAge: 26, nationality: "England", height: 183, league: "Premier League", rating: 72 },
+  { name: "Kevin Kilbane", position: "RCM", availableSeason: 2008, startAge: 31, nationality: "Ireland", height: 185, league: "Premier League", rating: 70 },
+  { name: "Robbie Savage", position: "RCM", availableSeason: 2008, startAge: 33, nationality: "Wales", height: 181, league: "Premier League", rating: 70 },
+  { name: "Stephen Ireland", position: "RCM", availableSeason: 2008, startAge: 22, nationality: "Ireland", height: 173, league: "Premier League", rating: 73 },
+  { name: "Craig Gardner", position: "RCM", availableSeason: 2008, startAge: 21, nationality: "England", height: 178, league: "Premier League", rating: 70 },
+  { name: "Muzzy Izzet", position: "RCM", availableSeason: 2008, startAge: 33, nationality: "Turkey", height: 178, league: "Championship", rating: 67 },
 
-  {
-    name: "Juan Mata",
-    position: "LW",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Spain",
-    height: 170,
-    league: "La Liga",
-    goals: 11,
-    assists: 13,
-    rating: 7.8,
-    values: { 2008: 8, 2009: 12, 2010: 20, 2011: 28, 2012: 38, 2013: 42, 2014: 40, 2015: 30, 2016: 20, 2017: 15, 2018: 10, 2019: 7, 2020: 4, 2021: 2 }
-  },
+  // LB
+  { name: "Marcelo", position: "LB", availableSeason: 2008, startAge: 19, nationality: "Brazil", height: 174, league: "La Liga", rating: 78 },
+  { name: "David Alaba", position: "LB", availableSeason: 2008, startAge: 16, nationality: "Austria", height: 180, league: "Bundesliga", rating: 68 },
+  { name: "Patrice Evra", position: "LB", availableSeason: 2008, startAge: 27, nationality: "France", height: 174, league: "Premier League", rating: 82 },
+  { name: "Fabio Coentrao", position: "LB", availableSeason: 2008, startAge: 18, nationality: "Portugal", height: 182, league: "Primeira Liga", rating: 72 },
+  { name: "Gareth Bale", position: "LB", availableSeason: 2008, startAge: 18, nationality: "Wales", height: 183, league: "Premier League", rating: 74 },
+  { name: "Ashley Cole", position: "LB", availableSeason: 2008, startAge: 27, nationality: "England", height: 176, league: "Premier League", rating: 86 },
+  { name: "Gael Clichy", position: "LB", availableSeason: 2008, startAge: 22, nationality: "France", height: 176, league: "Premier League", rating: 77 },
+  { name: "Wayne Bridge", position: "LB", availableSeason: 2008, startAge: 27, nationality: "England", height: 175, league: "Premier League", rating: 76 },
+  { name: "Leighton Baines", position: "LB", availableSeason: 2008, startAge: 23, nationality: "England", height: 170, league: "Premier League", rating: 76 },
+  { name: "Stephen Warnock", position: "LB", availableSeason: 2008, startAge: 27, nationality: "England", height: 175, league: "Premier League", rating: 73 },
+  { name: "Nicky Shorey", position: "LB", availableSeason: 2008, startAge: 27, nationality: "England", height: 175, league: "Premier League", rating: 72 },
+  { name: "Paul Konchesky", position: "LB", availableSeason: 2008, startAge: 27, nationality: "England", height: 179, league: "Premier League", rating: 71 },
+  { name: "Patrick van Aanholt", position: "LB", availableSeason: 2008, startAge: 18, nationality: "Netherlands", height: 175, league: "Premier League", rating: 68 },
+  { name: "Alan Hutton", position: "LB", availableSeason: 2008, startAge: 23, nationality: "Scotland", height: 183, league: "Premier League", rating: 73 },
+  { name: "Marek Cech", position: "LB", availableSeason: 2008, startAge: 26, nationality: "Czech Republic", height: 178, league: "Premier League", rating: 70 },
 
-  // ===== ST =====
+  // LCB
+  { name: "Sergio Ramos", position: "LCB", availableSeason: 2008, startAge: 22, nationality: "Spain", height: 184, league: "La Liga", rating: 84 },
+  { name: "Gerard Pique", position: "LCB", availableSeason: 2008, startAge: 21, nationality: "Spain", height: 194, league: "Premier League", rating: 77 },
+  { name: "Thiago Silva", position: "LCB", availableSeason: 2008, startAge: 23, nationality: "Brazil", height: 183, league: "Serie A", rating: 77 },
+  { name: "Mats Hummels", position: "LCB", availableSeason: 2008, startAge: 19, nationality: "Germany", height: 191, league: "Bundesliga", rating: 74 },
+  { name: "Vincent Kompany", position: "LCB", availableSeason: 2008, startAge: 22, nationality: "Belgium", height: 193, league: "Premier League", rating: 77 },
+  { name: "Rio Ferdinand", position: "LCB", availableSeason: 2008, startAge: 29, nationality: "England", height: 190, league: "Premier League", rating: 87 },
+  { name: "John Terry", position: "LCB", availableSeason: 2008, startAge: 27, nationality: "England", height: 187, league: "Premier League", rating: 88 },
+  { name: "Nemanja Vidic", position: "LCB", availableSeason: 2008, startAge: 26, nationality: "Serbia", height: 188, league: "Premier League", rating: 85 },
+  { name: "Ricardo Carvalho", position: "LCB", availableSeason: 2008, startAge: 30, nationality: "Portugal", height: 182, league: "Premier League", rating: 84 },
+  { name: "Sami Hyypia", position: "LCB", availableSeason: 2008, startAge: 34, nationality: "Finland", height: 192, league: "Premier League", rating: 78 },
+  { name: "Joleon Lescott", position: "LCB", availableSeason: 2008, startAge: 25, nationality: "England", height: 187, league: "Premier League", rating: 77 },
+  { name: "Abdoulaye Meite", position: "LCB", availableSeason: 2008, startAge: 28, nationality: "Ivory Coast", height: 185, league: "Premier League", rating: 72 },
+  { name: "Carlos Cuellar", position: "LCB", availableSeason: 2008, startAge: 26, nationality: "Spain", height: 184, league: "Premier League", rating: 73 },
+  { name: "Danny Shittu", position: "LCB", availableSeason: 2008, startAge: 28, nationality: "Nigeria", height: 193, league: "Premier League", rating: 71 },
+  { name: "Brede Hangeland", position: "LCB", availableSeason: 2008, startAge: 27, nationality: "Norway", height: 194, league: "Premier League", rating: 74 },
 
-  {
-    name: "Karim Benzema",
-    position: "ST",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "France",
-    height: 185,
-    league: "Ligue 1",
-    goals: 20,
-    assists: 8,
-    rating: 8.1,
-    values: { 2008: 10, 2009: 25, 2010: 30, 2011: 35, 2012: 45, 2013: 50, 2014: 55, 2015: 60, 2016: 55, 2017: 50, 2018: 45, 2019: 50, 2020: 60, 2021: 70 }
-  },
+  // RCB
+  { name: "Simon Kjaer", position: "RCB", availableSeason: 2008, startAge: 19, nationality: "Denmark", height: 190, league: "Superliga", rating: 72 },
+  { name: "Martin Skrtel", position: "RCB", availableSeason: 2008, startAge: 23, nationality: "Slovakia", height: 191, league: "Premier League", rating: 76 },
+  { name: "Ezequiel Garay", position: "RCB", availableSeason: 2008, startAge: 21, nationality: "Argentina", height: 189, league: "La Liga", rating: 73 },
+  { name: "Micah Richards", position: "RCB", availableSeason: 2008, startAge: 20, nationality: "England", height: 182, league: "Premier League", rating: 77 },
+  { name: "Nicolas Otamendi", position: "RCB", availableSeason: 2008, startAge: 20, nationality: "Argentina", height: 183, league: "Argentine Primera Division", rating: 70 },
+  { name: "Branislav Ivanovic", position: "RCB", availableSeason: 2008, startAge: 24, nationality: "Serbia", height: 188, league: "Premier League", rating: 78 },
+  { name: "Jamie Carragher", position: "RCB", availableSeason: 2008, startAge: 30, nationality: "England", height: 185, league: "Premier League", rating: 82 },
+  { name: "Martin Laursen", position: "RCB", availableSeason: 2008, startAge: 31, nationality: "Denmark", height: 190, league: "Premier League", rating: 78 },
+  { name: "Robert Huth", position: "RCB", availableSeason: 2008, startAge: 23, nationality: "Germany", height: 191, league: "Premier League", rating: 74 },
+  { name: "Ryan Shawcross", position: "RCB", availableSeason: 2008, startAge: 20, nationality: "England", height: 190, league: "Premier League", rating: 72 },
+  { name: "Sylvain Distin", position: "RCB", availableSeason: 2008, startAge: 30, nationality: "France", height: 193, league: "Premier League", rating: 75 },
+  { name: "Zat Knight", position: "RCB", availableSeason: 2008, startAge: 27, nationality: "England", height: 201, league: "Premier League", rating: 70 },
+  { name: "Aaron Hughes", position: "RCB", availableSeason: 2008, startAge: 28, nationality: "Northern Ireland", height: 180, league: "Premier League", rating: 73 },
+  { name: "Paul McShane", position: "RCB", availableSeason: 2008, startAge: 23, nationality: "Ireland", height: 181, league: "Premier League", rating: 70 },
+  { name: "Matthew Upson", position: "RCB", availableSeason: 2008, startAge: 29, nationality: "England", height: 185, league: "Premier League", rating: 74 },
 
-  {
-    name: "Sergio Aguero",
-    position: "ST",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Argentina",
-    height: 173,
-    league: "La Liga",
-    goals: 19,
-    assists: 6,
-    rating: 8.0,
-    values: { 2008: 35, 2009: 38, 2010: 45, 2011: 50, 2012: 55, 2013: 60, 2014: 65, 2015: 70, 2016: 75, 2017: 80, 2018: 75, 2019: 65, 2020: 45, 2021: 20 }
-  },
+  // RB
+  { name: "Dani Alves", position: "RB", availableSeason: 2008, startAge: 25, nationality: "Brazil", height: 173, league: "La Liga", rating: 84 },
+  { name: "Maicon", position: "RB", availableSeason: 2008, startAge: 27, nationality: "Brazil", height: 184, league: "Serie A", rating: 85 },
+  { name: "Pablo Zabaleta", position: "RB", availableSeason: 2008, startAge: 23, nationality: "Argentina", height: 181, league: "La Liga", rating: 76 },
+  { name: "Rafinha", position: "RB", availableSeason: 2008, startAge: 23, nationality: "Brazil", height: 172, league: "La Liga", rating: 75 },
+  { name: "Glen Johnson", position: "RB", availableSeason: 2008, startAge: 23, nationality: "England", height: 180, league: "Premier League", rating: 77 },
+  { name: "Luke Young", position: "RB", availableSeason: 2008, startAge: 28, nationality: "England", height: 180, league: "Premier League", rating: 74 },
+  { name: "Stephen Hunt", position: "RB", availableSeason: 2008, startAge: 27, nationality: "Ireland", height: 170, league: "Premier League", rating: 72 },
+  { name: "Pascal Chimbonda", position: "RB", availableSeason: 2008, startAge: 29, nationality: "France", height: 182, league: "Premier League", rating: 73 },
+  { name: "Habib Beye", position: "RB", availableSeason: 2008, startAge: 30, nationality: "Senegal", height: 183, league: "Premier League", rating: 74 },
+  { name: "Geremi", position: "RB", availableSeason: 2008, startAge: 30, nationality: "Cameroon", height: 179, league: "Premier League", rating: 73 },
+  { name: "Nicky Hunt", position: "RB", availableSeason: 2008, startAge: 25, nationality: "England", height: 181, league: "Premier League", rating: 70 },
+  { name: "Danny Mills", position: "RB", availableSeason: 2008, startAge: 30, nationality: "England", height: 181, league: "Premier League", rating: 71 },
+  { name: "Tony McMahon", position: "RB", availableSeason: 2008, startAge: 22, nationality: "England", height: 173, league: "Premier League", rating: 68 },
+  { name: "Liam Rosenior", position: "RB", availableSeason: 2008, startAge: 23, nationality: "England", height: 177, league: "Premier League", rating: 69 },
+  { name: "Nuno Morais", position: "RB", availableSeason: 2008, startAge: 26, nationality: "Portugal", height: 175, league: "Premier League", rating: 70 },
 
-  {
-    name: "Robert Lewandowski",
-    position: "ST",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Poland",
-    height: 185,
-    league: "Ekstraklasa",
-    goals: 18,
-    assists: 7,
-    rating: 7.8,
-    values: { 2008: 2, 2009: 4, 2010: 8, 2011: 15, 2012: 30, 2013: 45, 2014: 50, 2015: 70, 2016: 80, 2017: 85, 2018: 90, 2019: 95, 2020: 100, 2021: 60 }
-  },
-
-  {
-    name: "Mario Balotelli",
-    position: "ST",
-    availableSeason: 2008,
-    startAge: 18,
-    nationality: "Italy",
-    height: 189,
-    league: "Serie A",
-    goals: 11,
-    assists: 2,
-    rating: 7.0,
-    values: { 2008: 12, 2009: 18, 2010: 22, 2011: 25, 2012: 20, 2013: 15, 2014: 12, 2015: 8, 2016: 6, 2017: 5, 2018: 4, 2019: 3, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Bojan Krkic",
-    position: "ST",
-    availableSeason: 2008,
-    startAge: 18,
-    nationality: "Spain",
-    height: 170,
-    league: "La Liga",
-    goals: 13,
-    assists: 4,
-    rating: 7.5,
-    values: { 2008: 15, 2009: 18, 2010: 14, 2011: 10, 2012: 8, 2013: 6, 2014: 5, 2015: 4, 2016: 3, 2017: 3, 2018: 2, 2019: 2, 2020: 1, 2021: 1 }
-  },
-
-  // ===== RW =====
-
-  {
-    name: "Angel Di Maria",
-    position: "RW",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Argentina",
-    height: 180,
-    league: "Primeira Liga",
-    goals: 8,
-    assists: 12,
-    rating: 7.6,
-    values: { 2008: 8, 2009: 15, 2010: 25, 2011: 35, 2012: 40, 2013: 45, 2014: 50, 2015: 60, 2016: 55, 2017: 45, 2018: 35, 2019: 30, 2020: 25, 2021: 20 }
-  },
-
-  {
-    name: "Theo Walcott",
-    position: "RW",
-    availableSeason: 2008,
-    startAge: 19,
-    nationality: "England",
-    height: 176,
-    league: "Premier League",
-    goals: 7,
-    assists: 8,
-    rating: 7.1,
-    values: { 2008: 18, 2009: 20, 2010: 22, 2011: 24, 2012: 28, 2013: 30, 2014: 25, 2015: 22, 2016: 20, 2017: 18, 2018: 14, 2019: 10, 2020: 7, 2021: 5 }
-  },
-
-  {
-    name: "Alexis Sanchez",
-    position: "RW",
-    availableSeason: 2008,
-    startAge: 19,
-    nationality: "Chile",
-    height: 169,
-    league: "Serie A",
-    goals: 12,
-    assists: 9,
-    rating: 7.7,
-    values: { 2008: 7, 2009: 12, 2010: 20, 2011: 30, 2012: 35, 2013: 40, 2014: 50, 2015: 65, 2016: 70, 2017: 65, 2018: 45, 2019: 30, 2020: 18, 2021: 10 }
-  },
-
-  // ===== CAM =====
-
-  {
-    name: "Mesut Ozil",
-    position: "CAM",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Germany",
-    height: 180,
-    league: "Bundesliga",
-    goals: 9,
-    assists: 17,
-    rating: 8.1,
-    values: { 2008: 7, 2009: 15, 2010: 30, 2011: 40, 2012: 45, 2013: 50, 2014: 55, 2015: 60, 2016: 65, 2017: 55, 2018: 40, 2019: 25, 2020: 12, 2021: 5 }
-  },
-
-  {
-    name: "Toni Kroos",
-    position: "CAM",
-    availableSeason: 2008,
-    startAge: 18,
-    nationality: "Germany",
-    height: 183,
-    league: "Bundesliga",
-    goals: 4,
-    assists: 7,
-    rating: 6.9,
-    values: { 2008: 4, 2009: 8, 2010: 15, 2011: 25, 2012: 35, 2013: 45, 2014: 60, 2015: 70, 2016: 75, 2017: 80, 2018: 80, 2019: 70, 2020: 60, 2021: 45 }
-  },
-
-  {
-    name: "Samir Nasri",
-    position: "CAM",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "France",
-    height: 175,
-    league: "Premier League",
-    goals: 8,
-    assists: 10,
-    rating: 7.4,
-    values: { 2008: 18, 2009: 22, 2010: 30, 2011: 35, 2012: 38, 2013: 30, 2014: 22, 2015: 18, 2016: 14, 2017: 10, 2018: 7, 2019: 5, 2020: 3, 2021: 2 }
-  },
-
-  {
-    name: "Diego",
-    position: "CAM",
-    availableSeason: 2008,
-    startAge: 23,
-    nationality: "Brazil",
-    height: 173,
-    league: "Bundesliga",
-    goals: 13,
-    assists: 12,
-    rating: 8.0,
-    values: { 2008: 28, 2009: 30, 2010: 25, 2011: 20, 2012: 15, 2013: 10, 2014: 8, 2015: 6, 2016: 4, 2017: 3, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Anderson",
-    position: "CAM",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Brazil",
-    height: 179,
-    league: "Premier League",
-    goals: 6,
-    assists: 8,
-    rating: 7.2,
-    values: { 2008: 20, 2009: 22, 2010: 18, 2011: 14, 2012: 10, 2013: 7, 2014: 5, 2015: 4, 2016: 3, 2017: 2, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  // ===== CM =====
-
-  {
-    name: "Luka Modric",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 23,
-    nationality: "Croatia",
-    height: 174,
-    league: "Premier League",
-    goals: 4,
-    assists: 11,
-    rating: 7.8,
-    values: { 2008: 12, 2009: 18, 2010: 25, 2011: 35, 2012: 45, 2013: 50, 2014: 55, 2015: 60, 2016: 65, 2017: 70, 2018: 75, 2019: 60, 2020: 45, 2021: 30 }
-  },
-
-  {
-    name: "Sergio Busquets",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Spain",
-    height: 189,
-    league: "La Liga",
-    goals: 2,
-    assists: 5,
-    rating: 7.5,
-    values: { 2008: 6, 2009: 15, 2010: 25, 2011: 35, 2012: 40, 2013: 45, 2014: 50, 2015: 55, 2016: 60, 2017: 60, 2018: 55, 2019: 45, 2020: 35, 2021: 25 }
-  },
-
-  {
-    name: "Yaya Toure",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 25,
-    nationality: "Ivory Coast",
-    height: 188,
-    league: "La Liga",
-    goals: 6,
-    assists: 4,
-    rating: 7.7,
-    values: { 2008: 18, 2009: 22, 2010: 30, 2011: 40, 2012: 50, 2013: 55, 2014: 60, 2015: 55, 2016: 40, 2017: 25, 2018: 12, 2019: 5, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Bastian Schweinsteiger",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 24,
-    nationality: "Germany",
-    height: 183,
-    league: "Bundesliga",
-    goals: 7,
-    assists: 10,
-    rating: 7.9,
-    values: { 2008: 25, 2009: 28, 2010: 35, 2011: 42, 2012: 48, 2013: 50, 2014: 55, 2015: 45, 2016: 25, 2017: 12, 2018: 5, 2019: 2, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Michael Johnson",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "England",
-    height: 178,
-    league: "Premier League",
-    goals: 5,
-    assists: 6,
-    rating: 7.3,
-    values: { 2008: 18, 2009: 16, 2010: 10, 2011: 5, 2012: 2, 2013: 1, 2014: 1, 2015: 1, 2016: 1, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Cesc Fabregas",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "Spain",
-    height: 179,
-    league: "Premier League",
-    goals: 13,
-    assists: 17,
-    rating: 8.5,
-    values: { 2008: 45, 2009: 50, 2010: 55, 2011: 60, 2012: 55, 2013: 50, 2014: 45, 2015: 35, 2016: 25, 2017: 18, 2018: 10, 2019: 5, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Joao Moutinho",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 22,
-    nationality: "Portugal",
-    height: 170,
-    league: "Primeira Liga",
-    goals: 5,
-    assists: 12,
-    rating: 7.7,
-    values: { 2008: 12, 2009: 15, 2010: 20, 2011: 25, 2012: 28, 2013: 30, 2014: 25, 2015: 18, 2016: 12, 2017: 8, 2018: 5, 2019: 3, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Mousa Dembele",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "Belgium",
-    height: 185,
-    league: "Eredivisie",
-    goals: 8,
-    assists: 8,
-    rating: 7.4,
-    values: { 2008: 8, 2009: 12, 2010: 18, 2011: 24, 2012: 30, 2013: 35, 2014: 32, 2015: 25, 2016: 18, 2017: 12, 2018: 8, 2019: 5, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Marouane Fellaini",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Belgium",
-    height: 194,
-    league: "Premier League",
-    goals: 9,
-    assists: 4,
-    rating: 7.5,
-    values: { 2008: 15, 2009: 18, 2010: 22, 2011: 25, 2012: 30, 2013: 35, 2014: 25, 2015: 18, 2016: 12, 2017: 8, 2018: 5, 2019: 3, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Denilson",
-    position: "CM",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Brazil",
-    height: 180,
-    league: "Premier League",
-    goals: 3,
-    assists: 5,
-    rating: 7.1,
-    values: { 2008: 14, 2009: 13, 2010: 10, 2011: 7, 2012: 5, 2013: 3, 2014: 2, 2015: 1, 2016: 1, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },  // ===== LB =====
-
-  {
-    name: "Marcelo",
-    position: "LB",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Brazil",
-    height: 174,
-    league: "La Liga",
-    goals: 3,
-    assists: 8,
-    rating: 7.6,
-    values: { 2008: 7, 2009: 12, 2010: 20, 2011: 30, 2012: 35, 2013: 40, 2014: 45, 2015: 50, 2016: 55, 2017: 60, 2018: 55, 2019: 40, 2020: 25, 2021: 15 }
-  },
-
-  {
-    name: "David Alaba",
-    position: "LB",
-    availableSeason: 2008,
-    startAge: 16,
-    nationality: "Austria",
-    height: 180,
-    league: "Bundesliga",
-    goals: 1,
-    assists: 4,
-    rating: 6.8,
-    values: { 2008: 1, 2009: 2, 2010: 8, 2011: 15, 2012: 25, 2013: 35, 2014: 40, 2015: 50, 2016: 55, 2017: 60, 2018: 60, 2019: 55, 2020: 50, 2021: 45 }
-  },
-
-  {
-    name: "Patrice Evra",
-    position: "LB",
-    availableSeason: 2008,
-    startAge: 27,
-    nationality: "France",
-    height: 174,
-    league: "Premier League",
-    goals: 1,
-    assists: 7,
-    rating: 7.8,
-    values: { 2008: 22, 2009: 24, 2010: 23, 2011: 20, 2012: 18, 2013: 14, 2014: 10, 2015: 7, 2016: 5, 2017: 3, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Fabio Coentrao",
-    position: "LB",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Portugal",
-    height: 179,
-    league: "Primeira Liga",
-    goals: 2,
-    assists: 6,
-    rating: 7.1,
-    values: { 2008: 5, 2009: 9, 2010: 18, 2011: 30, 2012: 25, 2013: 18, 2014: 12, 2015: 8, 2016: 5, 2017: 3, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Gareth Bale",
-    position: "LB",
-    availableSeason: 2008,
-    startAge: 19,
-    nationality: "Wales",
-    height: 183,
-    league: "Premier League",
-    goals: 3,
-    assists: 5,
-    rating: 7.0,
-    values: { 2008: 5, 2009: 7, 2010: 15, 2011: 25, 2012: 40, 2013: 65, 2014: 80, 2015: 80, 2016: 90, 2017: 80, 2018: 70, 2019: 50, 2020: 35, 2021: 18 }
-  },
-
-  // ===== CB =====
-
-  {
-    name: "Sergio Ramos",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 22,
-    nationality: "Spain",
-    height: 184,
-    league: "La Liga",
-    goals: 5,
-    assists: 2,
-    rating: 8.0,
-    values: { 2008: 25, 2009: 30, 2010: 35, 2011: 40, 2012: 45, 2013: 50, 2014: 55, 2015: 60, 2016: 65, 2017: 70, 2018: 60, 2019: 50, 2020: 35, 2021: 20 }
-  },
-
-  {
-    name: "Gerard Pique",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "Spain",
-    height: 194,
-    league: "Premier League",
-    goals: 2,
-    assists: 1,
-    rating: 7.3,
-    values: { 2008: 6, 2009: 18, 2010: 30, 2011: 40, 2012: 45, 2013: 50, 2014: 50, 2015: 45, 2016: 40, 2017: 35, 2018: 30, 2019: 25, 2020: 18, 2021: 10 }
-  },
-
-  {
-    name: "Thiago Silva",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 24,
-    nationality: "Brazil",
-    height: 183,
-    league: "Serie A",
-    goals: 3,
-    assists: 1,
-    rating: 7.9,
-    values: { 2008: 18, 2009: 25, 2010: 35, 2011: 45, 2012: 50, 2013: 55, 2014: 50, 2015: 45, 2016: 40, 2017: 30, 2018: 20, 2019: 12, 2020: 8, 2021: 5 }
-  },
-
-  {
-    name: "Mats Hummels",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 19,
-    nationality: "Germany",
-    height: 191,
-    league: "Bundesliga",
-    goals: 1,
-    assists: 2,
-    rating: 6.9,
-    values: { 2008: 3, 2009: 6, 2010: 14, 2011: 25, 2012: 35, 2013: 40, 2014: 45, 2015: 42, 2016: 38, 2017: 30, 2018: 22, 2019: 15, 2020: 8, 2021: 5 }
-  },
-
-  {
-    name: "Vincent Kompany",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 22,
-    nationality: "Belgium",
-    height: 190,
-    league: "Premier League",
-    goals: 2,
-    assists: 1,
-    rating: 7.4,
-    values: { 2008: 10, 2009: 15, 2010: 22, 2011: 30, 2012: 38, 2013: 42, 2014: 45, 2015: 40, 2016: 32, 2017: 20, 2018: 10, 2019: 5, 2020: 2, 2021: 1 }
-  },  {
-    name: "Simon Kjaer",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 19,
-    nationality: "Denmark",
-    height: 189,
-    league: "Serie A",
-    goals: 1,
-    assists: 1,
-    rating: 6.8,
-    values: { 2008: 2, 2009: 5, 2010: 10, 2011: 18, 2012: 20, 2013: 18, 2014: 15, 2015: 12, 2016: 10, 2017: 8, 2018: 6, 2019: 8, 2020: 12, 2021: 10 }
-  },
-
-  {
-    name: "Martin Skrtel",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 23,
-    nationality: "Slovakia",
-    height: 191,
-    league: "Premier League",
-    goals: 2,
-    assists: 1,
-    rating: 7.1,
-    values: { 2008: 8, 2009: 12, 2010: 15, 2011: 18, 2012: 20, 2013: 18, 2014: 15, 2015: 12, 2016: 8, 2017: 5, 2018: 3, 2019: 2, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Ezequiel Garay",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 22,
-    nationality: "Argentina",
-    height: 189,
-    league: "La Liga",
-    goals: 4,
-    assists: 1,
-    rating: 7.3,
-    values: { 2008: 10, 2009: 15, 2010: 20, 2011: 25, 2012: 28, 2013: 30, 2014: 25, 2015: 20, 2016: 12, 2017: 8, 2018: 5, 2019: 3, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Micah Richards",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "England",
-    height: 180,
-    league: "Premier League",
-    goals: 2,
-    assists: 3,
-    rating: 7.2,
-    values: { 2008: 15, 2009: 18, 2010: 16, 2011: 12, 2012: 10, 2013: 8, 2014: 5, 2015: 3, 2016: 2, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Nicolas Otamendi",
-    position: "CB",
-    availableSeason: 2008,
-    startAge: 20,
-    nationality: "Argentina",
-    height: 183,
-    league: "Argentina",
-    goals: 1,
-    assists: 1,
-    rating: 6.9,
-    values: { 2008: 2, 2009: 4, 2010: 8, 2011: 15, 2012: 20, 2013: 25, 2014: 30, 2015: 35, 2016: 32, 2017: 25, 2018: 18, 2019: 12, 2020: 8, 2021: 5 }
-  },
-
-  {
-    name: "Dani Alves",
-    position: "RB",
-    availableSeason: 2008,
-    startAge: 25,
-    nationality: "Brazil",
-    height: 172,
-    league: "La Liga",
-    goals: 5,
-    assists: 15,
-    rating: 8.3,
-    values: { 2008: 35, 2009: 40, 2010: 45, 2011: 50, 2012: 55, 2013: 60, 2014: 55, 2015: 45, 2016: 35, 2017: 25, 2018: 15, 2019: 8, 2020: 4, 2021: 2 }
-  },
-
-  {
-    name: "Maicon",
-    position: "RB",
-    availableSeason: 2008,
-    startAge: 27,
-    nationality: "Brazil",
-    height: 184,
-    league: "Serie A",
-    goals: 6,
-    assists: 10,
-    rating: 8.0,
-    values: { 2008: 30, 2009: 35, 2010: 40, 2011: 38, 2012: 30, 2013: 20, 2014: 12, 2015: 6, 2016: 3, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Pablo Zabaleta",
-    position: "RB",
-    availableSeason: 2008,
-    startAge: 23,
-    nationality: "Argentina",
-    height: 178,
-    league: "Premier League",
-    goals: 2,
-    assists: 5,
-    rating: 7.4,
-    values: { 2008: 10, 2009: 12, 2010: 15, 2011: 18, 2012: 20, 2013: 22, 2014: 20, 2015: 18, 2016: 12, 2017: 8, 2018: 4, 2019: 2, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Rafinha",
-    position: "RB",
-    availableSeason: 2008,
-    startAge: 23,
-    nationality: "Brazil",
-    height: 172,
-    league: "Bundesliga",
-    goals: 2,
-    assists: 8,
-    rating: 7.2,
-    values: { 2008: 8, 2009: 10, 2010: 12, 2011: 15, 2012: 18, 2013: 20, 2014: 18, 2015: 14, 2016: 10, 2017: 6, 2018: 3, 2019: 2, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Glen Johnson",
-    position: "RB",
-    availableSeason: 2008,
-    startAge: 24,
-    nationality: "England",
-    height: 182,
-    league: "Premier League",
-    goals: 3,
-    assists: 6,
-    rating: 7.3,
-    values: { 2008: 12, 2009: 15, 2010: 18, 2011: 20, 2012: 18, 2013: 15, 2014: 12, 2015: 8, 2016: 5, 2017: 3, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Manuel Neuer",
-    position: "GK",
-    availableSeason: 2008,
-    startAge: 22,
-    nationality: "Germany",
-    height: 193,
-    league: "Bundesliga",
-    goals: 0,
-    assists: 0,
-    rating: 7.8,
-    values: { 2008: 8, 2009: 15, 2010: 25, 2011: 35, 2012: 45, 2013: 55, 2014: 65, 2015: 70, 2016: 65, 2017: 60, 2018: 50, 2019: 40, 2020: 25, 2021: 15 }
-  },
-
-  {
-    name: "Joe Hart",
-    position: "GK",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "England",
-    height: 196,
-    league: "Premier League",
-    goals: 0,
-    assists: 0,
-    rating: 7.1,
-    values: { 2008: 4, 2009: 8, 2010: 15, 2011: 22, 2012: 28, 2013: 30, 2014: 28, 2015: 20, 2016: 12, 2017: 6, 2018: 3, 2019: 2, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Hugo Lloris",
-    position: "GK",
-    availableSeason: 2008,
-    startAge: 21,
-    nationality: "France",
-    height: 188,
-    league: "Ligue 1",
-    goals: 0,
-    assists: 0,
-    rating: 7.5,
-    values: { 2008: 10, 2009: 15, 2010: 22, 2011: 30, 2012: 38, 2013: 42, 2014: 45, 2015: 40, 2016: 35, 2017: 30, 2018: 22, 2019: 15, 2020: 8, 2021: 4 }
-  },
-
-  {
-    name: "Rene Adler",
-    position: "GK",
-    availableSeason: 2008,
-    startAge: 23,
-    nationality: "Germany",
-    height: 191,
-    league: "Bundesliga",
-    goals: 0,
-    assists: 0,
-    rating: 7.3,
-    values: { 2008: 12, 2009: 15, 2010: 18, 2011: 15, 2012: 10, 2013: 6, 2014: 3, 2015: 2, 2016: 1, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Igor Akinfeev",
-    position: "GK",
-    availableSeason: 2008,
-    startAge: 22,
-    nationality: "Russia",
-    height: 186,
-    league: "Russia",
-    goals: 0,
-    assists: 0,
-    rating: 7.6,
-    values: { 2008: 15, 2009: 18, 2010: 22, 2011: 25, 2012: 28, 2013: 25, 2014: 20, 2015: 15, 2016: 10, 2017: 6, 2018: 4, 2019: 2, 2020: 1, 2021: 1 }
-  }
+  // GK
+  { name: "Manuel Neuer", position: "GK", availableSeason: 2008, startAge: 22, nationality: "Germany", height: 193, league: "Bundesliga", rating: 78 },
+  { name: "Joe Hart", position: "GK", availableSeason: 2008, startAge: 21, nationality: "England", height: 196, league: "Premier League", rating: 75 },
+  { name: "Hugo Lloris", position: "GK", availableSeason: 2008, startAge: 21, nationality: "France", height: 188, league: "Ligue 1", rating: 76 },
+  { name: "Rene Adler", position: "GK", availableSeason: 2008, startAge: 23, nationality: "Germany", height: 190, league: "Bundesliga", rating: 76 },
+  { name: "Igor Akinfeev", position: "GK", availableSeason: 2008, startAge: 22, nationality: "Russia", height: 186, league: "Russian Premier League", rating: 78 },
+  { name: "Petr Cech", position: "GK", availableSeason: 2008, startAge: 26, nationality: "Czech Republic", height: 196, league: "Premier League", rating: 88 },
+  { name: "Edwin van der Sar", position: "GK", availableSeason: 2008, startAge: 37, nationality: "Netherlands", height: 197, league: "Premier League", rating: 85 },
+  { name: "Mark Schwarzer", position: "GK", availableSeason: 2008, startAge: 35, nationality: "Australia", height: 196, league: "Premier League", rating: 79 },
+  { name: "Brad Friedel", position: "GK", availableSeason: 2008, startAge: 37, nationality: "United States", height: 193, league: "Premier League", rating: 79 },
+  { name: "Shay Given", position: "GK", availableSeason: 2008, startAge: 32, nationality: "Ireland", height: 185, league: "Premier League", rating: 81 },
+  { name: "David James", position: "GK", availableSeason: 2008, startAge: 38, nationality: "England", height: 196, league: "Premier League", rating: 77 },
+  { name: "Jussi Jaaskelainen", position: "GK", availableSeason: 2008, startAge: 33, nationality: "Finland", height: 190, league: "Premier League", rating: 77 },
+  { name: "Carlo Cudicini", position: "GK", availableSeason: 2008, startAge: 35, nationality: "Italy", height: 187, league: "Premier League", rating: 75 },
+  { name: "Paul Robinson", position: "GK", availableSeason: 2008, startAge: 28, nationality: "England", height: 195, league: "Premier League", rating: 76 },
+  { name: "Scott Carson", position: "GK", availableSeason: 2008, startAge: 22, nationality: "England", height: 188, league: "Premier League", rating: 73 },
 ];
