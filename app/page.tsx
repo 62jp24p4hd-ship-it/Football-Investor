@@ -1,113 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import type {
-  AuctionState,
-  BudgetMode,
-  ContractOffer,
-  EventChoiceState,
-  EventType,
-  GameLengthMode,
-  GameMode,
-  GamePlayer,
-  InvestorOfferState,
-  NewsItem,
-  OwnedPlayer,
-  Player,
-  RewardCardType,
-  SeasonEvent,
-  Slot,
-  TeamStarterState,
+  GamePlayer, Player, GameMode, BudgetMode, EventType,
+  AuctionState, InvestorOfferState, RewardChoice, StealChallenge,
+  SeasonEvent, NewsItem, ContractNegotiation, OwnedPlayer,
+  RewardCard, DevEventId, SeasonEvent as SeasonEventType,
 } from "./game/types";
 
-import {
-  CLASSIC_END_SEASON,
-  START_SEASON,
-} from "./game/constants";
+// Game engines
+import { buildAllBasePlayers, getSecretPlayers } from "./game/playerDatabase";
+import { generateSeasonPlayerPool } from "./game/playerGenerator";
+import { getCurrentValue } from "./game/valueEngine";
+import { getSeasonStats } from "./game/statsEngine";
+import { createNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
+import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
+import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions } from "./game/eventEngine";
+import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
+import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
+import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
+import { setupNewSeason, buildInitialState, getFirstTurn, validateGameStart } from "./game/gameSetup";
+import { generateSponsorshipOffer, shouldReceiveSponsorshipOffer, addSponsorshipToPlayer, createSponsorshipNews } from "./game/sponsorshipEngine";
+import { createTransferNews, createSaleNews, createFreezeCardNews, createTripleBuyNews, createStealCardNews, createGeneratedClassNews } from "./game/newsEngine";
+import { shuffle, randomId, pickRandom } from "./game/helpers";
+import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS } from "./game/constants";
 
-import {
-  createNewsItem,
-  getOtherPlayerIndex,
-  getSeasonStarter,
-  slotToPosition,
-} from "./game/helpers";
-
-import {
-  calculateAge,
-  getPlayerValue,
-} from "./game/valueEngine";
-
-import {
-  getSeasonStats,
-} from "./game/statsEngine";
-
-import {
-  createContractOffer,
-  updateContractOffer,
-  willAcceptContract,
-  acceptContract,
-} from "./game/contractEngine";
-
-import {
-  tryGenerateSponsorship,
-} from "./game/sponsorshipEngine";
-
-import {
-  applySalePurchaseBonus,
-  canAdvanceSeason,
-  getBankruptcyWinnerIndex,
-  resetSeasonChances,
-  applyAnnualEconomy,
-} from "./game/economyEngine";
-
-import {
-  createEventChoiceOptions,
-  applyEventToPlayer,
-  applyRandomPlayerEventToOwner,
-  createSharedMarketEvent,
-} from "./game/eventEngine";
-
-import {
-  getEligibleRewardCards,
-  unlockRewardCard,
-  useRewardCard,
-  reduceCardCooldowns,
-} from "./game/rewardCardEngine";
-
-import {
-  createInvestorOfferState,
-  canAffordInvestorOffer,
-} from "./game/investorOfferEngine";
-
-import {
-  createAuctionPreviewState,
-  startAuctionBidding,
-  canAuctionBid,
-  placeAuctionBid,
-  surrenderAuction,
-  finishAuctionByTimer,
-} from "./game/auctionEngine";
-
-import {
-  createSinglePlayerSetup,
-  createVersusSetup,
-  createStarterState,
-  updateSeasonStarter,
-} from "./game/gameSetup";
-
-import {
-  getAllPlayers,
-} from "./game/playerDatabase";
-
-import {
-  generateSelectionPool,
-} from "./game/playerGenerator";
-
+// Components
 import StartScreen from "./components/StartScreen";
 import TopBar from "./components/TopBar";
-import TeamPanel from "./components/TeamPanel";
 import Formation from "./components/Formation";
+import TeamPanel from "./components/TeamPanel";
+import NewsFeed from "./components/NewsFeed";
 import PlayerSelectionModal from "./components/PlayerSelectionModal";
 import ContractModal from "./components/ContractModal";
 import OwnedPlayerModal from "./components/OwnedPlayerModal";
@@ -115,1594 +38,883 @@ import RewardModal from "./components/RewardModal";
 import EventChoiceModal from "./components/EventChoiceModal";
 import InvestorOfferModal from "./components/InvestorOfferModal";
 import AuctionModal from "./components/AuctionModal";
-import NewsFeed from "./components/NewsFeed";
 import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
-import DeveloperPanel, {
-  DevEventId,
-} from "./components/DeveloperPanel";
+import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
 
-type SelectedOwnedState = {
-  playerIndex: number;
-  ownedIndex: number;
-};
-
-type ContractState = {
-  player: Player;
-  slot: Slot;
-  playerIndex: number;
-  marketValue: number;
-  contract: ContractOffer;
-};
-
-type RewardState = {
-  playerIndex: number;
-  cards: RewardCardType[];
-};
-
-type ReplacementState = {
-  ownerIndex: number;
-  incomingPlayer: Player;
-  price: number;
-  candidates: OwnedPlayer[];
-};
+// ============================================
+// MAIN GAME PAGE
+// ============================================
 
 export default function Home() {
+  // ── Game config ──────────────────────────
+  const [started, setStarted] = useState(false);
+  const [mode, setMode] = useState<GameMode>("single");
+  const [gameLengthMode, setGameLengthMode] = useState<"classic" | "infinite">("classic");
+  const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
+  const [eventsEnabled, setEventsEnabled] = useState(true);
+  const [timerSeconds, setTimerSeconds] = useState<number | null>(15);
 
-  const [mode, setMode] =
-    useState<GameMode | null>(null);
+  // ── Game state ────────────────────────────
+  const [season, setSeason] = useState(GAME_START_SEASON);
+  const [turnIndex, setTurnIndex] = useState(0);
+  const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [seasonEvent, setSeasonEvent] = useState<SeasonEvent | null>(null);
 
-  const [
-    gameLengthMode,
-    setGameLengthMode,
-  ] =
-    useState<GameLengthMode | null>(
-      null
-    );
+  // ── Player pools ──────────────────────────
+  const [basePlayers, setBasePlayers] = useState<Player[]>([]);
+  const [easterUnlocked, setEasterUnlocked] = useState(false);
+  const [generatedBySeason, setGeneratedBySeason] = useState<Record<number, Player[]>>({});
 
-  const [
-    budgetMode,
-    setBudgetMode,
-  ] =
-    useState<BudgetMode>(
-      "balanced"
-    );
+  // ── UI state ──────────────────────────────
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [pendingSlot, setPendingSlot] = useState<string | null>(null);
+  const [timer, setTimer] = useState(15);
+  const [timerActive, setTimerActive] = useState(false);
+  const [message, setMessage] = useState("");
+  const [seasonSecretClicks, setSeasonSecretClicks] = useState(0);
+  const [showDeveloperPanel, setShowDeveloperPanel] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
 
-  const [
-    eventsEnabled,
-    setEventsEnabled,
-  ] =
-    useState(true);
+  // ── Modals ────────────────────────────────
+  const [negotiation, setNegotiation] = useState<ContractNegotiation | null>(null);
+  const [selectedOwned, setSelectedOwned] = useState<{ playerIndex: number; ownedIndex: number } | null>(null);
+  const [rewardChoice, setRewardChoice] = useState<RewardChoice | null>(null);
+  const [stealChallenge, setStealChallenge] = useState<StealChallenge | null>(null);
+  const [eventChoice, setEventChoice] = useState<{ option1: SeasonEventType; option2: SeasonEventType; playerIndex: number } | null>(null);
+  const [investorOffer, setInvestorOffer] = useState<InvestorOfferState | null>(null);
+  const [auctionState, setAuctionState] = useState<AuctionState | null>(null);
 
-  const [
-    eventType,
-    setEventType,
-  ] =
-    useState<EventType>("all");
+  // ── Derived ───────────────────────────────
+  const activePlayerIndex = mode === "versus" ? turnIndex : 0;
+  const activePlayer = gamePlayers[activePlayerIndex];
+  const isFrozen = activePlayer?.frozenSeason === season;
 
-  const [
-    selectedTime,
-    setSelectedTime,
-  ] =
-    useState(15);
+  const marketMultiplier = seasonEvent?.marketMultiplier ?? 1;
 
-  const [
-    teamOneName,
-    setTeamOneName,
-  ] =
-    useState("Team 1");
+  // ── All players pool ─────────────────────
+  const allPlayers = useMemo<Player[]>(() => {
+    const base = easterUnlocked ? [...basePlayers, ...getSecretPlayers()] : basePlayers;
+    const gen = Object.values(generatedBySeason).flat();
+    return [...base, ...gen];
+  }, [basePlayers, easterUnlocked, generatedBySeason]);
 
-  const [
-    teamTwoName,
-    setTeamTwoName,
-  ] =
-    useState("Team 2");
+  // ── Options for selected slot ─────────────
+  const slotOptions = useMemo<Player[]>(() => {
+    if (!selectedSlot) return [];
+    const ownedNames = new Set(gamePlayers.flatMap((gp) => gp.owned.map((o) => o.player.name)));
+    return shuffle(
+      allPlayers.filter(
+        (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name)
+      )
+    ).slice(0, 5);
+  }, [selectedSlot, season, gamePlayers, allPlayers]);
 
-  const [
-    started,
-    setStarted,
-  ] =
-    useState(false);
+  // ── Init base players ─────────────────────
+  useEffect(() => {
+    if (basePlayers.length > 0) return;
+    setBasePlayers(buildAllBasePlayers());
+  }, [basePlayers.length]);
 
-  const [
-    season,
-    setSeason,
-  ] =
-    useState(START_SEASON);
+  // ── Generate infinite mode players ────────
+  useEffect(() => {
+    if (gameLengthMode !== "infinite" || season <= 2028) return;
+    if (generatedBySeason[season]) return;
+    const pool = generateSeasonPlayerPool(season);
+    setGeneratedBySeason((prev) => ({ ...prev, [season]: pool }));
+    addNewsItems([createGeneratedClassNews(season)]);
+  }, [season, gameLengthMode]);
 
-  const [
-    players,
-    setPlayers,
-  ] =
-    useState<GamePlayer[]>([]);
+  // ── Timer countdown ───────────────────────
+  useEffect(() => {
+    if (!started || !timerActive || !selectedSlot || timerSeconds === null || showEndModal) return;
+    if (timer <= 0) { autoPick(); return; }
+    const t = setTimeout(() => setTimer((p) => p - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timer, timerActive, selectedSlot, started, showEndModal]);
 
-  const [
-    turnIndex,
-    setTurnIndex,
-  ] =
-    useState(0);
-
-  const [
-    starterState,
-    setStarterState,
-  ] =
-    useState<TeamStarterState | null>(
-      null
-    );
-
-  const [
-    message,
-    setMessage,
-  ] =
-    useState("");
-
-  const [
-    showHowToPlay,
-    setShowHowToPlay,
-  ] =
-    useState(false);
-
-  const [
-    showStats,
-    setShowStats,
-  ] =
-    useState(false);
-
-  const [
-    showEndGame,
-    setShowEndGame,
-  ] =
-    useState(false);
-
-  const [
-    showDeveloperPanel,
-    setShowDeveloperPanel,
-  ] =
-    useState(false);
-
-  const [
-    seasonSecretClicks,
-    setSeasonSecretClicks,
-  ] =
-    useState(0);
-
-  const [
-    news,
-    setNews,
-  ] =
-    useState<NewsItem[]>([]);
-
-  const [
-    seasonEvent,
-    setSeasonEvent,
-  ] =
-    useState<SeasonEvent | null>(null);
-
-  const [
-    selectedSlot,
-    setSelectedSlot,
-  ] =
-    useState<Slot | null>(null);
-
-  const [
-    selectionOptions,
-    setSelectionOptions,
-  ] =
-    useState<Player[]>([]);
-
-  const [
-    selectedPlayerPreview,
-    setSelectedPlayerPreview,
-  ] =
-    useState<Player | null>(null);
-
-  const [
-    selectionTimer,
-    setSelectionTimer,
-  ] =
-    useState(selectedTime);
-
-  const [
-    contractState,
-    setContractState,
-  ] =
-    useState<ContractState | null>(
-      null
-    );
-
-  const [
-    selectedOwned,
-    setSelectedOwned,
-  ] =
-    useState<SelectedOwnedState | null>(
-      null
-    );
-
-  const [
-    rewardState,
-    setRewardState,
-  ] =
-    useState<RewardState | null>(null);
-
-  const [
-    eventChoiceState,
-    setEventChoiceState,
-  ] =
-    useState<EventChoiceState | null>(
-      null
-    );
-
-  const [
-    investorOffer,
-    setInvestorOffer,
-  ] =
-    useState<InvestorOfferState | null>(
-      null
-    );
-
-  const [
-    auctionState,
-    setAuctionState,
-  ] =
-    useState<AuctionState | null>(
-      null
-    );
-
-  const [
-    replacementState,
-    setReplacementState,
-  ] =
-    useState<ReplacementState | null>(
-      null
-    );
-
-  const allPlayers =
-    useMemo(
-      () => getAllPlayers(),
-      []
-    );
-
-  const activePlayer =
-    players[turnIndex];
-
-  const winnerText =
-    getWinnerText();
-
-  function getWinnerText() {
-    if (players.length === 0) {
-      return "";
+  // ── Auction timer ─────────────────────────
+  useEffect(() => {
+    if (!auctionState) return;
+    if (auctionState.timer <= 0) {
+      if (auctionState.phase === "preview") {
+        setAuctionState(startBiddingPhase(auctionState, season, gamePlayers));
+        return;
+      }
+      if (auctionState.phase === "bidding") {
+        handleFinishAuction();
+        return;
+      }
     }
-
-    const sorted =
-      [...players].sort(
-        (a, b) =>
-          b.budget - a.budget
-      );
-
-    return `${sorted[0].teamName} wins with €${Math.round(
-      sorted[0].budget
-    )}M`;
-  }
-
-  function getOwnedAge(
-    owned: OwnedPlayer
-  ) {
-    return calculateAge(
-      owned.player,
-      season
-    );
-  }
-
-  function getOwnedValue(
-    owned: OwnedPlayer
-  ) {
-    return getPlayerValue(
-      owned.player,
-      season,
-      seasonEvent?.marketMultiplier ??
-        1
-    );
-  }
-
-  function getPlayerCurrentValue(
-    player: Player
-  ) {
-    return getPlayerValue(
-      player,
-      season,
-      seasonEvent?.marketMultiplier ??
-        1
-    );
-  }
-
-  function getPlayerCurrentAge(
-    player: Player
-  ) {
-    return calculateAge(
-      player,
-      season
-    );
-  }
-
-  function addNews(
-    title: string,
-    description: string,
-    tone:
-      | "good"
-      | "bad"
-      | "neutral"
-      | "special" = "neutral"
-  ) {
-    setNews((current) => [
-      createNewsItem(
-        season,
-        title,
-        description,
-        tone
-      ),
-      ...current,
-    ]);
-  }
-
-  function startGame(
-    firstStarter: number
-  ) {
-    const starter =
-      createStarterState(
-        firstStarter
-      );
-
-    const setupPlayers =
-      mode === "versus"
-        ? createVersusSetup(
-            teamOneName,
-            teamTwoName,
-            budgetMode
-          )
-        : createSinglePlayerSetup(
-            budgetMode
-          );
-
-    setStarterState(starter);
-
-    setPlayers(setupPlayers);
-
-    setTurnIndex(firstStarter);
-
-    setStarted(true);
-
-    setSeason(
-      START_SEASON
-    );
-
-    setMessage(
-      `Season ${START_SEASON} started`
-    );
-
-    addNews(
-      "Game Started",
-      "Football Investor has begun.",
-      "special"
-    );
-  }
-
-  function nextTurn() {
-    if (
-      mode !== "versus"
-    ) {
+    if (shouldAuctionEnd(auctionState, gamePlayers.length)) {
+      handleFinishAuction();
       return;
     }
+    const t = setTimeout(() => setAuctionState((prev) => prev ? tickAuctionTimer(prev) : prev), 1000);
+    return () => clearTimeout(t);
+  }, [auctionState]);
 
-    setTurnIndex(
-      getOtherPlayerIndex(
-        turnIndex
+  // ── Contract timer ────────────────────────
+  useEffect(() => {
+    if (!negotiation) return;
+    if (negotiation.timer <= 0) {
+      notify("⏰ Negotiation timed out — chance lost");
+      spendPurchaseChance(activePlayerIndex);
+      setNegotiation(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      setNegotiation((prev) => prev ? { ...prev, timer: prev.timer - 1 } : prev);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [negotiation?.timer]);
+
+  // ============================================
+  // HELPERS
+  // ============================================
+
+  function notify(text: string) {
+    setMessage(text);
+    setTimeout(() => setMessage(""), 3000);
+  }
+
+  function addNewsItems(items: NewsItem[]) {
+    setNews((prev) => [...items, ...prev]);
+  }
+
+  function addNewsItem(item: NewsItem) {
+    setNews((prev) => [item, ...prev]);
+  }
+
+  function spendPurchaseChance(playerIndex: number) {
+    setGamePlayers((prev) =>
+      prev.map((gp, i) =>
+        i === playerIndex ? { ...gp, purchaseChances: gp.purchaseChances - 1 } : gp
       )
     );
   }
 
-  function openSlot(
-    playerIndex: number,
-    slot: Slot
-  ) {
-    if (
-      playerIndex !==
-      turnIndex
-    ) {
-      return;
-    }
-
-    const options =
-      generateSelectionPool(
-        season,
-        slot
-      );
-
-    setSelectedSlot(
-      slot
-    );
-
-    setSelectionOptions(
-      options
-    );
-
-    setSelectedPlayerPreview(
-      null
-    );
-
-    setSelectionTimer(
-      selectedTime
-    );
+  function currentValue(player: Player): number {
+    return getCurrentValue(player, season, marketMultiplier);
   }
 
-  function previewPlayer(
-    player: Player
-  ) {
-    setSelectedPlayerPreview(
-      player
+  function getOwnedItem(playerIndex: number, ownedIndex: number): OwnedPlayer | null {
+    return gamePlayers[playerIndex]?.owned[ownedIndex] ?? null;
+  }
+
+  // ============================================
+  // START GAME
+  // ============================================
+
+  function startGame(config: {
+    mode: GameMode; budgetMode: BudgetMode; team1Name: string; team2Name: string;
+    eventsEnabled: boolean; eventType: EventType; timerSeconds: number | null;
+    gameLengthMode: "classic" | "infinite";
+  }) {
+    setMode(config.mode);
+    setBudgetMode(config.budgetMode);
+    setGameLengthMode(config.gameLengthMode);
+    setEventsEnabled(config.eventsEnabled);
+    setTimerSeconds(config.timerSeconds);
+    if (config.timerSeconds !== null) setTimer(config.timerSeconds);
+
+    const { gamePlayers: gps, news: startNews } = buildInitialState(
+      config.budgetMode, config.team1Name, config.team2Name, config.mode
     );
+    setGamePlayers(gps);
+    setNews(startNews);
+    setSeason(GAME_START_SEASON);
+    setTurnIndex(getFirstTurn(config.mode));
+    setSeasonEvent(null);
+    setStarted(true);
   }
 
-  function backToPlayerList() {
-    setSelectedPlayerPreview(
-      null
-    );
+  // ============================================
+  // SLOT SELECTION
+  // ============================================
+
+  function handleSlotClick(slot: string) {
+    if (isFrozen) return notify("🧊 You are frozen this season");
+    if (!activePlayer || activePlayer.purchaseChances <= 0) return notify("No purchase chances remaining");
+    if (pendingSlot && pendingSlot !== slot) return notify("Finish current selection first");
+    if (activePlayer.owned.find((o) => o.slot === slot)) return;
+
+    setSelectedOwned(null);
+    setPendingSlot(slot);
+    setSelectedSlot(slot);
+    if (timerSeconds !== null) { setTimer(timerSeconds); setTimerActive(true); }
   }
 
-  function createContractForSelection() {
-    if (
-      !selectedPlayerPreview ||
-      !selectedSlot
-    ) {
-      return;
-    }
-
-    const marketValue =
-      getPlayerCurrentValue(
-        selectedPlayerPreview
-      );
-
-    setContractState({
-      player:
-        selectedPlayerPreview,
-      slot: selectedSlot,
-      playerIndex:
-        turnIndex,
-      marketValue,
-      contract:
-        createContractOffer(
-          marketValue
-        ),
-    });
+  function closePlayerSelection() {
+    setSelectedSlot("");
+    setTimerActive(false);
   }
 
-  function updateContractValues(
-    salary: number,
-    years: number
-  ) {
-    if (
-      !contractState
-    ) {
-      return;
-    }
+  // ============================================
+  // BUY PLAYER → START CONTRACT NEGOTIATION
+  // ============================================
 
-    setContractState({
-      ...contractState,
-      contract:
-        updateContractOffer(
-          contractState.marketValue,
-          salary,
-          years
-        ),
-    });
+  function handleBuyPlayer(player: Player) {
+    const gp = gamePlayers[activePlayerIndex];
+    if (!gp || isFrozen) return;
+    if (gp.purchaseChances <= 0) return notify("No purchase chances remaining");
+
+    const value = currentValue(player);
+    if (gp.budget < value) return notify("Insufficient budget");
+
+    const neg = createNegotiation(player, selectedSlot, value);
+    setNegotiation(neg);
+    setSelectedSlot("");
+    setTimerActive(false);
   }
 
-  function confirmContract() {
-    if (
-      !contractState
-    ) {
-      return;
-    }
+  function handleContractUpdate(neg: ContractNegotiation) {
+    setNegotiation(neg);
+  }
 
-    const accepted =
-      willAcceptContract(
-        contractState.contract
-      );
+  function handleContractSign() {
+    if (!negotiation) return;
+    if (isRejected(negotiation)) return notify("Player rejected the offer");
 
-    if (!accepted) {
-      addNews(
-        "Contract Rejected",
-        `${contractState.player.name} rejected the contract.`,
-        "bad"
-      );
+    const gp = gamePlayers[activePlayerIndex];
+    const contract = finalizeContract(negotiation, season);
+    const value = currentValue(negotiation.player);
 
-      setContractState(
-        null
-      );
+    if (gp.budget < value) return notify("Insufficient budget");
 
-      return;
-    }
+    const newOwned: OwnedPlayer = {
+      player: negotiation.player,
+      slot: negotiation.slot,
+      buySeason: season,
+      buyPrice: value,
+      contract,
+      sponsorships: [],
+    };
 
-    const finalContract =
-      acceptContract(
-        contractState.contract
-      );
-
-    const sponsorship =
-      tryGenerateSponsorship(
-        contractState.marketValue
-      );
-
-    const ownedPlayer: OwnedPlayer =
-      {
-        player: {
-          ...contractState.player,
-          sponsorship,
-        },
-
-        slot:
-          contractState.slot,
-
-        buySeason:
-          season,
-
-        buyPrice:
-          contractState.marketValue,
-
-        contract:
-          finalContract,
+    const updatedPlayers = gamePlayers.map((p, i) => {
+      if (i !== activePlayerIndex) return p;
+      return {
+        ...p,
+        budget: p.budget - value,
+        purchaseChances: p.purchaseChances - 1,
+        owned: [...p.owned.filter((o) => o.slot !== negotiation.slot), newOwned],
       };
+    });
 
-    setPlayers(
-      (current) =>
-        current.map(
-          (
-            player,
-            index
-          ) => {
-            if (
-              index !==
-              contractState.playerIndex
-            ) {
-              return player;
-            }
+    setGamePlayers(updatedPlayers);
+    addNewsItem(createTransferNews(season, negotiation.player.name, gp.name, value, contract));
+    setNegotiation(null);
+    setPendingSlot(null);
+    notify(`✅ ${negotiation.player.name} signed!`);
 
-            return {
-              ...player,
-              budget:
-                player.budget -
-                contractState.marketValue,
+    // Check sponsorship
+    if (shouldReceiveSponsorshipOffer(value)) {
+      const sponsorship = generateSponsorshipOffer(value, season);
+      const afterSponsorship = addSponsorshipToPlayer(
+        updatedPlayers[activePlayerIndex], negotiation.player.name, sponsorship
+      );
+      setGamePlayers((prev) => prev.map((gp2, i) => i === activePlayerIndex ? afterSponsorship : gp2));
+      addNewsItem(createSponsorshipNews(season, negotiation.player.name, gp.name, sponsorship));
+    }
 
-              purchaseChances:
-                Math.max(
-                  0,
-                  player.purchaseChances -
-                    1
-                ),
+    if (mode === "versus") endVersusTurn(updatedPlayers);
+  }
 
-              owned: [
-                ...player.owned,
-                ownedPlayer,
-              ],
-            };
-          }
-        )
-    );
+  function handleContractCancel() {
+    spendPurchaseChance(activePlayerIndex);
+    setPendingSlot(null);
+    setNegotiation(null);
+    notify("Contract cancelled — chance spent");
+    if (mode === "versus") endVersusTurn();
+  }
 
-    addNews(
-      "Transfer Completed",
-      `${contractState.player.name} joined ${players[turnIndex]?.teamName}.`,
-      "good"
-    );
+  // ============================================
+  // SELL PLAYER
+  // ============================================
 
-    setSelectedSlot(
-      null
-    );
+  function handleSellPlayer() {
+    if (!selectedOwned) return;
+    const { playerIndex, ownedIndex } = selectedOwned;
+    const gp = gamePlayers[playerIndex];
+    const item = gp.owned[ownedIndex];
+    if (!item) return;
 
-    setSelectionOptions(
-      []
-    );
+    const sellPrice = currentValue(item.player);
+    const profit = sellPrice - item.buyPrice;
 
-    setSelectedPlayerPreview(
-      null
-    );
+    const updatedPlayers = gamePlayers.map((p, i) => {
+      if (i !== playerIndex) return p;
+      const extraChance = p.soldBonusUsedThisSeason ? 0 : 1;
+      return {
+        ...p,
+        budget: p.budget + sellPrice,
+        purchaseChances: p.purchaseChances + extraChance,
+        soldBonusUsedThisSeason: true,
+        owned: p.owned.filter((_, idx) => idx !== ownedIndex),
+        sold: [{
+          owner: p.name, name: item.player.name, buySeason: item.buySeason,
+          sellSeason: season, buyPrice: item.buyPrice, sellPrice, profit,
+          position: item.player.position,
+        }, ...p.sold],
+      };
+    });
 
-    setContractState(
-      null
-    );
+    setGamePlayers(updatedPlayers);
+    setSelectedOwned(null);
+    addNewsItem(createSaleNews(season, item.player.name, gp.name, sellPrice, profit));
+    notify(`💰 ${item.player.name} sold for €${sellPrice}M`);
 
-    if (
-      mode === "versus"
-    ) {
-      nextTurn();
+    // Reward cards
+    const eligibleCards = getEligibleCards(gp, sellPrice);
+    if (eligibleCards.length > 0) {
+      setRewardChoice({ playerIndex, cards: eligibleCards });
+    }
+
+    // Event choice for 100M+ sales
+    if (sellPrice >= EVENT_CHOICE_SELL_THRESHOLD) {
+      const [opt1, opt2] = createEventChoiceOptions(season);
+      setEventChoice({ option1: opt1, option2: opt2, playerIndex });
     }
   }
 
-  function closeSelection() {
-    setSelectedSlot(
-      null
-    );
-
-    setSelectionOptions(
-      []
-    );
-
-    setSelectedPlayerPreview(
-      null
-    );
-  }
-
-  function openOwnedPlayer(
-    playerIndex: number,
-    ownedIndex: number
-  ) {
-    setSelectedOwned({
-      playerIndex,
-      ownedIndex,
-    });
-  }
-
-  function closeOwnedPlayer() {
+  function handleKeepPlayer() {
     setSelectedOwned(null);
   }
 
-  function sellSelectedPlayer() {
-    if (!selectedOwned) {
-      return;
-    }
+  // ============================================
+  // REWARD CARDS
+  // ============================================
 
-    const owner =
-      players[selectedOwned.playerIndex];
-
-    const owned =
-      owner?.owned[
-        selectedOwned.ownedIndex
-      ];
-
-    if (!owner || !owned) {
-      return;
-    }
-
-    const sellPrice =
-      getOwnedValue(owned);
-
-    const profit =
-      sellPrice -
-      owned.buyPrice;
-
-    setPlayers((current) =>
-      current.map(
-        (player, index) => {
-          if (
-            index !==
-            selectedOwned.playerIndex
-          ) {
-            return player;
-          }
-
-          return applySalePurchaseBonus({
-            ...player,
-            budget:
-              player.budget +
-              sellPrice,
-
-            sellChances:
-              Math.max(
-                0,
-                player.sellChances -
-                  1
-              ),
-
-            owned:
-              player.owned.filter(
-                (_, i) =>
-                  i !==
-                  selectedOwned.ownedIndex
-              ),
-
-            sold: [
-              {
-                owner:
-                  player.teamName,
-
-                name:
-                  owned.player.name,
-
-                buySeason:
-                  owned.buySeason,
-
-                sellSeason:
-                  season,
-
-                buyPrice:
-                  owned.buyPrice,
-
-                sellPrice,
-
-                profit,
-              },
-
-              ...player.sold,
-            ],
-          });
-        }
-      )
-    );
-
-    addNews(
-      "Player Sold",
-      `${owned.player.name} sold for €${sellPrice}M.`,
-      profit >= 0
-        ? "good"
-        : "bad"
-    );
-
-    const rewardCards =
-      getEligibleRewardCards(
-        sellPrice,
-        owner
-      );
-
-    if (
-      rewardCards.length > 0
-    ) {
-      setRewardState({
-        playerIndex:
-          selectedOwned.playerIndex,
-        cards:
-          rewardCards,
-      });
-    }
-
-    setSelectedOwned(
-      null
-    );
+  function handleChooseReward(card: RewardCard) {
+    if (!rewardChoice) return;
+    const updated = unlockCard(gamePlayers[rewardChoice.playerIndex], card);
+    setGamePlayers((prev) => prev.map((gp, i) => i === rewardChoice.playerIndex ? updated : gp));
+    setRewardChoice(null);
+    notify(`🎴 ${card} card unlocked!`);
   }
 
-  function chooseRewardCard(
-    card: RewardCardType
-  ) {
-    if (
-      !rewardState
-    ) {
-      return;
+  function handleUseCard(playerIndex: number, card: RewardCard) {
+    if (card === "freeze") {
+      if (mode !== "versus") return notify("Freeze card only works in versus mode");
+      const updated = useFreezeCard(gamePlayers, playerIndex, season);
+      setGamePlayers(updated);
+      const enemyIndex = playerIndex === 0 ? 1 : 0;
+      addNewsItem(createFreezeCardNews(season, gamePlayers[playerIndex].name, gamePlayers[enemyIndex].name));
+      notify("🧊 Opponent frozen next season!");
     }
-
-    setPlayers((current) =>
-      current.map(
-        (player, index) => {
-          if (
-            index !==
-            rewardState.playerIndex
-          ) {
-            return player;
-          }
-
-          const unlocked =
-            unlockRewardCard(
-              player,
-              card
-            );
-
-          return unlocked;
-        }
-      )
-    );
-
-    addNews(
-      "Reward Unlocked",
-      `${card} unlocked.`,
-      "special"
-    );
-
-    setRewardState(
-      null
-    );
-  }
-
-  function useCard(
-    playerIndex: number,
-    card: RewardCardType
-  ) {
-    setPlayers((current) =>
-      current.map(
-        (player, index) => {
-          if (
-            index !==
-            playerIndex
-          ) {
-            return player;
-          }
-
-          return useRewardCard(
-            player,
-            card
-          );
-        }
-      )
-    );
-  }
-
-  function nextSeason() {
-    if (
-      !canAdvanceSeason(players)
-    ) {
-      setMessage(
-        "All teams must finish their buy chances or skip."
-      );
-      return;
+    if (card === "triple") {
+      const updated = useTripleCard(gamePlayers, playerIndex);
+      setGamePlayers(updated);
+      addNewsItem(createTripleBuyNews(season, gamePlayers[playerIndex].name));
+      notify("⚡ Triple buy activated for next season!");
     }
-
-    const bankruptcyWinner =
-      getBankruptcyWinnerIndex(
-        players
-      );
-
-    if (
-      bankruptcyWinner !== null
-    ) {
-      setShowEndGame(true);
-      return;
-    }
-
-    const newSeason =
-      season + 1;
-
-    if (
-      gameLengthMode ===
-        "classic" &&
-      newSeason >
-        CLASSIC_END_SEASON
-    ) {
-      setShowEndGame(true);
-      return;
-    }
-
-    const updatedPlayers =
-      players.map((player) => ({
-        ...applyAnnualEconomy(
-          resetSeasonChances({
-            ...player,
-            cards:
-              reduceCardCooldowns(
-                player.cards
-              ),
-          })
-        ),
-      }));
-
-    setPlayers(
-      updatedPlayers
-    );
-
-    setSeason(
-      newSeason
-    );
-
-    if (
-      starterState
-    ) {
-      const updatedStarter =
-        updateSeasonStarter(
-          starterState,
-          newSeason
-        );
-
-      setStarterState(
-        updatedStarter
-      );
-
-      setTurnIndex(
-        updatedStarter.currentSeasonStarter
-      );
-    }
-
-    setSeasonEvent(
-      null
-    );
-
-    setMessage(
-      `Season ${newSeason}`
-    );
-
-    addNews(
-      `Season ${newSeason}`,
-      "A new season has begun.",
-      "special"
-    );
-  }
-
-  function skipTurn() {
-    setPlayers(
-      (current) =>
-        current.map(
-          (
-            player,
-            index
-          ) => {
-            if (
-              index !==
-              turnIndex
-            ) {
-              return player;
-            }
-
-            return {
-              ...player,
-              skippedTurn:
-                true,
-            };
-          }
-        )
-    );
-
-    if (
-      mode === "versus"
-    ) {
-      nextTurn();
+    if (card === "steal") {
+      if (mode !== "versus") return notify("Steal card only works in versus mode");
+      setGamePlayers((prev) => prev.map((gp, i) =>
+        i === playerIndex ? { ...gp, cards: { ...gp.cards, steal: { unlocked: true, used: true, cooldownUntil: null } } } : gp
+      ));
+      setStealChallenge({ userIndex: playerIndex, success: false, ownIndex: null, enemyIndex: null });
     }
   }
 
-  function openInvestorOffer() {
-    const offer =
-      createInvestorOfferState(
-        allPlayers,
-        season,
-        players,
-        turnIndex,
-        (player) =>
-          getPlayerCurrentValue(
-            player
-          )
-      );
-
-    if (
-      !offer
-    ) {
-      return;
-    }
-
-    setInvestorOffer(
-      offer
-    );
+  function handleStealSwap() {
+    if (!stealChallenge || stealChallenge.ownIndex === null || stealChallenge.enemyIndex === null) return;
+    const updated = executeStealSwap(gamePlayers, stealChallenge.userIndex, stealChallenge.ownIndex, stealChallenge.enemyIndex);
+    const enemyIndex = stealChallenge.userIndex === 0 ? 1 : 0;
+    const playerGiven = gamePlayers[stealChallenge.userIndex].owned[stealChallenge.ownIndex]?.player.name ?? "";
+    const playerReceived = gamePlayers[enemyIndex].owned[stealChallenge.enemyIndex]?.player.name ?? "";
+    setGamePlayers(updated);
+    addNewsItem(createStealCardNews(season, gamePlayers[stealChallenge.userIndex].name, playerGiven, playerReceived));
+    setStealChallenge(null);
+    notify("🕵️ Players swapped!");
   }
 
-  function acceptInvestorOffer() {
-    if (
-      !investorOffer
-    ) {
-      return;
-    }
+  // ============================================
+  // EVENT CHOICE
+  // ============================================
 
-    const owner =
-      players[
-        investorOffer
-          .targetPlayerIndex
-      ];
-
-    if (
-      !canAffordInvestorOffer(
-        investorOffer,
-        owner
-      )
-    ) {
-      setInvestorOffer(
-        null
-      );
-
-      addNews(
-        "Offer Failed",
-        "Not enough budget.",
-        "bad"
-      );
-
-      return;
-    }
-
-    addNews(
-      "Investor Offer Accepted",
-      `${investorOffer.selectedPlayer.name} joined ${owner.teamName}.`,
-      "good"
-    );
-
-    setInvestorOffer(
-      null
-    );
+  function handleEventChoice(event: SeasonEventType) {
+    setEventChoice(null);
+    notify(`✨ ${event.title} applied!`);
   }
 
-  function rejectInvestorOffer() {
-    setInvestorOffer(
-      null
-    );
+  // ============================================
+  // INVESTOR OFFER
+  // ============================================
+
+  function triggerInvestorOffer() {
+    const offer = createInvestorOffer(allPlayers, season, gamePlayers);
+    if (!offer) return;
+    setInvestorOffer(offer);
   }
 
-  function startAuction() {
-    const candidates =
-      allPlayers
-        .filter(
-          (player) =>
-            player.availableSeason ===
-            season
-        )
-        .slice(0, 3);
-
-    if (candidates.length === 0) {
-      return;
-    }
-
-    setAuctionState(
-      createAuctionPreviewState(
-        candidates
-      )
-    );
+  function handleAcceptOffer() {
+    if (!investorOffer) return;
+    const { updatedPlayers, newsItem } = acceptInvestorOffer(investorOffer, gamePlayers, activePlayerIndex, season);
+    setGamePlayers(updatedPlayers);
+    addNewsItem(newsItem);
+    setInvestorOffer(null);
+    notify(`✅ Offer accepted!`);
   }
 
-  function moveAuctionToBidding() {
-    if (!auctionState) {
-      return;
-    }
-
-    setAuctionState(
-      startAuctionBidding(
-        auctionState,
-        (player) =>
-          getPlayerCurrentValue(
-            player
-          )
-      )
-    );
+  function handleRejectOffer() {
+    if (!investorOffer) return;
+    addNewsItem(rejectInvestorOffer(investorOffer, season));
+    setInvestorOffer(null);
+    notify("Offer rejected");
   }
 
-  function bidAuction(
-    playerIndex: number
-  ) {
-    if (!auctionState) {
-      return;
-    }
+  // ============================================
+  // AUCTION
+  // ============================================
 
-    if (
-      !canAuctionBid(
-        auctionState,
-        players[playerIndex],
-        playerIndex
-      )
-    ) {
-      return;
-    }
-
-    setAuctionState(
-      placeAuctionBid(
-        auctionState,
-        playerIndex
-      )
-    );
+  function triggerLegendaryAuction() {
+    const state = createAuctionState(allPlayers, season, gamePlayers);
+    if (!state) return notify("No auction players available");
+    setAuctionState(state);
+    addNewsItem(getAuctionStartNews(season));
   }
 
-  function surrenderCurrentAuction(
-    playerIndex: number
-  ) {
-    if (!auctionState) {
-      return;
-    }
-
-    const finished =
-      surrenderAuction(
-        auctionState,
-        playerIndex
-      );
-
-    setAuctionState(
-      finished
-    );
-
-    addNews(
-      "Auction Finished",
-      "Auction ended by surrender.",
-      "special"
-    );
+  function handleBid(playerIndex: number) {
+    if (!auctionState) return;
+    const gp = gamePlayers[playerIndex];
+    const nextBid = auctionState.currentBid + 5;
+    if (gp.budget < nextBid) return notify("Insufficient budget");
+    setAuctionState(placeBidEngine(auctionState, playerIndex));
   }
 
-  function finishAuctionTimer() {
-    if (!auctionState) {
-      return;
-    }
-
-    setAuctionState(
-      finishAuctionByTimer(
-        auctionState
-      )
-    );
+  function handleSurrender(playerIndex: number) {
+    if (!auctionState) return;
+    setAuctionState(surrenderAuction(auctionState, playerIndex));
   }
 
-  function triggerDeveloperEvent(
-    eventId: DevEventId
-  ) {
-    if (eventId === "legendaryAuction") {
-      startAuction();
+  function handleFinishAuction() {
+    if (!auctionState) return;
+    const { updatedPlayers, newsItem } = finishAuction(auctionState, gamePlayers, season);
+    setGamePlayers(updatedPlayers);
+    addNewsItem(newsItem);
+    setAuctionState(null);
+  }
+
+  // ============================================
+  // DEVELOPER PANEL
+  // ============================================
+
+  function handleSeasonClick() {
+    const next = seasonSecretClicks + 1;
+    setSeasonSecretClicks(next);
+    if (next >= 20) { setShowDeveloperPanel(true); notify("🔓 Developer Panel Unlocked"); }
+  }
+
+  function handleDevEvent(eventId: DevEventId) {
+    if (eventId === "legendaryAuction") { triggerLegendaryAuction(); return; }
+    if (eventId === "investorOffer") { triggerInvestorOffer(); return; }
+    if (eventId === "sponsorshipOffer") {
+      const gp = gamePlayers[activePlayerIndex];
+      if (gp.owned.length === 0) return notify("No owned players");
+      const item = pickRandom(gp.owned);
+      const s = generateSponsorshipOffer(currentValue(item.player), season);
+      const updated = addSponsorshipToPlayer(gp, item.player.name, s);
+      setGamePlayers((prev) => prev.map((p, i) => i === activePlayerIndex ? updated : p));
+      addNewsItem(createSponsorshipNews(season, item.player.name, gp.name, s));
+      return;
+    }
+    if (["hotMarket", "marketCrash"].includes(eventId)) {
+      const result = forcedMarketEvent(season, gamePlayers, eventId === "hotMarket");
+      if (result.event) setSeasonEvent(result.event);
+      addNewsItems(result.newsItems);
+      return;
+    }
+    const positive = ["ballonDor", "goldenBoy", "goldenBoot", "wonderkid", "saudiOffer", "recordTransfer", "freeTransfer"].includes(eventId);
+    const result = positive
+      ? forcedPositiveEvent(season, gamePlayers, activePlayerIndex)
+      : forcedNegativeEvent(season, gamePlayers, activePlayerIndex);
+    setGamePlayers(result.updatedPlayers);
+    addNewsItems(result.newsItems);
+  }
+
+  // ============================================
+  // AUTO PICK
+  // ============================================
+
+  function autoPick() {
+    if (!selectedSlot || !activePlayer) return;
+    const affordable = slotOptions.filter((p) => currentValue(p) <= activePlayer.budget);
+    if (affordable.length === 0) {
+      closePlayerSelection();
+      setPendingSlot(null);
+      if (mode === "versus") endVersusTurn();
+      return;
+    }
+    handleBuyPlayer(pickRandom(affordable));
+  }
+
+  // ============================================
+  // TURN & SEASON
+  // ============================================
+
+  function endVersusTurn(updatedList?: GamePlayer[]) {
+    setTimerActive(false);
+    if (timerSeconds !== null) setTimer(timerSeconds);
+    if (turnIndex === 0) { setTurnIndex(1); return; }
+    setTurnIndex(0);
+    nextSeason(updatedList);
+  }
+
+  function nextSeason(listOverride?: GamePlayer[]) {
+    if (pendingSlot) return notify("Finish current player selection first");
+    if (auctionState) return notify("An auction is in progress");
+    if (investorOffer) return notify("An investor offer is pending");
+    if (negotiation) return notify("A contract negotiation is in progress");
+
+    const currentList = listOverride ?? gamePlayers;
+
+    if (gameLengthMode === "classic" && season >= GAME_END_SEASON) {
+      finishGame(currentList);
       return;
     }
 
-    if (eventId === "investorOffer") {
-      openInvestorOffer();
-      return;
+    const newSeason = season + 1;
+    const setupResult = setupNewSeason(newSeason, currentList);
+    const eventResult = eventsEnabled
+      ? createRandomSeasonEvent(newSeason, setupResult.updatedPlayers)
+      : { event: null, updatedPlayers: setupResult.updatedPlayers, newsItems: [] };
+
+    setSeason(newSeason);
+    setTurnIndex(0);
+    setPendingSlot(null);
+    setSelectedSlot("");
+    setTimerActive(false);
+    setSeasonEvent(eventResult.event);
+    setGamePlayers(eventResult.updatedPlayers);
+    if (timerSeconds !== null) setTimer(timerSeconds);
+
+    addNewsItems([
+      ...setupResult.retirementNews,
+      ...setupResult.salaryNews,
+      ...setupResult.sponsorshipNews,
+      setupResult.seasonNews,
+      ...eventResult.newsItems,
+    ]);
+
+    // Random investor offer in single mode
+    if (mode === "single" && Math.random() < 0.25) {
+      setTimeout(() => triggerInvestorOffer(), 600);
     }
 
-    if (eventId === "hotMarket") {
-      const result =
-        createSharedMarketEvent(
-          season,
-          true
-        );
-
-      setSeasonEvent(
-        result.event
-      );
-
-      setNews((current) => [
-        result.newsItem,
-        ...current,
-      ]);
-
-      return;
-    }
-
-    if (eventId === "marketCrash") {
-      const result =
-        createSharedMarketEvent(
-          season,
-          false
-        );
-
-      setSeasonEvent(
-        result.event
-      );
-
-      setNews((current) => [
-        result.newsItem,
-        ...current,
-      ]);
-
-      return;
-    }
-
-    const positive =
-      [
-        "saudiOffer",
-        "ballonDor",
-        "goldenBoy",
-        "goldenBoot",
-        "recordTransfer",
-        "wonderkid",
-      ].includes(eventId);
-
-    const result =
-      applyRandomPlayerEventToOwner(
-        season,
-        players,
-        turnIndex,
-        positive
-      );
-
-    setPlayers(
-      result.updatedPlayers
-    );
-
-    if (result.newsItem) {
-      setNews((current) => [
-        result.newsItem!,
-        ...current,
-      ]);
+    // Random auction
+    if (Math.random() < 0.15) {
+      setTimeout(() => triggerLegendaryAuction(), 1200);
     }
   }
 
-  function handleSeasonSecretClick() {
-    const next =
-      seasonSecretClicks + 1;
-
-    setSeasonSecretClicks(
-      next
-    );
-
-    if (next >= 20) {
-      setShowDeveloperPanel(true);
-    }
+  function finishGame(listOverride?: GamePlayer[]) {
+    const list = listOverride ?? gamePlayers;
+    const finalPlayers = list.map((gp) => autoSellAllPlayers(gp, season));
+    setGamePlayers(finalPlayers);
+    setShowEndModal(true);
   }
 
-  function applyEventChoice(
-    event: EventChoiceState["events"][number]
-  ) {
-    if (!eventChoiceState) {
-      return;
-    }
-
-    setPlayers((current) =>
-      current.map(
-        (player, index) => {
-          if (
-            index !==
-            eventChoiceState.playerIndex
-          ) {
-            return player;
-          }
-
-          if (player.owned.length === 0) {
-            return player;
-          }
-
-          const firstOwned =
-            player.owned[0];
-
-          return {
-            ...player,
-            owned: [
-              {
-                ...firstOwned,
-                player:
-                  applyEventToPlayer(
-                    firstOwned.player,
-                    season,
-                    event
-                  ),
-              },
-              ...player.owned.slice(1),
-            ],
-          };
-        }
-      )
-    );
-
-    setEventChoiceState(null);
+  function handleSkipTurn() {
+    spendPurchaseChance(activePlayerIndex);
+    if (mode === "versus") endVersusTurn();
+    notify("Turn skipped");
   }
 
-  const devEvents: {
-    id: DevEventId;
-    label: string;
-  }[] = [
-    { id: "hotMarket", label: "🔥 Hot Market" },
-    { id: "saudiOffer", label: "💰 Saudi Offer" },
-    { id: "ballonDor", label: "🏆 Ballon d'Or" },
-    { id: "goldenBoy", label: "🌟 Golden Boy" },
-    { id: "goldenBoot", label: "👟 Golden Boot" },
-    { id: "recordTransfer", label: "💸 Record Transfer" },
-    { id: "wonderkid", label: "🚀 Wonderkid" },
-    { id: "aclInjury", label: "🤕 ACL Injury" },
-    { id: "majorInjury", label: "🚑 Major Injury" },
-    { id: "benchWarmer", label: "🪑 Bench Warmer" },
-    { id: "failedTransfer", label: "📉 Failed Transfer" },
-    { id: "freeTransfer", label: "💔 Free Transfer" },
-    { id: "marketCrash", label: "📉 Market Crash" },
-    { id: "retirement", label: "👋 Retirement Check" },
-    { id: "investorOffer", label: "💼 Investor Offer" },
-    { id: "legendaryAuction", label: "🏆 Legendary Auction" },
-  ];
+  // ============================================
+  // RESTART
+  // ============================================
 
-  const selectedOwnedPlayer =
-    selectedOwned
-      ? players[
-          selectedOwned.playerIndex
-        ]?.owned[
-          selectedOwned.ownedIndex
-        ] ?? null
-      : null;
+  function restartGame() {
+    setStarted(false);
+    setShowEndModal(false);
+    setSeason(GAME_START_SEASON);
+    setTurnIndex(0);
+    setGamePlayers([]);
+    setNews([]);
+    setSeasonEvent(null);
+    setSelectedSlot("");
+    setPendingSlot(null);
+    setNegotiation(null);
+    setSelectedOwned(null);
+    setRewardChoice(null);
+    setStealChallenge(null);
+    setEventChoice(null);
+    setInvestorOffer(null);
+    setAuctionState(null);
+    setShowDeveloperPanel(false);
+    setSeasonSecretClicks(0);
+    setTimerActive(false);
+  }
+
+  // ============================================
+  // RENDER: START SCREEN
+  // ============================================
 
   if (!started) {
-    return (
-      <>
-        <StartScreen
-          mode={mode}
-          setMode={setMode}
-          gameLengthMode={gameLengthMode}
-          setGameLengthMode={setGameLengthMode}
-          budgetMode={budgetMode}
-          setBudgetMode={setBudgetMode}
-          eventsEnabled={eventsEnabled}
-          setEventsEnabled={setEventsEnabled}
-          eventType={eventType}
-          setEventType={setEventType}
-          selectedTime={selectedTime}
-          setSelectedTime={setSelectedTime}
-          teamOneName={teamOneName}
-          setTeamOneName={setTeamOneName}
-          teamTwoName={teamTwoName}
-          setTeamTwoName={setTeamTwoName}
-          onStart={startGame}
-          onOpenHowToPlay={() =>
-            setShowHowToPlay(true)
-          }
-        />
-
-        <HowToPlayModal
-          open={showHowToPlay}
-          onClose={() =>
-            setShowHowToPlay(false)
-          }
-        />
-      </>
-    );
+    return <StartScreen onStart={startGame} />;
   }
 
+  const canNextSeason = !pendingSlot && !auctionState && !investorOffer && !negotiation;
+
+  // ============================================
+  // RENDER: GAME
+  // ============================================
+
   return (
-    <main className="min-h-screen bg-black text-white p-4">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-[#060a0f] text-white">
 
-        <TopBar
-          season={season}
-          mode={mode ?? "single"}
-          gameLengthMode={
-            gameLengthMode ?? "classic"
-          }
-          currentTeamName={
-            players[turnIndex]?.teamName ??
-            ""
-          }
-          message={message}
-          onSeasonClick={
-            handleSeasonSecretClick
-          }
-          onRestart={() =>
-            window.location.reload()
-          }
-          onOpenHowToPlay={() =>
-            setShowHowToPlay(true)
-          }
-        />
-
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {players.map((player, index) => (
-            <TeamPanel
-              key={player.teamName}
-              player={player}
-              active={index === turnIndex}
-            />
-          ))}
+      {/* Toast message */}
+      {message && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-yellow-500/50 px-5 py-3 rounded-xl z-[100] text-sm font-bold shadow-xl">
+          {message}
         </div>
+      )}
 
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          {players.map((player, index) => (
-            <Formation
-              key={player.teamName}
-              player={player}
-              playerIndex={index}
-              active={index === turnIndex}
-              season={season}
-              getCurrentValue={getOwnedValue}
-              getAge={getOwnedAge}
-              onSelectSlot={openSlot}
-              onSelectOwned={openOwnedPlayer}
-            />
-          ))}
-        </div>
+      {/* Top Bar */}
+      <TopBar
+        season={season}
+        mode={mode}
+        gameLengthMode={gameLengthMode}
+        budgetMode={budgetMode}
+        activePlayerIndex={activePlayerIndex}
+        gamePlayers={gamePlayers}
+        timerSeconds={timerSeconds}
+        timer={timer}
+        pendingSlot={pendingSlot}
+        onNextSeason={() => nextSeason()}
+        onSeasonClick={handleSeasonClick}
+        onFinishGame={() => finishGame()}
+        canNextSeason={canNextSeason}
+      />
 
-        <div className="flex flex-wrap justify-center gap-3 mb-6">
-          <button
-            onClick={skipTurn}
-            className="px-5 py-3 rounded-xl bg-zinc-700 transition-all active:scale-95"
-          >
-            Skip Turn
-          </button>
-
-          <button
-            onClick={nextSeason}
-            className="px-5 py-3 rounded-xl bg-yellow-700 transition-all active:scale-95"
-          >
-            Next Season
-          </button>
-
-          <button
-            onClick={startAuction}
-            className="px-5 py-3 rounded-xl bg-purple-700 transition-all active:scale-95"
-          >
-            Legendary Auction
-          </button>
-
-          <button
-            onClick={openInvestorOffer}
-            className="px-5 py-3 rounded-xl bg-green-700 transition-all active:scale-95"
-          >
-            Investor Offer
-          </button>
-
-          <button
-            onClick={() =>
-              setShowStats(true)
-            }
-            className="px-5 py-3 rounded-xl bg-blue-700 transition-all active:scale-95"
-          >
-            Statistics
-          </button>
-        </div>
-
-        <NewsFeed
-          news={news}
-          seasonEvent={seasonEvent}
-        />
-
-        <PlayerSelectionModal
-          open={!!selectedSlot}
-          slot={selectedSlot}
-          season={season}
-          budget={
-            activePlayer?.budget ?? 0
-          }
-          timer={selectionTimer}
-          players={selectionOptions}
-          selectedPlayer={
-            selectedPlayerPreview
-          }
-          getPlayerValue={
-            getPlayerCurrentValue
-          }
-          getPlayerAge={
-            getPlayerCurrentAge
-          }
-          onPreviewPlayer={
-            previewPlayer
-          }
-          onBackToList={
-            backToPlayerList
-          }
-          onBuyPlayer={
-            createContractForSelection
-          }
-          onClose={
-            closeSelection
-          }
-        />
-
-        <ContractModal
-          open={!!contractState}
-          player={
-            contractState?.player ??
-            null
-          }
-          marketValue={
-            contractState?.marketValue ??
-            0
-          }
-          contract={
-            contractState?.contract ??
-            null
-          }
-          onChangeContract={
-            updateContractValues
-          }
-          onConfirm={
-            confirmContract
-          }
-          onCancel={() =>
-            setContractState(null)
-          }
-        />
-
-        <OwnedPlayerModal
-          open={!!selectedOwnedPlayer}
-          ownedPlayer={
-            selectedOwnedPlayer
-          }
-          currentValue={
-            selectedOwnedPlayer
-              ? getOwnedValue(
-                  selectedOwnedPlayer
-                )
-              : 0
-          }
-          currentAge={
-            selectedOwnedPlayer
-              ? getOwnedAge(
-                  selectedOwnedPlayer
-                )
-              : 0
-          }
-          sellChances={
-            activePlayer?.sellChances ??
-            0
-          }
-          onSell={
-            sellSelectedPlayer
-          }
-          onClose={
-            closeOwnedPlayer
-          }
-        />
-
-        <RewardModal
-          open={!!rewardState}
-          cards={
-            rewardState?.cards ?? []
-          }
-          onChoose={
-            chooseRewardCard
-          }
-        />
-
-        <EventChoiceModal
-          open={!!eventChoiceState}
-          events={
-            eventChoiceState?.events ??
-            []
-          }
-          onChoose={
-            applyEventChoice
-          }
-        />
-
-        <InvestorOfferModal
-          open={!!investorOffer}
-          offer={investorOffer}
-          teamName={
-            activePlayer?.teamName ??
-            ""
-          }
-          onAccept={
-            acceptInvestorOffer
-          }
-          onReject={
-            rejectInvestorOffer
-          }
-        />
-
-        <AuctionModal
-          open={!!auctionState}
-          state={auctionState}
-          players={players}
-          canBid={(index) =>
-            auctionState
-              ? canAuctionBid(
-                  auctionState,
-                  players[index],
-                  index
-                )
-              : false
-          }
-          onBid={bidAuction}
-          onSurrender={
-            surrenderCurrentAuction
-          }
-        />
-
-        <StatisticsModal
-          open={showStats}
-          players={players}
-          onClose={() =>
-            setShowStats(false)
-          }
-        />
-
-        <EndGameModal
-          open={showEndGame}
-          players={players}
-          winnerText={winnerText}
-          onShowStats={() =>
-            setShowStats(true)
-          }
-          onRestart={() =>
-            window.location.reload()
-          }
-        />
-
-        <DeveloperPanel
-          open={
-            showDeveloperPanel
-          }
-          events={devEvents}
-          onTriggerEvent={
-            triggerDeveloperEvent
-          }
-          onClose={() =>
-            setShowDeveloperPanel(
-              false
-            )
-          }
-        />
-
-        <HowToPlayModal
-          open={showHowToPlay}
-          onClose={() =>
-            setShowHowToPlay(false)
-          }
-        />
-
+      {/* Main layout */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {mode === "single" ? (
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="xl:col-span-2">
+              <Formation
+                gamePlayer={gamePlayers[0]}
+                playerIndex={0}
+                season={season}
+                isActive={true}
+                pendingSlot={pendingSlot}
+                marketMultiplier={marketMultiplier}
+                onSlotClick={handleSlotClick}
+                onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
+              />
+            </div>
+            <div>
+              <TeamPanel
+                gamePlayer={gamePlayers[0]}
+                playerIndex={0}
+                season={season}
+                marketMultiplier={marketMultiplier}
+                isActive={true}
+                mode={mode}
+                onUseCard={handleUseCard}
+                onShowStats={() => setShowStats(true)}
+                onSkipTurn={handleSkipTurn}
+              />
+            </div>
+            <div className="h-[600px]">
+              <NewsFeed news={news} seasonEvent={seasonEvent} />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {gamePlayers.map((gp, i) => (
+                <div key={i} className="flex flex-col gap-4">
+                  <Formation
+                    gamePlayer={gp}
+                    playerIndex={i}
+                    season={season}
+                    isActive={i === activePlayerIndex}
+                    pendingSlot={i === activePlayerIndex ? pendingSlot : null}
+                    marketMultiplier={marketMultiplier}
+                    onSlotClick={handleSlotClick}
+                    onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
+                  />
+                  <TeamPanel
+                    gamePlayer={gp}
+                    playerIndex={i}
+                    season={season}
+                    marketMultiplier={marketMultiplier}
+                    isActive={i === activePlayerIndex}
+                    mode={mode}
+                    onUseCard={handleUseCard}
+                    onShowStats={() => setShowStats(true)}
+                    onSkipTurn={handleSkipTurn}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="h-[700px]">
+              <NewsFeed news={news} seasonEvent={seasonEvent} />
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* ── MODALS ── */}
+
+      {selectedSlot && slotOptions.length >= 0 && !negotiation && (
+        <PlayerSelectionModal
+          slot={selectedSlot}
+          options={slotOptions}
+          activePlayer={activePlayer}
+          season={season}
+          timer={timer}
+          timerSeconds={timerSeconds}
+          marketMultiplier={marketMultiplier}
+          onBuy={handleBuyPlayer}
+          onClose={closePlayerSelection}
+        />
+      )}
+
+      {negotiation && (
+        <ContractModal
+          negotiation={negotiation}
+          season={season}
+          onUpdate={handleContractUpdate}
+          onSign={handleContractSign}
+          onCancel={handleContractCancel}
+        />
+      )}
+
+      {selectedOwned !== null && getOwnedItem(selectedOwned.playerIndex, selectedOwned.ownedIndex) && (
+        <OwnedPlayerModal
+          owned={getOwnedItem(selectedOwned.playerIndex, selectedOwned.ownedIndex)!}
+          ownerName={gamePlayers[selectedOwned.playerIndex]?.name ?? ""}
+          season={season}
+          marketMultiplier={marketMultiplier}
+          canSell={gamePlayers[selectedOwned.playerIndex]?.sellChances > 0}
+          onSell={handleSellPlayer}
+          onKeep={handleKeepPlayer}
+        />
+      )}
+
+      {rewardChoice && (
+        <RewardModal
+          cards={rewardChoice.cards}
+          playerName={gamePlayers[rewardChoice.playerIndex]?.sold[0]?.name ?? ""}
+          sellPrice={gamePlayers[rewardChoice.playerIndex]?.sold[0]?.sellPrice ?? 0}
+          onChoose={handleChooseReward}
+        />
+      )}
+
+      {eventChoice && (
+        <EventChoiceModal
+          option1={eventChoice.option1}
+          option2={eventChoice.option2}
+          onChoose={handleEventChoice}
+        />
+      )}
+
+      {investorOffer && (
+        <InvestorOfferModal
+          offer={investorOffer}
+          activePlayer={activePlayer}
+          season={season}
+          onAccept={handleAcceptOffer}
+          onReject={handleRejectOffer}
+        />
+      )}
+
+      {auctionState && (
+        <AuctionModal
+          state={auctionState}
+          gamePlayers={gamePlayers}
+          season={season}
+          marketMultiplier={marketMultiplier}
+          onBid={handleBid}
+          onSurrender={handleSurrender}
+        />
+      )}
+
+      {showStats && (
+        <StatisticsModal
+          gamePlayers={gamePlayers}
+          season={season}
+          marketMultiplier={marketMultiplier}
+          onClose={() => setShowStats(false)}
+        />
+      )}
+
+      {showHowToPlay && (
+        <HowToPlayModal onClose={() => setShowHowToPlay(false)} />
+      )}
+
+      {showEndModal && (
+        <EndGameModal
+          gamePlayers={gamePlayers}
+          season={season}
+          mode={mode}
+          onRestart={restartGame}
+        />
+      )}
+
+      {showDeveloperPanel && (
+        <DeveloperPanel
+          onTrigger={(id) => handleDevEvent(id)}
+          onClose={() => setShowDeveloperPanel(false)}
+        />
+      )}
+
+      {/* Steal challenge overlay */}
+      {stealChallenge && stealChallenge.success && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0f14] border border-purple-500/40 rounded-3xl w-full max-w-2xl p-6">
+            <h2 className="text-2xl font-black text-white text-center mb-6">🕵️ Choose Players to Swap</h2>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Your Player</div>
+                {gamePlayers[stealChallenge.userIndex].owned.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setStealChallenge({ ...stealChallenge, ownIndex: i })}
+                    className={`w-full text-left p-2.5 rounded-xl mb-1.5 text-sm transition-all ${
+                      stealChallenge.ownIndex === i ? "bg-blue-700 text-white" : "bg-white/5 text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    {item.player.name} — {item.slot}
+                  </button>
+                ))}
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Opponent's Player</div>
+                {gamePlayers[stealChallenge.userIndex === 0 ? 1 : 0].owned.map((item, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setStealChallenge({ ...stealChallenge, enemyIndex: i })}
+                    className={`w-full text-left p-2.5 rounded-xl mb-1.5 text-sm transition-all ${
+                      stealChallenge.enemyIndex === i ? "bg-red-700 text-white" : "bg-white/5 text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    {item.player.name} — {item.slot}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setStealChallenge(null)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 font-bold">Cancel</button>
+              <button
+                onClick={handleStealSwap}
+                disabled={stealChallenge.ownIndex === null || stealChallenge.enemyIndex === null}
+                className="flex-1 py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-black disabled:bg-white/5 disabled:text-gray-600 transition-all"
+              >
+                Confirm Swap
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

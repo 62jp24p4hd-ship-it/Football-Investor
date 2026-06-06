@@ -1,425 +1,266 @@
 "use client";
 
-import type {
-  BudgetMode,
-  EventType,
-  GameLengthMode,
-  GameMode,
-} from "../game/types";
+import { useState } from "react";
+import type { BudgetMode, GameMode, EventType } from "../game/types";
+import { BUDGET_SETTINGS } from "../game/constants";
 
-import {
-  BUDGET_SETTINGS,
-} from "../game/constants";
-
-type StartScreenProps = {
-  mode: GameMode | null;
-  setMode: (mode: GameMode) => void;
-
-  gameLengthMode: GameLengthMode | null;
-  setGameLengthMode: (mode: GameLengthMode) => void;
-
+type StartConfig = {
+  mode: GameMode;
   budgetMode: BudgetMode;
-  setBudgetMode: (mode: BudgetMode) => void;
-
+  team1Name: string;
+  team2Name: string;
   eventsEnabled: boolean;
-  setEventsEnabled: (value: boolean) => void;
-
   eventType: EventType;
-  setEventType: (value: EventType) => void;
-
-  selectedTime: number;
-  setSelectedTime: (value: number) => void;
-
-  teamOneName: string;
-  setTeamOneName: (value: string) => void;
-
-  teamTwoName: string;
-  setTeamTwoName: (value: string) => void;
-
-  onStart: (starterIndex: number) => void;
-  onOpenHowToPlay: () => void;
+  timerSeconds: number | null;
+  gameLengthMode: "classic" | "infinite";
 };
 
-function buttonClass(active: boolean) {
-  return `
-    p-4
-    rounded-xl
-    transition-all
-    duration-150
-    active:scale-95
-    ${
-      active
-        ? "bg-green-700 border-green-300"
-        : "bg-zinc-800 border-zinc-700"
-    }
-    border
-  `;
-}
+type Props = {
+  onStart: (config: StartConfig) => void;
+};
 
-export default function StartScreen(
-  props: StartScreenProps
-) {
-  const {
-    mode,
-    setMode,
-    gameLengthMode,
-    setGameLengthMode,
-    budgetMode,
-    setBudgetMode,
-    eventsEnabled,
-    setEventsEnabled,
-    eventType,
-    setEventType,
-    selectedTime,
-    setSelectedTime,
-    teamOneName,
-    setTeamOneName,
-    teamTwoName,
-    setTeamTwoName,
-    onStart,
-    onOpenHowToPlay,
-  } = props;
+const TIMER_OPTIONS: { label: string; value: number | null }[] = [
+  { label: "No Timer", value: null },
+  { label: "15s", value: 15 },
+  { label: "30s", value: 30 },
+  { label: "45s", value: 45 },
+  { label: "60s", value: 60 },
+];
 
-  function canStart() {
-    return Boolean(
-      mode &&
-        gameLengthMode &&
-        budgetMode
-    );
+export default function StartScreen({ onStart }: Props) {
+  const [mode, setMode] = useState<GameMode | null>(null);
+  const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
+  const [team1Name, setTeam1Name] = useState("Investor 1");
+  const [team2Name, setTeam2Name] = useState("Investor 2");
+  const [eventsEnabled, setEventsEnabled] = useState(true);
+  const [eventType, setEventType] = useState<EventType>("all");
+  const [timerSeconds, setTimerSeconds] = useState<number | null>(15);
+  const [gameLengthMode, setGameLengthMode] = useState<"classic" | "infinite">("classic");
+  const [easterClicks, setEasterClicks] = useState(0);
+  const [easterUnlocked, setEasterUnlocked] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+
+  function handleStart() {
+    if (!mode) return;
+    onStart({
+      mode,
+      budgetMode,
+      team1Name: team1Name.trim() || "Investor 1",
+      team2Name: team2Name.trim() || "Investor 2",
+      eventsEnabled,
+      eventType,
+      timerSeconds,
+      gameLengthMode,
+    });
   }
 
-  function startRandom() {
-    const starter =
-      Math.random() > 0.5
-        ? 0
-        : 1;
-
-    onStart(starter);
+  function handleEasterClick() {
+    const next = easterClicks + 1;
+    setEasterClicks(next);
+    if (next >= 5) setEasterUnlocked(true);
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-3xl bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+    <main className="min-h-screen bg-[#060a0f] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
 
-        <h1 className="text-5xl font-bold text-center mb-3">
-          Football Investor v1.8
-        </h1>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[20%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[20%] w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px]" />
+      </div>
 
-        <p className="text-center text-gray-400 mb-6">
-          Enhanced Edition
-        </p>
+      <div className="relative z-10 w-full max-w-2xl">
+
+        <div className="text-center mb-10">
+          <p
+            onClick={handleEasterClick}
+            className="text-emerald-400/60 text-sm mb-3 cursor-pointer hover:text-emerald-400 transition-colors tracking-widest uppercase"
+          >
+            عمو يوسف المطور المستقل — 7GE 👀
+          </p>
+          <h1 className="text-6xl font-black tracking-tight bg-gradient-to-br from-white via-emerald-200 to-emerald-500 bg-clip-text text-transparent">
+            Football
+          </h1>
+          <h1 className="text-6xl font-black tracking-tight bg-gradient-to-br from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
+            Investor
+          </h1>
+          <p className="text-gray-400 mt-4 text-sm tracking-wider uppercase">
+            Build the most valuable squad • 2008 — 2028
+          </p>
+          {easterUnlocked && (
+            <p className="mt-3 text-yellow-400 text-sm font-bold animate-pulse">
+              😏 شطور... الحين دور عن بطاقتي.
+            </p>
+          )}
+        </div>
 
         <button
-          onClick={onOpenHowToPlay}
-          className="
-            w-full
-            mb-6
-            p-3
-            rounded-xl
-            bg-blue-700
-            transition-all
-            duration-150
-            active:scale-95
-          "
+          onClick={() => setShowHowToPlay(!showHowToPlay)}
+          className="w-full mb-6 py-2 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all text-sm"
         >
-          📖 How To Play
+          {showHowToPlay ? "▲ Hide Guide" : "📖 How To Play"}
         </button>
 
-        <div className="space-y-6">
+        {showHowToPlay && (
+          <div className="mb-6 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-300 space-y-2">
+            <p>⚽ <strong className="text-white">Buy players</strong> each season and build your squad</p>
+            <p>💰 <strong className="text-white">Sell at the right time</strong> to maximize profit</p>
+            <p>📈 <strong className="text-white">Player values</strong> change every season based on performance</p>
+            <p>🎴 <strong className="text-white">Events</strong> shake up the market — injuries, awards, crashes</p>
+            <p>🏆 <strong className="text-white">Most valuable empire</strong> by 2028 wins</p>
+          </div>
+        )}
 
-          <section>
-            <h2 className="text-xl font-bold mb-3">
-              Game Mode
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3">
+        <section className="mb-6">
+          <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Game Mode</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {(["single", "versus"] as GameMode[]).map((m) => (
               <button
-                onClick={() =>
-                  setMode("single")
-                }
-                className={buttonClass(
-                  mode === "single"
-                )}
+                key={m}
+                onClick={() => setMode(m)}
+                className={`py-4 rounded-2xl border-2 font-bold transition-all duration-200 ${
+                  mode === m
+                    ? m === "single"
+                      ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
+                      : "border-blue-500 bg-blue-500/20 text-blue-300"
+                    : "border-white/10 bg-white/5 text-gray-400 hover:border-white/20"
+                }`}
               >
-                Single Player
+                {m === "single" ? "👤 Single Player" : "👥 Versus Friend"}
               </button>
+            ))}
+          </div>
+        </section>
 
-              <button
-                onClick={() =>
-                  setMode("versus")
-                }
-                className={buttonClass(
-                  mode === "versus"
-                )}
-              >
-                Play vs Friend
-              </button>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-3">
-              Season Mode
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() =>
-                  setGameLengthMode(
-                    "classic"
-                  )
-                }
-                className={buttonClass(
-                  gameLengthMode ===
-                    "classic"
-                )}
-              >
-                Classic 2008-2028
-              </button>
-
-              <button
-                onClick={() =>
-                  setGameLengthMode(
-                    "infinite"
-                  )
-                }
-                className={buttonClass(
-                  gameLengthMode ===
-                    "infinite"
-                )}
-              >
-                Infinite Mode
-              </button>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-3">
-              Starting Budget
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3">
-              {(
-                Object.keys(
-                  BUDGET_SETTINGS
-                ) as BudgetMode[]
-              ).map((key) => (
-                <button
-                  key={key}
-                  onClick={() =>
-                    setBudgetMode(key)
-                  }
-                  className={buttonClass(
-                    budgetMode === key
-                  )}
-                >
-                  {BUDGET_SETTINGS[key].label}
-                  <br />
-                  <span className="text-sm text-gray-300">
-                    €{BUDGET_SETTINGS[key].amount}M
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-3">
-              Timer
-            </h2>
-
-            <div className="grid grid-cols-4 gap-3">
-              {[10, 15, 30, 60].map(
-                (time) => (
-                  <button
-                    key={time}
-                    onClick={() =>
-                      setSelectedTime(time)
-                    }
-                    className={buttonClass(
-                      selectedTime === time
-                    )}
-                  >
-                    {time}s
-                  </button>
-                )
+        {mode && (
+          <section className="mb-6">
+            <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Team Names</h2>
+            <div className={`grid gap-3 ${mode === "versus" ? "grid-cols-2" : "grid-cols-1"}`}>
+              <input
+                value={team1Name}
+                onChange={(e) => setTeam1Name(e.target.value)}
+                placeholder="Team 1 Name"
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+              {mode === "versus" && (
+                <input
+                  value={team2Name}
+                  onChange={(e) => setTeam2Name(e.target.value)}
+                  placeholder="Team 2 Name"
+                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors"
+                />
               )}
             </div>
           </section>
+        )}
 
-          <section>
-            <h2 className="text-xl font-bold mb-3">
-              Events
-            </h2>
-
-            <div className="flex items-center gap-3 mb-3">
+        <section className="mb-6">
+          <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Starting Budget</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {(Object.keys(BUDGET_SETTINGS) as BudgetMode[]).map((b) => (
               <button
-                onClick={() =>
-                  setEventsEnabled(
-                    !eventsEnabled
-                  )
-                }
-                className={`
-                  w-20
-                  h-10
-                  rounded-full
-                  relative
-                  transition-all
-                  ${
-                    eventsEnabled
-                      ? "bg-green-600"
-                      : "bg-zinc-700"
-                  }
-                `}
+                key={b}
+                onClick={() => setBudgetMode(b)}
+                className={`py-3 px-4 rounded-xl border transition-all duration-200 text-left ${
+                  budgetMode === b
+                    ? "border-emerald-500 bg-emerald-500/15 text-white"
+                    : "border-white/10 bg-white/5 text-gray-400 hover:border-white/20"
+                }`}
               >
-                <span
-                  className={`
-                    absolute
-                    top-1
-                    w-8
-                    h-8
-                    bg-white
-                    rounded-full
-                    transition-all
-                    ${
-                      eventsEnabled
-                        ? "left-11"
-                        : "left-1"
-                    }
-                  `}
-                />
+                <div className="font-bold text-sm">{BUDGET_SETTINGS[b].label}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{BUDGET_SETTINGS[b].description}</div>
               </button>
+            ))}
+          </div>
+        </section>
 
-              <span>
-                {eventsEnabled
-                  ? "ON"
-                  : "OFF"}
-              </span>
-            </div>
+        <section className="mb-6">
+          <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Season Mode</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {(["classic", "infinite"] as const).map((g) => (
+              <button
+                key={g}
+                onClick={() => setGameLengthMode(g)}
+                className={`py-3 rounded-xl border font-bold transition-all duration-200 ${
+                  gameLengthMode === g
+                    ? "border-yellow-500 bg-yellow-500/15 text-yellow-300"
+                    : "border-white/10 bg-white/5 text-gray-400 hover:border-white/20"
+                }`}
+              >
+                {g === "classic" ? "🏆 Classic 2008–2028" : "♾️ Infinite Mode"}
+              </button>
+            ))}
+          </div>
+        </section>
 
-            {eventsEnabled && (
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  onClick={() =>
-                    setEventType("all")
-                  }
-                  className={buttonClass(
-                    eventType === "all"
-                  )}
-                >
-                  All
-                </button>
-
-                <button
-                  onClick={() =>
-                    setEventType("positive")
-                  }
-                  className={buttonClass(
-                    eventType === "positive"
-                  )}
-                >
-                  Positive
-                </button>
-
-                <button
-                  onClick={() =>
-                    setEventType("negative")
-                  }
-                  className={buttonClass(
-                    eventType === "negative"
-                  )}
-                >
-                  Negative
-                </button>
-              </div>
-            )}
-          </section>
-
-          {mode === "versus" && (
-            <section>
-              <h2 className="text-xl font-bold mb-3">
-                Team Names
-              </h2>
-
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  value={teamOneName}
-                  onChange={(event) =>
-                    setTeamOneName(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Team 1"
-                  className="bg-black border border-zinc-700 rounded-xl p-3"
-                />
-
-                <input
-                  value={teamTwoName}
-                  onChange={(event) =>
-                    setTeamTwoName(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Team 2"
-                  className="bg-black border border-zinc-700 rounded-xl p-3"
-                />
-              </div>
-            </section>
-          )}
-
-          {mode === "versus" ? (
-            <section>
-              <h2 className="text-xl font-bold mb-3">
-                Who Starts 2008?
-              </h2>
-
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  disabled={!canStart()}
-                  onClick={() => onStart(0)}
-                  className="p-4 rounded-xl bg-cyan-700 disabled:bg-zinc-700 transition-all active:scale-95"
-                >
-                  Team 1
-                </button>
-
-                <button
-                  disabled={!canStart()}
-                  onClick={() => onStart(1)}
-                  className="p-4 rounded-xl bg-pink-700 disabled:bg-zinc-700 transition-all active:scale-95"
-                >
-                  Team 2
-                </button>
-
-                <button
-                  disabled={!canStart()}
-                  onClick={startRandom}
-                  className="p-4 rounded-xl bg-yellow-700 disabled:bg-zinc-700 transition-all active:scale-95"
-                >
-                  Random
-                </button>
-              </div>
-            </section>
-          ) : (
+        <section className="mb-6">
+          <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Events</h2>
+          <div className="flex items-center gap-4 mb-3">
             <button
-              disabled={!canStart()}
-              onClick={() => onStart(0)}
-              className="
-                w-full
-                p-4
-                rounded-xl
-                bg-green-700
-                disabled:bg-zinc-700
-                text-xl
-                font-bold
-                transition-all
-                active:scale-95
-              "
+              onClick={() => setEventsEnabled(!eventsEnabled)}
+              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
+                eventsEnabled ? "bg-emerald-500" : "bg-white/10"
+              }`}
             >
-              Start Game
+              <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-all duration-300 ${
+                eventsEnabled ? "left-8" : "left-1"
+              }`} />
             </button>
+            <span className="text-sm text-gray-400">{eventsEnabled ? "Events ON" : "Events OFF"}</span>
+          </div>
+          {eventsEnabled && (
+            <div className="flex gap-2">
+              {(["all", "positive", "negative"] as EventType[]).map((e) => (
+                <button
+                  key={e}
+                  onClick={() => setEventType(e)}
+                  className={`flex-1 py-2 rounded-xl text-sm border transition-all ${
+                    eventType === e
+                      ? e === "positive"
+                        ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
+                        : e === "negative"
+                        ? "border-red-500 bg-red-500/20 text-red-300"
+                        : "border-white/30 bg-white/10 text-white"
+                      : "border-white/10 bg-white/5 text-gray-500"
+                  }`}
+                >
+                  {e === "all" ? "All" : e === "positive" ? "✅ Positive" : "❌ Negative"}
+                </button>
+              ))}
+            </div>
           )}
+        </section>
 
-        </div>
+        <section className="mb-8">
+          <h2 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Selection Timer</h2>
+          <div className="flex gap-2">
+            {TIMER_OPTIONS.map((t) => (
+              <button
+                key={String(t.value)}
+                onClick={() => setTimerSeconds(t.value)}
+                className={`flex-1 py-2 rounded-xl text-sm border transition-all ${
+                  timerSeconds === t.value
+                    ? "border-yellow-500 bg-yellow-500/20 text-yellow-300"
+                    : "border-white/10 bg-white/5 text-gray-500 hover:border-white/20"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <button
+          onClick={handleStart}
+          disabled={!mode}
+          className={`w-full py-5 rounded-2xl font-black text-xl tracking-wide transition-all duration-300 ${
+            mode
+              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black shadow-lg shadow-emerald-500/25 hover:scale-[1.02] active:scale-[0.98]"
+              : "bg-white/5 text-gray-600 cursor-not-allowed border border-white/10"
+          }`}
+        >
+          {mode ? "⚽ Start Game" : "Select a Game Mode First"}
+        </button>
+
       </div>
     </main>
   );

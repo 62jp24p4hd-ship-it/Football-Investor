@@ -1,219 +1,247 @@
-import type {
-  GamePlayer,
-  PlayerCards,
-  RewardCardType,
-} from "./types";
+// ============================================
+// FOOTBALL INVESTOR 1.8 - REWARD CARD ENGINE
+// ============================================
 
+import type { Cards, CardData, RewardCard, GamePlayer } from "./types";
 import {
-  CARD_COOLDOWN_SEASONS,
+  SELL_BONUS_THRESHOLD_FREEZE,
+  SELL_BONUS_THRESHOLD_TRIPLE,
+  SELL_BONUS_THRESHOLD_STEAL,
 } from "./constants";
 
-import {
-  applyExtraBuyCard,
-  applyExtraSellCard,
-} from "./economyEngine";
+// ============================================
+// EMPTY CARDS
+// ============================================
 
-export function createEmptyCardState() {
+export function emptyCards(): Cards {
   return {
-    unlocked: false,
-    cooldown: 0,
+    freeze: { unlocked: false, used: false, cooldownUntil: null },
+    triple: { unlocked: false, used: false, cooldownUntil: null },
+    steal: { unlocked: false, used: false, cooldownUntil: null },
   };
 }
 
-export function createEmptyCards(): PlayerCards {
-  return {
-    tripleBuy: createEmptyCardState(),
-    extraSell: createEmptyCardState(),
-    steal: createEmptyCardState(),
-    eventChoice: createEmptyCardState(),
-  };
-}
+// ============================================
+// ELIGIBLE CARDS AFTER SELL
+// ============================================
 
-export function getCardName(
-  card: RewardCardType
-) {
-  if (card === "tripleBuy") {
-    return "⚡ Extra Buy Card";
-  }
-
-  if (card === "extraSell") {
-    return "💸 Extra Sell Card";
-  }
-
-  if (card === "steal") {
-    return "🕵️ Steal Card";
-  }
-
-  return "🎲 Event Choice Card";
-}
-
-export function getEligibleRewardCards(
-  sellPrice: number,
-  player: GamePlayer
-): RewardCardType[] {
-  const cards: RewardCardType[] = [];
+export function getEligibleCards(
+  gp: GamePlayer,
+  sellPrice: number
+): RewardCard[] {
+  const cards: RewardCard[] = [];
 
   if (
-    sellPrice >= 40 &&
-    player.cards.tripleBuy.cooldown <= 0
+    sellPrice >= SELL_BONUS_THRESHOLD_FREEZE &&
+    !gp.cards.freeze.unlocked &&
+    !gp.cards.freeze.used
   ) {
-    cards.push("tripleBuy");
+    cards.push("freeze");
   }
 
   if (
-    sellPrice >= 70 &&
-    player.cards.extraSell.cooldown <= 0
+    sellPrice >= SELL_BONUS_THRESHOLD_TRIPLE &&
+    !gp.cards.triple.unlocked &&
+    !gp.cards.triple.used
   ) {
-    cards.push("extraSell");
+    cards.push("triple");
   }
 
   if (
-    sellPrice >= 50 &&
-    player.cards.steal.cooldown <= 0
+    sellPrice >= SELL_BONUS_THRESHOLD_STEAL &&
+    !gp.cards.steal.unlocked &&
+    !gp.cards.steal.used
   ) {
     cards.push("steal");
-  }
-
-  if (
-    sellPrice >= 100 &&
-    player.cards.eventChoice.cooldown <= 0
-  ) {
-    cards.push("eventChoice");
   }
 
   return cards;
 }
 
-export function unlockRewardCard(
-  player: GamePlayer,
-  card: RewardCardType
+// ============================================
+// UNLOCK CARD
+// ============================================
+
+export function unlockCard(
+  gp: GamePlayer,
+  card: RewardCard
 ): GamePlayer {
   return {
-    ...player,
+    ...gp,
     cards: {
-      ...player.cards,
+      ...gp.cards,
       [card]: {
         unlocked: true,
-        cooldown: 0,
+        used: false,
+        cooldownUntil: null,
       },
     },
   };
 }
 
-export function putCardOnCooldown(
-  player: GamePlayer,
-  card: RewardCardType
-): GamePlayer {
-  return {
-    ...player,
-    cards: {
-      ...player.cards,
-      [card]: {
-        unlocked: true,
-        cooldown:
-          CARD_COOLDOWN_SEASONS,
+// ============================================
+// USE FREEZE CARD
+// ============================================
+
+export function useFreezeCard(
+  players: GamePlayer[],
+  userIndex: number,
+  currentSeason: number
+): GamePlayer[] {
+  const enemyIndex = userIndex === 0 ? 1 : 0;
+
+  return players.map((gp, i) => {
+    if (i === userIndex) {
+      return {
+        ...gp,
+        cards: {
+          ...gp.cards,
+          freeze: { unlocked: true, used: true, cooldownUntil: null },
+        },
+      };
+    }
+    if (i === enemyIndex) {
+      return {
+        ...gp,
+        frozenSeason: currentSeason + 1,
+      };
+    }
+    return gp;
+  });
+}
+
+// ============================================
+// USE TRIPLE BUY CARD
+// ============================================
+
+export function useTripleCard(
+  players: GamePlayer[],
+  userIndex: number
+): GamePlayer[] {
+  return players.map((gp, i) => {
+    if (i !== userIndex) return gp;
+    return {
+      ...gp,
+      tripleNextSeason: true,
+      cards: {
+        ...gp.cards,
+        triple: { unlocked: true, used: true, cooldownUntil: null },
       },
-    },
-  };
+    };
+  });
 }
 
-export function reduceCardCooldowns(
-  cards: PlayerCards
-): PlayerCards {
-  return {
-    tripleBuy: {
-      ...cards.tripleBuy,
-      cooldown:
-        Math.max(
-          0,
-          cards.tripleBuy.cooldown - 1
-        ),
-    },
-    extraSell: {
-      ...cards.extraSell,
-      cooldown:
-        Math.max(
-          0,
-          cards.extraSell.cooldown - 1
-        ),
-    },
-    steal: {
-      ...cards.steal,
-      cooldown:
-        Math.max(
-          0,
-          cards.steal.cooldown - 1
-        ),
-    },
-    eventChoice: {
-      ...cards.eventChoice,
-      cooldown:
-        Math.max(
-          0,
-          cards.eventChoice.cooldown - 1
-        ),
-    },
-  };
+// ============================================
+// USE STEAL CARD — SWAP PLAYERS
+// ============================================
+
+export function executeStealSwap(
+  players: GamePlayer[],
+  userIndex: number,
+  ownOwnedIndex: number,
+  enemyOwnedIndex: number
+): GamePlayer[] {
+  const enemyIndex = userIndex === 0 ? 1 : 0;
+
+  return players.map((gp, i) => {
+    if (i === userIndex) {
+      const copy = [...gp.owned];
+      const enemyItem = players[enemyIndex].owned[enemyOwnedIndex];
+      copy[ownOwnedIndex] = {
+        ...enemyItem,
+        slot: gp.owned[ownOwnedIndex].slot,
+      };
+      return {
+        ...gp,
+        owned: copy,
+        cards: {
+          ...gp.cards,
+          steal: { unlocked: true, used: true, cooldownUntil: null },
+        },
+      };
+    }
+    if (i === enemyIndex) {
+      const copy = [...gp.owned];
+      const userItem = players[userIndex].owned[ownOwnedIndex];
+      copy[enemyOwnedIndex] = {
+        ...userItem,
+        slot: gp.owned[enemyOwnedIndex].slot,
+      };
+      return { ...gp, owned: copy };
+    }
+    return gp;
+  });
 }
 
-export function canUseCard(
-  player: GamePlayer,
-  card: RewardCardType
-) {
-  const cardState =
-    player.cards[card];
+// ============================================
+// CARD STATUS
+// ============================================
 
-  return (
-    cardState.unlocked &&
-    cardState.cooldown <= 0
-  );
+export function getCardStatus(
+  card: CardData,
+  currentSeason: number
+): "locked" | "ready" | "used" | "cooldown" {
+  if (card.used) return "used";
+  if (!card.unlocked) return "locked";
+  if (card.cooldownUntil !== null && currentSeason < card.cooldownUntil) return "cooldown";
+  return "ready";
 }
 
-export function useRewardCard(
-  player: GamePlayer,
-  card: RewardCardType
-): GamePlayer {
-  if (!canUseCard(player, card)) {
-    return player;
+// ============================================
+// CARD DISPLAY INFO
+// ============================================
+
+export type CardDisplayInfo = {
+  name: string;
+  icon: string;
+  description: string;
+  unlockRequirement: string;
+  color: string;
+};
+
+export function getCardDisplayInfo(card: RewardCard): CardDisplayInfo {
+  switch (card) {
+    case "freeze":
+      return {
+        name: "Freeze Card",
+        icon: "🧊",
+        description: "Freeze your opponent for 1 season — they cannot buy players.",
+        unlockRequirement: "Sell a player for €20M+",
+        color: "bg-blue-700 border-blue-400",
+      };
+    case "triple":
+      return {
+        name: "Triple Buy Card",
+        icon: "⚡",
+        description: "Get 3 purchase chances next season instead of 1.",
+        unlockRequirement: "Sell a player for €40M+",
+        color: "bg-yellow-700 border-yellow-400",
+      };
+    case "steal":
+      return {
+        name: "Steal Card",
+        icon: "🕵️",
+        description: "Win a challenge to swap one of your players with your opponent.",
+        unlockRequirement: "Sell a player for €50M+",
+        color: "bg-purple-700 border-purple-400",
+      };
   }
-
-  let updatedPlayer =
-    putCardOnCooldown(
-      player,
-      card
-    );
-
-  if (card === "tripleBuy") {
-    updatedPlayer =
-      applyExtraBuyCard(
-        updatedPlayer
-      );
-  }
-
-  if (card === "extraSell") {
-    updatedPlayer =
-      applyExtraSellCard(
-        updatedPlayer
-      );
-  }
-
-  return updatedPlayer;
 }
 
-export function getCardStatusText(
-  player: GamePlayer,
-  card: RewardCardType
-) {
-  const cardState =
-    player.cards[card];
+// ============================================
+// CARD LOCKED TOOLTIP
+// ============================================
 
-  if (!cardState.unlocked) {
-    return "Locked";
+export function getCardLockedTooltip(card: RewardCard): string {
+  switch (card) {
+    case "freeze": return "Sell a player for €20M or more to unlock";
+    case "triple": return "Sell a player for €40M or more to unlock";
+    case "steal": return "Sell a player for €50M or more to unlock";
   }
-
-  if (cardState.cooldown > 0) {
-    return `${cardState.cooldown} seasons left`;
-  }
-
-  return "Ready";
 }
+
+// ============================================
+// ALL CARDS LIST
+// ============================================
+
+export const ALL_REWARD_CARDS: RewardCard[] = ["freeze", "triple", "steal"];

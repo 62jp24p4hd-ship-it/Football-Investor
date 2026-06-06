@@ -1,15 +1,8 @@
-export type Position =
-  | "GK"
-  | "LB"
-  | "CB"
-  | "RB"
-  | "CM"
-  | "CAM"
-  | "LW"
-  | "RW"
-  | "ST";
+// ============================================
+// FOOTBALL INVESTOR 1.8 - TYPES
+// ============================================
 
-export type Slot =
+export type Position =
   | "GK"
   | "LB"
   | "LCB"
@@ -19,19 +12,20 @@ export type Slot =
   | "RCM"
   | "CAM"
   | "LW"
-  | "RW"
-  | "ST";
+  | "ST"
+  | "RW";
 
 export type HiddenPlayerType =
   | "talent"
   | "normal"
-  | "flop";
+  | "trap"
+  | "secret";
 
-export type NewsTone =
-  | "good"
-  | "bad"
-  | "neutral"
-  | "special";
+export type BudgetMode =
+  | "lucky"
+  | "balanced"
+  | "rich"
+  | "billionaire";
 
 export type GameMode =
   | "single"
@@ -41,39 +35,48 @@ export type GameLengthMode =
   | "classic"
   | "infinite";
 
-export type BudgetMode =
-  | "lucky"
-  | "balanced"
-  | "rich"
-  | "billionaire";
-
 export type EventType =
   | "all"
   | "positive"
   | "negative";
 
-export type ContractStatus =
-  | "pending"
-  | "accepted"
-  | "rejected";
+export type NewsTone =
+  | "good"
+  | "bad"
+  | "neutral"
+  | "special";
 
-export type SponsorshipStatus =
-  | "active"
-  | "expired";
-
-export type RewardCardType =
-  | "tripleBuy"
-  | "extraSell"
-  | "steal"
-  | "eventChoice";
+export type RewardCard =
+  | "freeze"
+  | "triple"
+  | "steal";
 
 export type AuctionPhase =
   | "preview"
   | "bidding"
-  | "replacement"
   | "finished";
 
-export interface SeasonStats {
+export type ContractStatus =
+  | "negotiating"
+  | "accepted"
+  | "rejected"
+  | "timeout";
+
+export type SponsorBrand =
+  | "Nike"
+  | "Adidas"
+  | "Puma"
+  | "Pepsi"
+  | "EA Sports"
+  | "Red Bull"
+  | "Beats"
+  | "Hublot";
+
+// ============================================
+// SEASON STATS
+// ============================================
+
+export type SeasonStats = {
   season: number;
   games: number;
   goals: number;
@@ -83,48 +86,91 @@ export interface SeasonStats {
   redCards: number;
   rating: number;
   value: number;
-}
+};
 
-export interface SponsorshipDeal {
-  brand: string;
-  totalValue: number;
-  investorSharePercent: number;
-  investorIncome: number;
-  yearsLeft: number;
-  status: SponsorshipStatus;
-}
+// ============================================
+// PLAYER
+// ============================================
 
-export interface ContractOffer {
-  salary: number;
-  years: number;
-  satisfaction: number;
-  status: ContractStatus;
-}
-
-export interface Player {
+export type Player = {
+  id: string;
   name: string;
   position: Position;
+  availableSeason: number;
+  startAge: number;
   nationality: string;
   height: number;
   league: string;
-  startAge: number;
-  availableSeason: number;
-  hiddenType: HiddenPlayerType;
-  secret: boolean;
-  values: Record<number, number>;
-  statsBySeason: Record<number, SeasonStats>;
-  sponsorship?: SponsorshipDeal | null;
-}
+  club: string;
+  games?: number;
+  goals?: number;
+  assists?: number;
+  cleanSheets?: number;
+  yellowCards?: number;
+  redCards?: number;
+  rating?: number;
+  secret?: boolean;
+  hiddenType?: HiddenPlayerType;
+  values?: Record<number, number>;
+  statsBySeason?: Record<number, SeasonStats>;
+  retirementAge?: number;
+};
 
-export interface OwnedPlayer {
+// ============================================
+// CONTRACT
+// ============================================
+
+export type Contract = {
+  salary: number;          // per year in M
+  duration: number;        // years 1-5
+  satisfaction: number;    // 0-100
+  requiredSalary: number;  // player's minimum demand
+  startSeason: number;
+  endSeason: number;
+};
+
+export type ContractNegotiation = {
   player: Player;
-  slot: Slot;
+  slot: string;
+  offeredSalary: number;
+  offeredDuration: number;
+  satisfaction: number;
+  requiredSalary: number;
+  marketValue: number;
+  timer: number;
+  attempts: number;
+};
+
+// ============================================
+// SPONSORSHIP
+// ============================================
+
+export type Sponsorship = {
+  brand: SponsorBrand;
+  annualIncome: number;   // M per year
+  duration: number;       // years
+  startSeason: number;
+  endSeason: number;
+};
+
+// ============================================
+// OWNED PLAYER
+// ============================================
+
+export type OwnedPlayer = {
+  player: Player;
+  slot: string;
   buySeason: number;
   buyPrice: number;
-  contract: ContractOffer;
-}
+  contract: Contract;
+  sponsorships: Sponsorship[];
+};
 
-export interface SoldPlayer {
+// ============================================
+// SOLD PLAYER
+// ============================================
+
+export type SoldPlayer = {
   owner: string;
   name: string;
   buySeason: number;
@@ -132,58 +178,175 @@ export interface SoldPlayer {
   buyPrice: number;
   sellPrice: number;
   profit: number;
-}
+  position: Position;
+};
 
-export interface CardState {
+// ============================================
+// CARD DATA
+// ============================================
+
+export type CardData = {
   unlocked: boolean;
-  cooldown: number;
-}
+  used: boolean;
+  cooldownUntil: number | null;
+};
 
-export interface PlayerCards {
-  tripleBuy: CardState;
-  extraSell: CardState;
-  steal: CardState;
-  eventChoice: CardState;
-}
+export type Cards = {
+  freeze: CardData;
+  triple: CardData;
+  steal: CardData;
+};
 
-export interface GamePlayer {
+// ============================================
+// FINANCIAL DASHBOARD
+// ============================================
+
+export type FinancialDashboard = {
+  totalSalaries: number;
+  totalSponsorships: number;
+  netIncome: number;
+  projectedNextSeason: number;
+};
+
+// ============================================
+// GAME PLAYER (INVESTOR)
+// ============================================
+
+export type GamePlayer = {
   name: string;
-  teamName: string;
   budget: number;
   owned: OwnedPlayer[];
   sold: SoldPlayer[];
   purchaseChances: number;
   sellChances: number;
-  receivedSalePurchaseBonus: boolean;
-  cards: PlayerCards;
-  skippedTurn: boolean;
-}
+  soldBonusUsedThisSeason: boolean;
+  cards: Cards;
+  tripleNextSeason: boolean;
+  frozenSeason: number | null;
+  totalSalaryBudget: number;
+  sponsorships: Sponsorship[];
+};
 
-export interface NewsItem {
+// ============================================
+// NEWS
+// ============================================
+
+export type NewsItem = {
   id: number;
   season: number;
   title: string;
   description: string;
   tone: NewsTone;
-  sourceName?: string;
-  sourceType?: "journalist" | "newspaper";
-}
+  journalist?: string;
+  source?: string;
+};
 
-export interface SeasonEvent {
+// ============================================
+// SEASON EVENT
+// ============================================
+
+export type SeasonEvent = {
+  id: string;
   title: string;
   description: string;
   tone: NewsTone;
   marketMultiplier?: number;
-}
+  playerMultipliers?: Record<string, number>;
+  affectedPlayerName?: string;
+  affectedOwner?: string;
+};
 
-export interface InvestorOfferState {
-  targetPlayerIndex: number;
+export type SeasonEventResult = {
+  event: SeasonEvent | null;
+  updatedPlayers: GamePlayer[];
+  newsItems: NewsItem[];
+};
+
+// ============================================
+// EVENT CHOICE (after selling 100M+)
+// ============================================
+
+export type EventChoice = {
+  playerIndex: number;
+  option1: SeasonEvent;
+  option2: SeasonEvent;
+};
+
+// ============================================
+// INVESTOR OFFER
+// ============================================
+
+export type InvestorOfferState = {
+  candidates: Player[];
   selectedPlayer: Player;
   marketValue: number;
   offerValue: number;
-}
+  offerTone: NewsTone;
+};
 
-export interface PlayerEventEffect {
+// ============================================
+// AUCTION
+// ============================================
+
+export type AuctionState = {
+  candidates: Player[];
+  selectedPlayer: Player | null;
+  phase: AuctionPhase;
+  timer: number;
+  currentBid: number;
+  highestBidder: number | null;
+  replacementSlot: string | null;
+  surrendered: Record<number, boolean>;
+};
+
+// ============================================
+// REWARD CHOICE
+// ============================================
+
+export type RewardChoice = {
+  playerIndex: number;
+  cards: RewardCard[];
+};
+
+// ============================================
+// STEAL CHALLENGE
+// ============================================
+
+export type StealChallenge = {
+  userIndex: number;
+  success: boolean;
+  ownIndex: number | null;
+  enemyIndex: number | null;
+};
+
+// ============================================
+// DEV EVENT
+// ============================================
+
+export type DevEventId =
+  | "hotMarket"
+  | "marketCrash"
+  | "saudiOffer"
+  | "ballonDor"
+  | "goldenBoy"
+  | "goldenBoot"
+  | "recordTransfer"
+  | "wonderkid"
+  | "aclInjury"
+  | "majorInjury"
+  | "benchWarmer"
+  | "failedTransfer"
+  | "freeTransfer"
+  | "retirement"
+  | "investorOffer"
+  | "legendaryAuction"
+  | "sponsorshipOffer";
+
+// ============================================
+// PLAYER EVENT EFFECT
+// ============================================
+
+export type PlayerEventEffect = {
   title: string;
   tone: NewsTone;
   multiplier: number;
@@ -192,40 +355,13 @@ export interface PlayerEventEffect {
   goalsChange: number;
   assistsChange: number;
   cleanSheetsChange: number;
-}
+};
 
-export interface AuctionState {
-  phase: AuctionPhase;
-  timer: number;
-  candidates: Player[];
-  selectedPlayer: Player | null;
-  baseValue: number;
-  currentBid: number;
-  currentTurn: number;
-  highestBidder: number | null;
-  winnerIndex: number | null;
-}
+// ============================================
+// GAME STATE (for page.tsx)
+// ============================================
 
-export interface ReplacementState {
-  ownerIndex: number;
-  incomingPlayer: Player;
-  price: number;
-  candidates: OwnedPlayer[];
-  source: "auction" | "investorOffer";
-}
-
-export interface EventChoiceState {
-  playerIndex: number;
-  events: PlayerEventEffect[];
-}
-
-export interface PlayerSelectionPreview {
-  player: Player;
-  slot: Slot;
-  contract: ContractOffer;
-}
-
-export interface TeamStarterState {
-  firstSeasonStarter: number;
-  currentSeasonStarter: number;
-}
+export type GamePhase =
+  | "menu"
+  | "playing"
+  | "finished";

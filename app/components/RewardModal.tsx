@@ -1,73 +1,53 @@
 "use client";
 
-import type {
-  RewardCardType,
-} from "../game/types";
+import type { RewardCard } from "../game/types";
+import { getCardDisplayInfo } from "../game/rewardCardEngine";
 
-import {
-  getCardName,
-} from "../game/rewardCardEngine";
-
-type RewardModalProps = {
-  open: boolean;
-  cards: RewardCardType[];
-  onChoose: (
-    card: RewardCardType
-  ) => void;
+type Props = {
+  cards: RewardCard[];
+  playerName: string;
+  sellPrice: number;
+  onChoose: (card: RewardCard) => void;
 };
 
-export default function RewardModal(
-  props: RewardModalProps
-) {
-  const {
-    open,
-    cards,
-    onChoose,
-  } = props;
-
-  if (!open) {
-    return null;
-  }
-
+export default function RewardModal({ cards, playerName, sellPrice, onChoose }: Props) {
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0f14] border border-purple-500/30 rounded-3xl w-full max-w-md overflow-hidden">
 
-      <div className="bg-zinc-950 border border-purple-500 rounded-2xl p-6 w-full max-w-xl">
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">🎴</div>
+            <h2 className="text-2xl font-black text-white">Special Card Unlocked!</h2>
+            <p className="text-gray-400 text-sm mt-1">
+              You sold {playerName} for <span className="text-emerald-400 font-bold">€{sellPrice}M</span>
+            </p>
+            <p className="text-gray-500 text-xs mt-1">Choose ONE reward card</p>
+          </div>
 
-        <h2 className="text-3xl font-bold text-center mb-3">
-          🎁 Reward Card
-        </h2>
-
-        <p className="text-center text-gray-400 mb-6">
-          Choose one reward
-        </p>
-
-        <div className="grid gap-3">
-
-          {cards.map((card) => (
-            <button
-              key={card}
-              onClick={() =>
-                onChoose(card)
-              }
-              className="
-                p-4
-                rounded-xl
-                bg-purple-700
-                transition-all
-                duration-150
-                active:scale-95
-                hover:bg-purple-600
-              "
-            >
-              {getCardName(card)}
-            </button>
-          ))}
-
+          <div className="flex flex-col gap-3">
+            {cards.map((card) => {
+              const info = getCardDisplayInfo(card);
+              return (
+                <button
+                  key={card}
+                  onClick={() => onChoose(card)}
+                  className={`border rounded-2xl p-4 text-left transition-all hover:scale-[1.02] active:scale-95 ${info.color}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{info.icon}</span>
+                    <div>
+                      <div className="font-black text-white text-lg">{info.name}</div>
+                      <div className="text-sm text-gray-300 mt-0.5">{info.description}</div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
       </div>
-
     </div>
   );
 }

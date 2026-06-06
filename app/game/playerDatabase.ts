@@ -1,3 +1,12 @@
+// ============================================
+// FOOTBALL INVESTOR 1.8 - PLAYER DATABASE
+// ============================================
+
+import type { Player } from "./types";
+import { buildDynamicPlayers } from "./careerEngine";
+import { createSecretPlayers } from "./playerGenerator";
+
+// Import all season data
 import { players2008 } from "../data/players2008";
 import { players2009 } from "../data/players2009";
 import { players2010 } from "../data/players2010";
@@ -20,24 +29,12 @@ import { players2026 } from "../data/players2026";
 import { players2027 } from "../data/players2027";
 import { players2028 } from "../data/players2028";
 
-import type {
-  Player,
-  Position,
-} from "./types";
+// ============================================
+// RAW BASE PLAYERS
+// ============================================
 
-import {
-  buildDynamicPlayers,
-} from "./careerEngine";
-
-type RawPlayer = Omit<
-  Player,
-  | "hiddenType"
-  | "secret"
-  | "values"
-  | "statsBySeason"
->;
-
-export const rawPlayers: RawPlayer[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const rawBasePlayers: any[] = [
   ...players2008,
   ...players2009,
   ...players2010,
@@ -59,30 +56,55 @@ export const rawPlayers: RawPlayer[] = [
   ...players2026,
   ...players2027,
   ...players2028,
-] as RawPlayer[];
+];
 
-export function getAllPlayers(): Player[] {
-  return buildDynamicPlayers(
-    rawPlayers
-  );
+// ============================================
+// BUILD ALL PLAYERS WITH DYNAMIC CAREERS
+// ============================================
+
+export function buildAllBasePlayers(): Player[] {
+  return buildDynamicPlayers(rawBasePlayers);
 }
 
-export function getPlayersBySeason(
-  season: number
-): Player[] {
-  return getAllPlayers().filter(
-    (player) =>
-      player.availableSeason === season
-  );
+// ============================================
+// GET SECRET PLAYERS
+// ============================================
+
+export function getSecretPlayers(): Player[] {
+  return createSecretPlayers();
 }
 
-export function getPlayersBySeasonAndPosition(
+// ============================================
+// GET PLAYERS FOR SEASON
+// ============================================
+
+export function getPlayersForSeason(
+  allPlayers: Player[],
   season: number,
-  position: Position
+  includeSecrets: boolean = false
 ): Player[] {
-  return getAllPlayers().filter(
-    (player) =>
-      player.availableSeason === season &&
-      player.position === position
+  const base = allPlayers.filter((p) => p.availableSeason === season);
+  if (includeSecrets) {
+    const secrets = getSecretPlayers().filter((p) => p.availableSeason === season);
+    return [...base, ...secrets];
+  }
+  return base;
+}
+
+// ============================================
+// GET PLAYERS BY POSITION FOR SEASON
+// ============================================
+
+export function getPlayersByPosition(
+  allPlayers: Player[],
+  season: number,
+  position: string,
+  ownedNames: Set<string>
+): Player[] {
+  return allPlayers.filter(
+    (p) =>
+      p.position === position &&
+      p.availableSeason === season &&
+      !ownedNames.has(p.name)
   );
 }

@@ -1,95 +1,131 @@
 "use client";
 
-import type {
-  GameLengthMode,
-  GameMode,
-} from "../game/types";
+import type { GamePlayer, GameMode, BudgetMode } from "../game/types";
 
-type TopBarProps = {
+type Props = {
   season: number;
   mode: GameMode;
-  gameLengthMode: GameLengthMode;
-  currentTeamName: string;
-  message: string;
+  gameLengthMode: "classic" | "infinite";
+  budgetMode: BudgetMode;
+  activePlayerIndex: number;
+  gamePlayers: GamePlayer[];
+  timerSeconds: number | null;
+  timer: number;
+  pendingSlot: string | null;
+  onNextSeason: () => void;
   onSeasonClick: () => void;
-  onRestart: () => void;
-  onOpenHowToPlay: () => void;
+  onFinishGame?: () => void;
+  canNextSeason: boolean;
 };
 
-export default function TopBar(
-  props: TopBarProps
-) {
-  const {
-    season,
-    mode,
-    gameLengthMode,
-    currentTeamName,
-    message,
-    onSeasonClick,
-    onRestart,
-    onOpenHowToPlay,
-  } = props;
+export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex, gamePlayers, timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick, onFinishGame, canNextSeason }: Props) {
+  const isTimerActive = pendingSlot !== null && timerSeconds !== null;
+  const timerDanger = timer <= 5;
+  const seasonsLeft = 2028 - season;
 
   return (
-    <div className="mb-6">
+    <header className="bg-[#0a0e1a]/95 backdrop-blur-md border-b border-white/8 sticky top-0 z-30 shadow-xl shadow-black/20">
+      <div className="max-w-7xl mx-auto px-4 py-3">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
 
-      <div className="flex items-center justify-between gap-3 mb-4">
+          {/* Left: Logo + Season */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-400 font-black text-lg">⚽</span>
+              <span className="font-black text-white text-sm hidden md:block">Football Investor</span>
+            </div>
 
-        <div>
-          <h1 className="text-3xl font-bold">
-            Football Investor v1.8
-          </h1>
+            <div className="h-6 w-px bg-white/10" />
 
-          <p className="text-sm text-gray-400">
-            {mode === "single"
-              ? "Single Player"
-              : "Play vs Friend"}
-            {" | "}
-            {gameLengthMode === "classic"
-              ? "Classic 2008-2028"
-              : "Infinite Mode"}
-          </p>
+            <button onClick={onSeasonClick} className="group flex items-center gap-2">
+              <div className="text-[10px] text-gray-500 uppercase tracking-widest">Season</div>
+              <div className="text-3xl font-black text-white group-hover:text-emerald-400 transition-colors leading-none">
+                {season}
+              </div>
+              {gameLengthMode === "classic" && seasonsLeft > 0 && (
+                <div className="text-[10px] text-gray-600 hidden md:block">
+                  {seasonsLeft} left
+                </div>
+              )}
+            </button>
+
+            {gameLengthMode === "infinite" && (
+              <span className="text-xs text-purple-400 font-bold bg-purple-900/30 border border-purple-500/30 px-2 py-0.5 rounded-lg">♾️ Infinite</span>
+            )}
+          </div>
+
+          {/* Center: Turn indicator */}
+          {mode === "versus" && (
+            <div className="flex items-center gap-2">
+              {gamePlayers.map((gp, i) => (
+                <div key={gp.name} className={`px-3 py-1.5 rounded-xl text-sm font-black transition-all border ${
+                  i === activePlayerIndex
+                    ? "border-yellow-500/60 bg-yellow-900/30 text-yellow-300 shadow-lg shadow-yellow-500/10"
+                    : "border-white/8 bg-white/5 text-gray-500"
+                }`}>
+                  {i === activePlayerIndex && <span className="mr-1">▶</span>}{gp.name}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Timer */}
+          {isTimerActive && (
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
+              timerDanger
+                ? "border-red-500/60 bg-red-900/30 animate-pulse"
+                : "border-yellow-500/30 bg-yellow-900/20"
+            }`}>
+              <span className="text-xs text-gray-400">⏱</span>
+              <span className={`font-black text-2xl tabular-nums ${timerDanger ? "text-red-400" : "text-yellow-300"}`}>
+                {timer}s
+              </span>
+            </div>
+          )}
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-3">
+            {mode === "single" && gamePlayers[0] && (
+              <div className="text-right hidden md:block">
+                <div className="text-[10px] text-gray-500 uppercase">Budget</div>
+                <div className={`font-black text-sm ${gamePlayers[0].budget >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  €{gamePlayers[0].budget}M
+                </div>
+              </div>
+            )}
+
+            <button onClick={onNextSeason} disabled={!canNextSeason}
+              className={`px-5 py-2.5 rounded-xl font-black text-sm transition-all duration-200 ${
+                canNextSeason
+                  ? "btn-primary text-black hover:scale-105 active:scale-95"
+                  : "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
+              }`}>
+              Next Season →
+            </button>
+
+            {gameLengthMode === "infinite" && onFinishGame && (
+              <button onClick={onFinishGame}
+                className="px-4 py-2.5 rounded-xl font-bold text-sm bg-red-900/40 border border-red-500/30 text-red-400 hover:bg-red-800/40 transition-all">
+                End
+              </button>
+            )}
+          </div>
+
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={onOpenHowToPlay}
-            className="px-4 py-2 rounded-xl bg-blue-700 transition-all active:scale-95"
-          >
-            How To Play
-          </button>
-
-          <button
-            onClick={onRestart}
-            className="px-4 py-2 rounded-xl bg-red-700 transition-all active:scale-95"
-          >
-            Restart
-          </button>
-        </div>
-
+        {/* Pending slot bar */}
+        {pendingSlot && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400/80 animate-fade-in">
+            <span className="animate-pulse">⏳</span>
+            <span>Selecting player for <strong className="text-yellow-300">{pendingSlot}</strong></span>
+            {timerSeconds !== null && (
+              <span className={timerDanger ? "text-red-400 font-black animate-pulse" : "text-gray-500"}>
+                — {timer}s remaining
+              </span>
+            )}
+          </div>
+        )}
       </div>
-
-      <div className="text-center mb-3">
-        <button
-          onClick={onSeasonClick}
-          className="text-2xl font-bold text-yellow-300 transition-all active:scale-95"
-        >
-          Season {season}
-        </button>
-      </div>
-
-      {mode === "versus" && (
-        <div className="text-center text-yellow-400 font-bold mb-3">
-          Current Turn: {currentTeamName}
-        </div>
-      )}
-
-      {message && (
-        <div className="bg-yellow-500/20 border border-yellow-500 rounded-xl p-3 text-center">
-          {message}
-        </div>
-      )}
-
-    </div>
+    </header>
   );
 }

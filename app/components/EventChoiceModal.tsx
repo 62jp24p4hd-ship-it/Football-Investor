@@ -1,130 +1,51 @@
 "use client";
 
-import type {
-  PlayerEventEffect,
-} from "../game/types";
+import type { SeasonEvent } from "../game/types";
 
-type EventChoiceModalProps = {
-  open: boolean;
-  events: PlayerEventEffect[];
-  onChoose: (
-    event: PlayerEventEffect
-  ) => void;
+type Props = {
+  option1: SeasonEvent;
+  option2: SeasonEvent;
+  onChoose: (event: SeasonEvent) => void;
 };
 
-export default function EventChoiceModal(
-  props: EventChoiceModalProps
-) {
-  const {
-    open,
-    events,
-    onChoose,
-  } = props;
-
-  if (!open) {
-    return null;
-  }
-
+export default function EventChoiceModal({ option1, option2, onChoose }: Props) {
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0f14] border border-purple-500/40 rounded-3xl w-full max-w-lg overflow-hidden">
+        <div className="p-6">
 
-      <div className="bg-zinc-950 border border-yellow-500 rounded-2xl p-6 w-full max-w-4xl">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">⚡</div>
+            <h2 className="text-2xl font-black text-white">Choose Your Boost</h2>
+            <p className="text-gray-400 text-sm mt-1">
+              You sold a player for over €100M! Choose one special event.
+            </p>
+          </div>
 
-        <h2 className="text-3xl font-bold text-center mb-3">
-          🎲 Event Choice Card
-        </h2>
-
-        <p className="text-center text-gray-400 mb-6">
-          Choose one event
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-4">
-
-          {events.map((event) => (
-            <button
-              key={event.title}
-              onClick={() =>
-                onChoose(event)
-              }
-              className={`
-                border
-                rounded-xl
-                p-5
-                text-left
-                transition-all
-                duration-150
-                active:scale-95
-                ${
-                  event.tone === "good"
-                    ? "border-green-500 bg-green-950/40"
-                    : "border-red-500 bg-red-950/40"
-                }
-              `}
-            >
-              <div className="text-2xl font-bold mb-3">
-                {event.title}
-              </div>
-
-              <div className="space-y-2 text-sm">
-
-                <div>
-                  Rating:
-                  {" "}
-                  {event.ratingChange > 0
-                    ? "+"
-                    : ""}
-                  {event.ratingChange}
+          <div className="flex flex-col gap-4">
+            {[option1, option2].map((event, i) => (
+              <button
+                key={i}
+                onClick={() => onChoose(event)}
+                className="bg-white/5 border border-purple-500/30 hover:border-purple-400/60 rounded-2xl p-5 text-left transition-all hover:scale-[1.02] active:scale-95 group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl">
+                    {i === 0 ? "🌟" : "⚡"}
+                  </div>
+                  <div>
+                    <div className="font-black text-white text-lg group-hover:text-purple-300 transition-colors">
+                      {event.title}
+                    </div>
+                    <div className="text-sm text-gray-400 mt-1">{event.description}</div>
+                  </div>
                 </div>
-
-                <div>
-                  Games:
-                  {" "}
-                  {event.gamesChange > 0
-                    ? "+"
-                    : ""}
-                  {event.gamesChange}
-                </div>
-
-                <div>
-                  Goals:
-                  {" "}
-                  {event.goalsChange > 0
-                    ? "+"
-                    : ""}
-                  {event.goalsChange}
-                </div>
-
-                <div>
-                  Assists:
-                  {" "}
-                  {event.assistsChange > 0
-                    ? "+"
-                    : ""}
-                  {event.assistsChange}
-                </div>
-
-                <div>
-                  Clean Sheets:
-                  {" "}
-                  {event.cleanSheetsChange > 0
-                    ? "+"
-                    : ""}
-                  {event.cleanSheetsChange}
-                </div>
-
-                <div className="font-bold text-yellow-300">
-                  Value x{event.multiplier}
-                </div>
-
-              </div>
-
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }

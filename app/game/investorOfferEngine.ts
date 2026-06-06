@@ -1,153 +1,205 @@
+// ============================================
+// FOOTBALL INVESTOR 1.8 - INVESTOR OFFER ENGINE
+// ============================================
+
 import type {
-  GamePlayer,
   InvestorOfferState,
+  GamePlayer,
   Player,
+  NewsItem,
+  OwnedPlayer,
+  Contract,
 } from "./types";
+import { pickRandom, randomId, shuffle } from "./helpers";
+import { createInvestorOfferValue, getOfferTone, getOfferDifferenceText } from "./valueEngine";
+import { getCurrentValue } from "./valueEngine";
+import { createInvestorOfferNews } from "./newsEngine";
+import { generateRequiredSalary, finalizeContract } from "./contractEngine";
 
-import {
-  pickRandom,
-  shuffle,
-} from "./helpers";
-
-export function createInvestorOfferValue(
-  marketValue: number
-) {
-  const minOffer =
-    Math.max(
-      1,
-      Math.round(marketValue * 0.7)
-    );
-
-  const maxOffer =
-    Math.max(
-      minOffer,
-      Math.round(marketValue * 1.7)
-    );
-
-  return (
-    Math.floor(
-      Math.random() *
-        (maxOffer - minOffer + 1)
-    ) + minOffer
-  );
-}
+// ============================================
+// GET CANDIDATES FOR INVESTOR OFFER
+// ============================================
 
 export function getInvestorOfferCandidates(
   playerPool: Player[],
-  season: number,
-  players: GamePlayer[]
-) {
-  const ownedNames =
-    new Set(
-      players.flatMap((gamePlayer) =>
-        gamePlayer.owned.map(
-          (owned) => owned.player.name
-        )
-      )
-    );
+  currentSeason: number,
+  gamePlayers: GamePlayer[]
+): Player[] {
+  const ownedNames = new Set(
+    gamePlayers.flatMap((gp) => gp.owned.map((item) => item.player.name))
+  );
 
-  return shuffle(
-    playerPool.filter(
-      (player) =>
-        player.availableSeason === season &&
-        !ownedNames.has(player.name)
-    )
-  ).slice(0, 3);
+  const available = playerPool.filter(
+    (p) =>
+      p.availableSeason === currentSeason &&
+      !ownedNames.has(p.name)
+  );
+
+  return shuffle(available).slice(0, 3);
 }
 
-export function createInvestorOfferState(
+// ============================================
+// CREATE INVESTOR OFFER STATE
+// ============================================
+
+export function createInvestorOffer(
   playerPool: Player[],
-  season: number,
-  players: GamePlayer[],
-  targetPlayerIndex: number,
-  getValue: (player: Player) => number
+  currentSeason: number,
+  gamePlayers: GamePlayer[]
 ): InvestorOfferState | null {
-  const candidates =
-    getInvestorOfferCandidates(
-      playerPool,
-      season,
-      players
-    );
+  const candidates = getInvestorOfferCandidates(
+    playerPool,
+    currentSeason,
+    gamePlayers
+  );
 
-  if (candidates.length === 0) {
-    return null;
-  }
+  if (candidates.length === 0) return null;
 
-  const selectedPlayer =
-    pickRandom(candidates);
-
-  const marketValue =
-    getValue(selectedPlayer);
-
-  const offerValue =
-    createInvestorOfferValue(
-      marketValue
-    );
+  const selectedPlayer = pickRandom(candidates);
+  const marketValue = getCurrentValue(selectedPlayer, currentSeason);
+  const offerValue = createInvestorOfferValue(marketValue);
+  const offerTone = getOfferTone(offerValue, marketValue);
 
   return {
-    targetPlayerIndex,
+    candidates,
     selectedPlayer,
     marketValue,
     offerValue,
+    offerTone,
   };
 }
 
-export function canAffordInvestorOffer(
+// ============================================
+// ACCEPT INVESTOR OFFER
+// ============================================
+
+export function acceptInvestorOffer(
   offer: InvestorOfferState,
-  player: GamePlayer
-) {
-  return player.budget >= offer.offerValue;
+  gamePlayers: GamePlayer[],
+  activeIndex: number,
+  currentSeason: number
+): { updatedPlayers: GamePlayer[]; newsItem: NewsItem } {
+  const player = offer.selectedPlayer;
+  const price = offer.offerValue;
+  const slot = player.position;
+
+  // Auto-generate contract for investor offer
+  const requiredSalary = generateRequiredSalary(offer.marketValue);
+  const contract: Contract = finalizeContract(
+    {
+      player,
+      slot,
+      offeredSalary: requiredSalary,
+      offeredDuration: 2,
+      satisfaction: 75,
+      requiredSalary,
+      marketValue: offer.marketValue,
+      timer: 60,
+      attempts: 0,
+    },
+    currentSeason
+  );
+
+  const newOwned: OwnedPlayer = {
+    player,
+    slot,
+    buySeason: currentSeason,
+    buyPrice: price,
+    contract,
+    sponsorships: [],
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== activeIndex) return gp;
+
+    // Remove any existing player in the same position
+    const filteredOwned = gp.owned.filter(
+      (item) => item.slot !== slot
+    );
+
+    return {
+      ...gp,
+      budget: gp.budget - price,
+      owned: [...filteredOwned, newOwned],
+    };
+  });
+
+  const newsItem = createInvestorOfferNews(
+    currentSeason,
+    player.name,
+    offer.offerValue,
+    offer.marketValue,
+    true
+  );
+
+  return { updatedPlayers, newsItem };
 }
 
-export function getInvestorOfferProfitText(
-  offer: InvestorOfferState
-) {
-  const difference =
-    offer.offerValue -
-    offer.marketValue;
+// ============================================
+// REJECT INVESTOR OFFER
+// ============================================
 
-  if (difference > 0) {
-    return `Above market by €${difference}M`;
-  }
-
-  if (difference < 0) {
-    return `Below market by €${Math.abs(difference)}M`;
-  }
-
-  return "Fair market value";
+export function rejectInvestorOffer(
+  offer: InvestorOfferState,
+  currentSeason: number
+): NewsItem {
+  return createInvestorOfferNews(
+    currentSeason,
+    offer.selectedPlayer.name,
+    offer.offerValue,
+    offer.marketValue,
+    false
+  );
 }
 
-export function getInvestorOfferTone(
-  offer: InvestorOfferState
-) {
-  const ratio =
-    offer.offerValue /
-    offer.marketValue;
+// ============================================
+// CAN AFFORD OFFER
+// ============================================
 
-  if (ratio <= 0.85) {
-    return "good";
-  }
-
-  if (ratio >= 1.35) {
-    return "bad";
-  }
-
-  return "neutral";
+export function canAffordOffer(
+  offer: InvestorOfferState,
+  gp: GamePlayer
+): boolean {
+  return gp.budget >= offer.offerValue;
 }
 
-export function getInvestorOfferMessage(
-  offer: InvestorOfferState
-) {
-  const tone =
-    getInvestorOfferTone(offer);
+// ============================================
+// OFFER UI HELPERS
+// ============================================
 
-  if (tone === "good") {
-    return "This looks like a bargain.";
+export function getOfferMessage(offer: InvestorOfferState): string {
+  const tone = getOfferTone(offer.offerValue, offer.marketValue);
+  if (tone === "good") return "🟢 This looks like a bargain! Don't miss it.";
+  if (tone === "bad") return "🔴 This offer is above market value. Be careful.";
+  return "🟡 This is a fair deal at market price.";
+}
+
+export function getOfferDiffDisplay(offer: InvestorOfferState): {
+  text: string;
+  color: string;
+} {
+  const diff = offer.offerValue - offer.marketValue;
+  if (diff < 0) {
+    return {
+      text: `€${Math.abs(diff)}M below market ✅`,
+      color: "text-emerald-400",
+    };
   }
-
-  if (tone === "bad") {
-    return "This offer is expensive.";
+  if (diff > 0) {
+    return {
+      text: `€${diff}M above market ⚠️`,
+      color: "text-red-400",
+    };
   }
+  return {
+    text: "Exactly at market value",
+    color: "text-yellow-400",
+  };
+}
 
-  return "This is a balanced offer.";
+export function getOfferBorderColor(offer: InvestorOfferState): string {
+  const tone = getOfferTone(offer.offerValue, offer.marketValue);
+  if (tone === "good") return "border-emerald-500";
+  if (tone === "bad") return "border-red-500";
+  return "border-yellow-500";
 }

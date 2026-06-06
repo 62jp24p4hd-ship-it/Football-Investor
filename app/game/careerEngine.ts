@@ -1,171 +1,190 @@
-import type {
-  HiddenPlayerType,
-  Player,
-  SeasonStats,
-} from "./types";
+// ============================================
+// FOOTBALL INVESTOR 1.8 - CAREER ENGINE
+// ============================================
 
-import {
-  CLASSIC_END_SEASON,
-} from "./constants";
+import type { Player, HiddenPlayerType, SeasonStats } from "./types";
+import { randomBetween, pickRandom, randomId } from "./helpers";
+import { getBaseRating, generateSeasonStats } from "./statsEngine";
+import { getRetirementChance } from "./helpers";
+import { GAME_END_SEASON } from "./constants";
 
-import {
-  randomBetween,
-} from "./helpers";
+// ============================================
+// DETERMINE HIDDEN TYPE
+// ============================================
 
-import {
-  generateStatsForSeason,
-} from "./statsEngine";
+export function determineHiddenType(player: Player): HiddenPlayerType {
+  if (player.secret) return "secret";
+  if (player.hiddenType) return player.hiddenType;
 
-export function getHiddenTypeForPlayer(
-  player: Partial<Player>
-): HiddenPlayerType {
-  if (player.secret) {
+  const rating = getBaseRating(player);
+  const roll = Math.random();
+
+  if (rating >= 84) {
+    // High rated → more likely talent
+    if (roll < 0.55) return "talent";
+    if (roll < 0.75) return "normal";
+    return "trap";
+  }
+
+  if (rating <= 65) {
+    // Low rated → more likely trap
+    if (roll < 0.45) return "trap";
+    if (roll < 0.75) return "normal";
     return "talent";
   }
 
-  if (player.hiddenType) {
-    return player.hiddenType;
-  }
-
-  const roll =
-    Math.random();
-
-  if (roll < 0.18) {
-    return "talent";
-  }
-
-  if (roll < 0.45) {
-    return "flop";
-  }
-
+  // Mid-rated
+  if (roll < 0.15) return "talent";
+  if (roll < 0.45) return "trap";
   return "normal";
 }
 
-export function buildDynamicCareer(
-  rawPlayer: Omit<
-    Player,
-    "hiddenType" | "secret" | "values" | "statsBySeason"
-  > &
-    Partial<
-      Pick<
-        Player,
-        "hiddenType" | "secret" | "values" | "statsBySeason"
-      >
-    >
-): Player {
-  const hiddenType =
-    getHiddenTypeForPlayer(
-      rawPlayer
-    );
+// ============================================
+// BUILD FULL DYNAMIC CAREER
+// ============================================
 
-  const statsBySeason: Record<
-    number,
-    SeasonStats
-  > = {};
+export function buildDynamicCareer(player: Player): Player {
+  const hiddenType = determineHiddenType(player);
 
-  const values: Record<
-    number,
-    number
-  > = {};
+  const statsBySeason: Record<number, SeasonStats> = {};
+  const values: Record<number, number> = {};
 
-  let previousStats: SeasonStats | null =
-    null;
+  let previousStats: SeasonStats | null = null;
 
-  for (
-    let season =
-      rawPlayer.availableSeason;
-    season <= CLASSIC_END_SEASON;
-    season++
-  ) {
-    const stats =
-      generateStatsForSeason(
-        {
-          ...rawPlayer,
-          hiddenType,
-          secret:
-            rawPlayer.secret ?? false,
-          values: {},
-          statsBySeason: {},
-        },
-        season,
-        previousStats,
-        hiddenType
-      );
+  const endSeason = Math.max(GAME_END_SEASON, player.availableSeason + 10);
 
-    statsBySeason[season] =
-      stats;
-
-    values[season] =
-      stats.value;
-
-    previousStats =
-      stats;
+  for (let s = player.availableSeason; s <= endSeason; s++) {
+    const stats = generateSeasonStats(player, s, previousStats, hiddenType);
+    statsBySeason[s] = stats;
+    values[s] = stats.value;
+    previousStats = stats;
   }
 
   return {
-    ...rawPlayer,
+    ...player,
+    id: player.id ?? `p_${randomId()}`,
     hiddenType,
-    secret:
-      rawPlayer.secret ?? false,
+    rating: statsBySeason[player.availableSeason]?.rating ?? player.rating ?? 70,
     values,
     statsBySeason,
-    sponsorship:
-      rawPlayer.sponsorship ?? null,
   };
 }
 
-export function buildDynamicPlayers<
-  T extends Omit<
-    Player,
-    "hiddenType" | "secret" | "values" | "statsBySeason"
-  > &
-    Partial<
-      Pick<
-        Player,
-        "hiddenType" | "secret" | "values" | "statsBySeason"
-      >
-    >
->(players: T[]) {
-  return players.map(
-    (player) =>
-      buildDynamicCareer(player)
-  );
+// ============================================
+// BUILD MULTIPLE PLAYERS
+// ============================================
+
+export function buildDynamicPlayers(list: Player[]): Player[] {
+  return list.map((p) => buildDynamicCareer(p));
 }
 
-export function createRetirementChance(
-  age: number
-) {
-  if (age < 30) {
-    return 0;
-  }
+// ============================================
+// RETIREMENT SYSTEM
+// ============================================
 
-  if (age <= 32) {
-    return 2;
-  }
+export function shouldPlayerRetire(
+  player: Player,
+  targetSeason: number
+): boolean {
+  if (player.secret) return false;
 
-  if (age <= 35) {
-    return 5;
-  }
+  const age = player.startAge + (targetSeason - player.availableSeason);
+  const chance = getRetirementChance(age);
 
-  if (age <= 38) {
-    return 10;
-  }
-
-  return 20;
+  if (chance <= 0) return false;
+  return Math.random() < chance;
 }
 
-export function shouldRetire(
-  age: number
-) {
-  const chance =
-    createRetirementChance(age);
+export type RetirementResult = {
+  retired: boolean;
+  playerName: string;
+  age: number;
+};
 
-  if (chance <= 0) {
-    return false;
+export function applyRetirementToSquad(
+  ownedPlayers: { player: Player; slot: string; buySeason: number; buyPrice: number }[],
+  newSeason: number
+): {
+  surviving: typeof ownedPlayers;
+  retired: RetirementResult[];
+} {
+  const surviving: typeof ownedPlayers = [];
+  const retired: RetirementResult[] = [];
+
+  for (const item of ownedPlayers) {
+    const age = item.player.startAge + (newSeason - item.player.availableSeason);
+    if (shouldPlayerRetire(item.player, newSeason)) {
+      retired.push({
+        retired: true,
+        playerName: item.player.name,
+        age,
+      });
+    } else {
+      surviving.push(item);
+    }
   }
 
-  return randomBetween(
-    1,
-    100
-  ) <= chance;
+  return { surviving, retired };
+}
+
+// ============================================
+// CAREER PEEK (for scouting display)
+// ============================================
+
+export function getCareerPeakValue(player: Player): number {
+  if (!player.values) return 1;
+  return Math.max(...Object.values(player.values));
+}
+
+export function getCareerPeakSeason(player: Player): number {
+  if (!player.values) return player.availableSeason;
+  let peak = player.availableSeason;
+  let peakVal = 0;
+  for (const [season, val] of Object.entries(player.values)) {
+    if (val > peakVal) {
+      peakVal = val;
+      peak = Number(season);
+    }
+  }
+  return peak;
+}
+
+export function getCareerTrajectory(
+  player: Player,
+  fromSeason: number,
+  toSeason: number
+): number[] {
+  const result: number[] = [];
+  for (let s = fromSeason; s <= toSeason; s++) {
+    result.push(player.values?.[s] ?? 0);
+  }
+  return result;
+}
+
+// ============================================
+// PLAYER PROGRESSION LABEL
+// ============================================
+
+export function getProgressionLabel(
+  hiddenType: HiddenPlayerType | undefined
+): string {
+  switch (hiddenType) {
+    case "talent": return "🌟 High Potential";
+    case "trap": return "⚠️ Risky Investment";
+    case "secret": return "🟡 Secret Card";
+    case "normal": return "📊 Steady Player";
+    default: return "❓ Unknown";
+  }
+}
+
+export function getHiddenTypeColor(
+  hiddenType: HiddenPlayerType | undefined
+): string {
+  switch (hiddenType) {
+    case "talent": return "text-emerald-400";
+    case "trap": return "text-orange-400";
+    case "secret": return "text-yellow-300";
+    case "normal": return "text-blue-400";
+    default: return "text-gray-400";
+  }
 }
