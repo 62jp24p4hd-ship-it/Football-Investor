@@ -12,7 +12,7 @@ type Props = {
   season: number;
   marketMultiplier: number;
   isActive: boolean;
-  mode: "single" | "versus" | "ai";
+  mode: "single" | "versus";
   onUseCard: (playerIndex: number, card: RewardCard) => void;
   onShowStats: () => void;
   onSkipTurn?: () => void;

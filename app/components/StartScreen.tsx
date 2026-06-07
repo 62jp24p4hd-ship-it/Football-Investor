@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import type { BudgetMode, GameMode, EventType } from "../game/types";
-import type { AIDifficulty } from "../game/aiEngine";
-import { AI_DIFFICULTY_CONFIG } from "../game/aiEngine";
 
 type StartConfig = {
   mode: GameMode;
@@ -14,7 +12,6 @@ type StartConfig = {
   eventType: EventType;
   timerSeconds: number | null;
   gameLengthMode: "classic" | "infinite";
-  aiDifficulty?: AIDifficulty;
 };
 
 type Props = { onStart: (config: StartConfig) => void };
@@ -53,11 +50,10 @@ export default function StartScreen({ onStart }: Props) {
   const [easterClicks, setEasterClicks] = useState(0);
   const [easterUnlocked, setEasterUnlocked] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
-  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>("manager");
 
   function handleStart() {
     if (!mode) return;
-    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, aiDifficulty });
+    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode });
   }
 
   const sectionStyle = {
@@ -136,12 +132,11 @@ export default function StartScreen({ onStart }: Props) {
         {/* Game Mode */}
         <div style={sectionStyle}>
           <div className={sectionTitle}>Game Mode — وضع اللعبة</div>
-          <div className="grid grid-cols-3 gap-3">
-            {(["single","versus","ai"] as const).map((m) => {
+          <div className="grid grid-cols-2 gap-3">
+            {(["single","versus"] as const).map((m) => {
               const cfg = {
                 single: { emoji: "👤", en: "Single Player", ar: "لاعب واحد", color: "#10b981" },
                 versus: { emoji: "👥", en: "Versus Friend", ar: "ضد صديق", color: "#3b82f6" },
-                ai:     { emoji: "🤖", en: "vs AI", ar: "ضد الكمبيوتر", color: "#a855f7" },
               }[m];
               return (
                 <button key={m} onClick={() => setMode(m)}
@@ -158,30 +153,6 @@ export default function StartScreen({ onStart }: Props) {
               );
             })}
           </div>
-
-          {/* AI Difficulty */}
-          {mode === "ai" && (
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 uppercase tracking-widest mb-3 font-bold">AI Difficulty — صعوبة الخصم</div>
-              <div className="grid grid-cols-3 gap-3">
-                {(["scout","manager","director"] as const).map((d) => {
-                  const cfg = AI_DIFFICULTY_CONFIG[d];
-                  return (
-                    <button key={d} onClick={() => setAiDifficulty(d)}
-                      className="py-4 rounded-none font-black transition-all duration-200 hover:scale-[1.02]"
-                      style={aiDifficulty === d ? {
-                        borderColor: cfg.color, borderWidth: 2, borderStyle: "solid",
-                        background: `${cfg.color}22`, boxShadow: `0 0 20px ${cfg.color}33`
-                      } : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
-                      <div className="text-2xl mb-1">{cfg.emoji}</div>
-                      <div className="text-white text-sm">{cfg.label}</div>
-                      <div className="text-gray-500 text-xs font-normal mt-1 leading-tight">{cfg.description}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Budget */}
@@ -206,7 +177,7 @@ export default function StartScreen({ onStart }: Props) {
         {mode && (
           <div style={sectionStyle}>
             <div className={sectionTitle}>Team Names — أسماء الفرق</div>
-            <div className={`grid gap-4 ${mode === "versus" || mode === "ai" ? "grid-cols-2" : "grid-cols-1"}`}>
+            <div className={`grid gap-4 ${mode === "versus" ? "grid-cols-2" : "grid-cols-1"}`}>
               <input value={team1Name} onChange={(e) => setTeam1Name(e.target.value)} placeholder="Team 1"
                 className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-none"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }} />
@@ -214,13 +185,6 @@ export default function StartScreen({ onStart }: Props) {
                 <input value={team2Name} onChange={(e) => setTeam2Name(e.target.value)} placeholder="Team 2"
                   className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-none"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }} />
-              )}
-              {mode === "ai" && (
-                <div className="px-4 py-4 font-bold text-base rounded-none flex items-center gap-2"
-                  style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)" }}>
-                  <span>🤖</span>
-                  <span className="text-purple-400">{AI_DIFFICULTY_CONFIG[aiDifficulty].label} AI</span>
-                </div>
               )}
             </div>
           </div>

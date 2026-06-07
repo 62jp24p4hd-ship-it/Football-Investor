@@ -26,8 +26,6 @@ import { shuffle, randomId, pickRandom } from "./game/helpers";
 import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS, ALL_POSITIONS } from "./game/constants";
 import { singleCanNextSeason } from "./game/singleMode";
 import { versusCanNextSeason } from "./game/versusMode";
-import { makeAIDecision, makeAISellDecision, makeAIBidDecision } from "./game/aiEngine";
-import type { AIDifficulty } from "./game/aiEngine";
 
 // Components
 import StartScreen from "./components/StartScreen";
@@ -59,7 +57,6 @@ export default function Home() {
   const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
   const [eventsEnabled, setEventsEnabled] = useState(true);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(15);
-  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>("manager");
 
   // ── Game state ────────────────────────────
   const [season, setSeason] = useState(GAME_START_SEASON);
@@ -97,7 +94,7 @@ export default function Home() {
   const [auctionState, setAuctionState] = useState<AuctionState | null>(null);
 
   // ── Derived ───────────────────────────────
-  const activePlayerIndex = mode === "versus" || mode === "ai" ? turnIndex : 0;
+  const activePlayerIndex = mode === "versus" ? turnIndex : 0;
   const activePlayer = gamePlayers[activePlayerIndex];
   const isFrozen = activePlayer?.frozenSeason === season;
 
@@ -130,182 +127,9 @@ export default function Home() {
     setBasePlayers(buildAllBasePlayers());
   }, [basePlayers.length]);
 
-  // ── AI Turn ────────────────────────────────
-  useEffect(() => {
-    if (mode !== "ai") return;
-    if (!started) return;
-    if (activePlayerIndex !== 1) return;
 
-    const aiPlayer = gamePlayers[1];
-    if (!aiPlayer?.isAI) return;
-    if (pendingSlot || negotiation || auctionState) return;
-    if (basePlayers.length === 0) return;
 
-    const difficulty = aiPlayer.aiDifficulty ?? "manager";
 
-    const timeout = setTimeout(() => {
-
-      // ── 1. البيع أولاً لو عنده فرصة ─────────
-      if (aiPlayer.sellChances > 0 && aiPlayer.owned.length > 0) {
-        const sellDecision = makeAISellDecision(difficulty, aiPlayer, season);
-        if (sellDecision) {
-          const item = aiPlayer.owned[sellDecision.ownedIndex];
-          const sellPrice = (item.currentValue && item.currentValue > 0) ? item.currentValue : item.buyPrice;
-          const profit = sellPrice - item.buyPrice;
-
-          setGamePlayers(prev => prev.map((p, i) => {
-            if (i !== 1) return p;
-            return {
-              ...p,
-              budget: p.budget + sellPrice,
-              sellChances: Math.max(0, p.sellChances - 1),
-              owned: p.owned.filter((_, oi) => oi !== sellDecision.ownedIndex),
-              sold: [...p.sold, {
-                owner: p.name,
-                name: item.player.name,
-                buySeason: item.buySeason,
-                sellSeason: season,
-                buyPrice: item.buyPrice,
-                sellPrice,
-                profit,
-                position: item.player.position,
-              }],
-            };
-          }));
-
-          addNewsItem({
-            id: Date.now(),
-            season,
-            title: `🤖 ${aiPlayer.name} sold ${item.player.name}`,
-            description: `Sold for €${sellPrice}M | Profit: ${profit >= 0 ? "+" : ""}€${profit}M`,
-            tone: profit >= 0 ? "good" : "bad",
-          });
-
-          setTimeout(() => endVersusTurn(), 800);
-          return;
-        }
-      }
-
-      // ── 2. الشراء ─────────────────────────
-      if (aiPlayer.purchaseChances <= 0) {
-        endVersusTurn();
-        return;
-      }
-
-      const seasonPool = basePlayers.filter(p =>
-        p.availableSeason === season &&
-        !aiPlayer.owned.some(o => o.player.name === p.name)
-      );
-
-      const affordablePool = seasonPool.filter(p => {
-        const v = p.statsBySeason?.[season]?.value ?? p.values?.[season] ?? 999;
-        return v <= aiPlayer.budget;
-      });
-
-      if (affordablePool.length === 0) {
-        endVersusTurn();
-        return;
-      }
-
-      // اختار مركز فاضي عشوائي أولاً
-      const emptySlots = ALL_POSITIONS.filter(s =>
-        !aiPlayer.owned.some(o => o.slot === s)
-      );
-
-      if (emptySlots.length === 0) { endVersusTurn(); return; }
-
-      // اختار لاعب يتطابق مع أي مركز فاضي
-      const matchingPlayers = affordablePool.filter(p =>
-        emptySlots.includes(p.position as typeof emptySlots[0])
-      );
-
-      if (matchingPlayers.length === 0) { endVersusTurn(); return; }
-
-      const decision = makeAIDecision(difficulty, matchingPlayers, aiPlayer, season);
-      if (!decision) { endVersusTurn(); return; }
-
-      // الـ slot = مركز اللاعب نفسه
-      const targetSlot = decision.player.position;
-
-      const rawVal = decision.player.statsBySeason?.[season]?.value ??
-        decision.player.values?.[season] ?? Math.round(aiPlayer.budget * 0.3);
-      const value = Math.min(rawVal, aiPlayer.budget);
-      if (value <= 0) { endVersusTurn(); return; }
-
-      const salary = Math.max(1, Math.round(value * 0.08));
-      const newOwned = {
-        player: decision.player,
-        slot: targetSlot,
-        buySeason: season,
-        buyPrice: value,
-        currentValue: value,
-        budgetAtBuy: aiPlayer.budget,
-        contract: {
-          salary,
-          duration: 2,
-          satisfaction: 80,
-          requiredSalary: salary,
-          startSeason: season,
-          endSeason: season + 1,
-        },
-        sponsorships: [] as [],
-      };
-
-      setGamePlayers(prev => {
-        const updated = prev.map((p, i) => {
-          if (i !== 1) return p;
-          return {
-            ...p,
-            budget: Math.max(0, p.budget - value),
-            purchaseChances: Math.max(0, p.purchaseChances - 1),
-            owned: [...p.owned.filter(o => o.slot !== targetSlot), newOwned],
-          };
-        });
-        return updated;
-      });
-
-      addNewsItem({
-        id: Date.now(), season,
-        title: `🤖 ${aiPlayer.name} signed ${decision.player.name}`,
-        description: `${decision.player.position} | €${value}M | ${decision.reason}`,
-        tone: "neutral",
-      });
-
-      setTimeout(() => endVersusTurn(), 600);
-    }, 1200);
-
-    return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePlayerIndex, turnIndex, season, mode, started, basePlayers.length]);
-
-  // ── AI Bid ──────────────────────────────
-  useEffect(() => {
-    if (mode !== "ai" || !auctionState || auctionState.phase !== "bidding") return;
-    const aiPlayer = gamePlayers[1];
-    if (!aiPlayer?.isAI) return;
-    if (auctionState.surrendered?.[1]) return;
-
-    const timeout = setTimeout(() => {
-      const playerRating = auctionState.selectedPlayer
-        ? getSeasonStats(auctionState.selectedPlayer, season)?.rating ?? 70
-        : 70;
-      const bidDecision = makeAIBidDecision(
-        aiPlayer.aiDifficulty ?? "manager",
-        aiPlayer,
-        auctionState.currentBid,
-        auctionState.currentBid * 1.3,
-        playerRating
-      );
-      if (bidDecision.shouldBid) {
-        setAuctionState(prev => prev ? { ...prev, currentBid: prev.currentBid + 5, highestBidder: 1 } : prev);
-      } else {
-        setAuctionState(prev => prev ? { ...prev, surrendered: { ...prev.surrendered, 1: true } } : prev);
-      }
-    }, 600 + Math.random() * 800);
-
-    return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auctionState?.currentBid, auctionState?.phase]);
 
   // ── Generate infinite mode players ────────
   useEffect(() => {
@@ -400,7 +224,7 @@ export default function Home() {
   function startGame(config: {
     mode: GameMode; budgetMode: BudgetMode; team1Name: string; team2Name: string;
     eventsEnabled: boolean; eventType: EventType; timerSeconds: number | null;
-    gameLengthMode: "classic" | "infinite"; aiDifficulty?: AIDifficulty;
+    gameLengthMode: "classic" | "infinite";
   }) {
     setMode(config.mode);
     setBudgetMode(config.budgetMode);
@@ -408,29 +232,16 @@ export default function Home() {
     setEventsEnabled(config.eventsEnabled);
     setTimerSeconds(config.timerSeconds);
     if (config.timerSeconds !== null) setTimer(config.timerSeconds);
-    if (config.aiDifficulty) setAiDifficulty(config.aiDifficulty);
 
     // AI mode uses "versus" internally but with AI as player 2
-    const internalMode = config.mode === "ai" ? "versus" : config.mode;
-    const aiName = config.aiDifficulty
-      ? `🤖 ${config.aiDifficulty.charAt(0).toUpperCase() + config.aiDifficulty.slice(1)}`
-      : "🤖 AI";
-
     const { gamePlayers: gps, news: startNews } = buildInitialState(
-      config.budgetMode, config.team1Name,
-      config.mode === "ai" ? aiName : config.team2Name,
-      internalMode
+      config.budgetMode, config.team1Name, config.team2Name, config.mode
     );
-
-    // Mark player 2 as AI
-    if (config.mode === "ai" && gps[1]) {
-      gps[1] = { ...gps[1], isAI: true, aiDifficulty: config.aiDifficulty ?? "manager" };
-    }
 
     setGamePlayers(gps);
     setNews(startNews);
     setSeason(GAME_START_SEASON);
-    setTurnIndex(getFirstTurn(internalMode));
+    setTurnIndex(getFirstTurn(config.mode));
     setSeasonEvent(null);
     setStarted(true);
   }

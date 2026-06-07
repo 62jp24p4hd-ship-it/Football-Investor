@@ -29,8 +29,7 @@ export type BudgetMode =
 
 export type GameMode =
   | "single"
-  | "versus"
-  | "ai";
+  | "versus";
 
 export type GameLengthMode =
   | "classic"
@@ -229,8 +228,6 @@ export type GamePlayer = {
   frozenSeason: number | null;
   totalSalaryBudget: number;
   sponsorships: Sponsorship[];
-  isAI?: boolean;
-  aiDifficulty?: "scout" | "manager" | "director";
 };
 
 // ============================================

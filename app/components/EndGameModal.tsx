@@ -7,7 +7,7 @@ import { calculateTotalProfit, calculateCurrentPortfolioValue, calculateNetWorth
 type Props = {
   gamePlayers: GamePlayer[];
   season: number;
-  mode: "single" | "versus" | "ai";
+  mode: "single" | "versus";
   onRestart: () => void;
 };
 
