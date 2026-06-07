@@ -139,6 +139,7 @@ export type ContractNegotiation = {
   marketValue: number;
   timer: number;
   attempts: number;
+  isRenewal?: boolean;
 };
 
 // ============================================
