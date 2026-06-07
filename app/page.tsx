@@ -26,7 +26,7 @@ import { shuffle, randomId, pickRandom } from "./game/helpers";
 import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS } from "./game/constants";
 import { singleCanNextSeason } from "./game/singleMode";
 import { versusCanNextSeason } from "./game/versusMode";
-import { makeAIDecision } from "./game/aiEngine";
+import { makeAIDecision, makeAISellDecision, makeAIBidDecision } from "./game/aiEngine";
 import type { AIDifficulty } from "./game/aiEngine";
 
 // Components
@@ -130,7 +130,7 @@ export default function Home() {
     setBasePlayers(buildAllBasePlayers());
   }, [basePlayers.length]);
 
-  // ── AI Turn: يشتغل تلقائياً عندما دور الـ AI ──
+  // ── AI Turn ────────────────────────────────
   useEffect(() => {
     if (mode !== "ai") return;
     if (!started) return;
@@ -138,45 +138,77 @@ export default function Home() {
 
     const aiPlayer = gamePlayers[1];
     if (!aiPlayer?.isAI) return;
-    if (aiPlayer.purchaseChances <= 0) {
-      // دور الـ AI خلص — انتقل للموسم التالي لو اللاعب الأول خلص كمان
-      return;
-    }
     if (pendingSlot || negotiation || auctionState) return;
-    if (basePlayers.length === 0) return; // انتظر تحميل اللاعبين
+    if (basePlayers.length === 0) return;
+
+    const difficulty = aiPlayer.aiDifficulty ?? "manager";
 
     const timeout = setTimeout(() => {
-      // استخدم basePlayers مباشرة مع filtrة الموسم
+
+      // ── 1. البيع أولاً لو عنده فرصة ─────────
+      if (aiPlayer.sellChances > 0 && aiPlayer.owned.length > 0) {
+        const sellDecision = makeAISellDecision(difficulty, aiPlayer, season);
+        if (sellDecision) {
+          const item = aiPlayer.owned[sellDecision.ownedIndex];
+          const sellPrice = (item.currentValue && item.currentValue > 0) ? item.currentValue : item.buyPrice;
+          const profit = sellPrice - item.buyPrice;
+
+          setGamePlayers(prev => prev.map((p, i) => {
+            if (i !== 1) return p;
+            return {
+              ...p,
+              budget: p.budget + sellPrice,
+              sellChances: Math.max(0, p.sellChances - 1),
+              owned: p.owned.filter((_, oi) => oi !== sellDecision.ownedIndex),
+              sold: [...p.sold, {
+                owner: p.name,
+                name: item.player.name,
+                buySeason: item.buySeason,
+                sellSeason: season,
+                buyPrice: item.buyPrice,
+                sellPrice,
+                profit,
+                position: item.player.position,
+              }],
+            };
+          }));
+
+          addNewsItem({
+            id: Date.now(),
+            season,
+            title: `🤖 ${aiPlayer.name} sold ${item.player.name}`,
+            description: `Sold for €${sellPrice}M | Profit: ${profit >= 0 ? "+" : ""}€${profit}M`,
+            tone: profit >= 0 ? "good" : "bad",
+          });
+
+          setTimeout(() => endVersusTurn(), 800);
+          return;
+        }
+      }
+
+      // ── 2. الشراء ─────────────────────────
+      if (aiPlayer.purchaseChances <= 0) {
+        endVersusTurn();
+        return;
+      }
+
       const seasonPool = basePlayers.filter(p =>
         p.availableSeason === season &&
         !aiPlayer.owned.some(o => o.player.name === p.name)
       );
 
-      if (seasonPool.length === 0) {
-        endVersusTurn();
-        return;
-      }
-
-      // AI يختار من pool حقيقي
       const affordablePool = seasonPool.filter(p => {
-        const v = p.statsBySeason?.[season]?.value ??
-          p.values?.[season] ?? p.values?.[p.availableSeason] ?? 999;
+        const v = p.statsBySeason?.[season]?.value ?? p.values?.[season] ?? 999;
         return v <= aiPlayer.budget;
       });
 
-      const pool = affordablePool.length > 0 ? affordablePool : seasonPool.slice(0, 3);
-
-      const decision = makeAIDecision(
-        aiPlayer.aiDifficulty ?? "manager",
-        pool,
-        aiPlayer,
-        season
-      );
-
-      if (!decision) {
+      if (affordablePool.length === 0) {
         endVersusTurn();
         return;
       }
+
+      const decision = makeAIDecision(difficulty, affordablePool, aiPlayer, season);
+      if (!decision) { endVersusTurn(); return; }
 
       const rawVal = decision.player.statsBySeason?.[season]?.value ??
         decision.player.values?.[season] ?? aiPlayer.budget * 0.3;
@@ -191,14 +223,7 @@ export default function Home() {
         buyPrice: value,
         currentValue: value,
         budgetAtBuy: aiPlayer.budget,
-        contract: {
-          salary,
-          duration: 2,
-          satisfaction: 80,
-          requiredSalary: salary,
-          startSeason: season,
-          endSeason: season + 1,
-        },
+        contract: { salary, duration: 2, satisfaction: 80, requiredSalary: salary, startSeason: season, endSeason: season + 1 },
         sponsorships: [] as [],
       };
 
@@ -213,10 +238,9 @@ export default function Home() {
       }));
 
       addNewsItem({
-        id: Date.now(),
-        season,
+        id: Date.now(), season,
         title: `🤖 ${aiPlayer.name} signed ${decision.player.name}`,
-        description: `${decision.player.position} | €${value}M | ${aiPlayer.aiDifficulty === "director" ? "Smart pick" : "Good value"}`,
+        description: `${decision.player.position} | €${value}M | ${decision.reason}`,
         tone: "neutral",
       });
 
@@ -226,6 +250,35 @@ export default function Home() {
     return () => clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePlayerIndex, turnIndex, season, mode, started, basePlayers.length]);
+
+  // ── AI Bid ──────────────────────────────
+  useEffect(() => {
+    if (mode !== "ai" || !auctionState || auctionState.phase !== "bidding") return;
+    const aiPlayer = gamePlayers[1];
+    if (!aiPlayer?.isAI) return;
+    if (auctionState.surrendered?.[1]) return;
+
+    const timeout = setTimeout(() => {
+      const playerRating = auctionState.selectedPlayer
+        ? getSeasonStats(auctionState.selectedPlayer, season)?.rating ?? 70
+        : 70;
+      const bidDecision = makeAIBidDecision(
+        aiPlayer.aiDifficulty ?? "manager",
+        aiPlayer,
+        auctionState.currentBid,
+        auctionState.currentBid * 1.3,
+        playerRating
+      );
+      if (bidDecision.shouldBid) {
+        setAuctionState(prev => prev ? { ...prev, currentBid: prev.currentBid + 5, highestBidder: 1 } : prev);
+      } else {
+        setAuctionState(prev => prev ? { ...prev, surrendered: { ...prev.surrendered, 1: true } } : prev);
+      }
+    }, 600 + Math.random() * 800);
+
+    return () => clearTimeout(timeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auctionState?.currentBid, auctionState?.phase]);
 
   // ── Generate infinite mode players ────────
   useEffect(() => {
@@ -643,6 +696,8 @@ export default function Home() {
   // ============================================
 
   function triggerLegendaryAuction() {
+    // المزايدات فقط في versus وai
+    if (mode === "single") return;
     const state = createAuctionState(allPlayers, season, gamePlayers);
     if (!state) return notify("No auction players available");
     setAuctionState(state);
@@ -1049,7 +1104,7 @@ export default function Home() {
         />
       )}
 
-      {auctionState && (
+      {auctionState && mode !== "single" && (
         <AuctionModal
           state={auctionState}
           gamePlayers={gamePlayers}
