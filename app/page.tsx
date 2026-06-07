@@ -589,7 +589,7 @@ export default function Home() {
     }
 
     const newSeason = season + 1;
-    const setupResult = setupNewSeason(newSeason, currentList);
+    const setupResult = setupNewSeason(newSeason, currentList, mode);
     const eventResult = eventsEnabled
       ? createRandomSeasonEvent(newSeason, setupResult.updatedPlayers)
       : { event: null, updatedPlayers: setupResult.updatedPlayers, newsItems: [] };
@@ -678,10 +678,14 @@ export default function Home() {
     return <StartScreen onStart={startGame} />;
   }
 
+  // versus: يمكن الانتقال بعد شراء لاعب واحد على الأقل (أو انتهاء الفرص)
+  // single: بعد انتهاء كل فرص الشراء
+  // dev unlock: حر تماماً بدون قيود
+  const versusCanNext = gamePlayers.every((gp) => gp.owned.length > 0 || gp.purchaseChances <= 0);
+  const singleCanNext = (gamePlayers[0]?.purchaseChances ?? 0) <= 0;
+
   const canNextSeason = devSeasonUnlocked || (!pendingSlot && !auctionState && !investorOffer && !negotiation &&
-    (mode === "single"
-      ? (gamePlayers[0]?.purchaseChances ?? 0) <= 0
-      : gamePlayers.every((gp) => gp.purchaseChances <= 0)));
+    (mode === "single" ? singleCanNext : versusCanNext));
 
   // ============================================
   // RENDER: GAME
@@ -723,10 +727,11 @@ export default function Home() {
       />
 
       {/* Main layout */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 py-4">
         {mode === "single" ? (
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-            <div className="xl:col-span-2 xl:ml-4">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+            {/* Formation — 2 cols */}
+            <div className="xl:col-span-2">
               <Formation
                 gamePlayer={gamePlayers[0]}
                 playerIndex={0}
@@ -738,7 +743,8 @@ export default function Home() {
                 onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
               />
             </div>
-            <div>
+            {/* Team Panel — 1 col */}
+            <div className="xl:col-span-1">
               <TeamPanel
                 gamePlayer={gamePlayers[0]}
                 playerIndex={0}
@@ -751,40 +757,68 @@ export default function Home() {
                 onSkipTurn={handleSkipTurn}
               />
             </div>
-            <div className="h-[600px]">
+            {/* News — 1 col */}
+            <div className="xl:col-span-1 min-h-[700px]">
               <NewsFeed news={news} seasonEvent={seasonEvent} />
             </div>
           </div>
         ) : (
+          /* Versus: 2 formations side by side + news on right */
           <div className="grid grid-cols-1 xl:grid-cols-7 gap-4">
-            <div className="xl:col-span-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
-              {gamePlayers.map((gp, i) => (
-                <div key={i} className="flex flex-col gap-4">
+            {/* Left formation + panel */}
+            <div className="xl:col-span-2 flex flex-col gap-3">
+              <Formation
+                gamePlayer={gamePlayers[0]}
+                playerIndex={0}
+                season={season}
+                isActive={0 === activePlayerIndex}
+                pendingSlot={0 === activePlayerIndex ? pendingSlot : null}
+                marketMultiplier={marketMultiplier}
+                onSlotClick={handleSlotClick}
+                onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
+              />
+              <TeamPanel
+                gamePlayer={gamePlayers[0]}
+                playerIndex={0}
+                season={season}
+                marketMultiplier={marketMultiplier}
+                isActive={0 === activePlayerIndex}
+                mode={mode}
+                onUseCard={handleUseCard}
+                onShowStats={() => setShowStats(true)}
+                onSkipTurn={handleSkipTurn}
+              />
+            </div>
+            {/* Right formation + panel */}
+            <div className="xl:col-span-2 flex flex-col gap-3">
+              {gamePlayers[1] && (
+                <>
                   <Formation
-                    gamePlayer={gp}
-                    playerIndex={i}
+                    gamePlayer={gamePlayers[1]}
+                    playerIndex={1}
                     season={season}
-                    isActive={i === activePlayerIndex}
-                    pendingSlot={i === activePlayerIndex ? pendingSlot : null}
+                    isActive={1 === activePlayerIndex}
+                    pendingSlot={1 === activePlayerIndex ? pendingSlot : null}
                     marketMultiplier={marketMultiplier}
                     onSlotClick={handleSlotClick}
                     onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
                   />
                   <TeamPanel
-                    gamePlayer={gp}
-                    playerIndex={i}
+                    gamePlayer={gamePlayers[1]}
+                    playerIndex={1}
                     season={season}
                     marketMultiplier={marketMultiplier}
-                    isActive={i === activePlayerIndex}
+                    isActive={1 === activePlayerIndex}
                     mode={mode}
                     onUseCard={handleUseCard}
                     onShowStats={() => setShowStats(true)}
                     onSkipTurn={handleSkipTurn}
                   />
-                </div>
-              ))}
+                </>
+              )}
             </div>
-            <div className="h-[700px]">
+            {/* News — 3 cols wide */}
+            <div className="xl:col-span-3 min-h-[800px]">
               <NewsFeed news={news} seasonEvent={seasonEvent} />
             </div>
           </div>
