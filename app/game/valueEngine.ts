@@ -241,80 +241,63 @@ export function getRatingBg(rating: number): string {
 // أقصى نمو استثنائي: 20% في الموسم
 // ============================================
 
-export type PriceTier = "cheap" | "mid" | "premium" | "elite";
-
-export function getPriceTier(price: number, budget: number): PriceTier {
-  const ratio = price / budget;
-  if (ratio <= 0.2)  return "cheap";
-  if (ratio <= 0.5)  return "mid";
-  if (ratio <= 0.8)  return "premium";
-  return "elite";
-}
-
-const TIER_CONFIG: Record<PriceTier, {
-  dropChance: number;
-  dropMin: number; dropMax: number;
-  stableChance: number;
-  stableMin: number; stableMax: number;
-  growChance: number;
-  growMin: number; growMax: number;
-}> = {
-  cheap: {
-    // رخيص — 55% ينزل، 25% ثابت، 20% يصعد (max 20%)
-    dropChance: 0.55, dropMin: 0.03, dropMax: 0.20,
-    stableChance: 0.25, stableMin: 0.00, stableMax: 0.03,
-    growChance: 0.20, growMin: 0.05, growMax: 0.20,
-  },
-  mid: {
-    // متوسط — 35% ينزل، 35% ثابت، 30% يصعد
-    dropChance: 0.35, dropMin: 0.02, dropMax: 0.15,
-    stableChance: 0.35, stableMin: 0.00, stableMax: 0.04,
-    growChance: 0.30, growMin: 0.04, growMax: 0.15,
-  },
-  premium: {
-    // غالي — 20% ينزل، 45% ثابت/بسيط، 35% يصعد
-    dropChance: 0.20, dropMin: 0.01, dropMax: 0.10,
-    stableChance: 0.45, stableMin: 0.01, stableMax: 0.05,
-    growChance: 0.35, growMin: 0.05, growMax: 0.12,
-  },
-  elite: {
-    // elite — 10% ينزل، 55% نمو بسيط، 35% نمو جيد
-    dropChance: 0.10, dropMin: 0.01, dropMax: 0.07,
-    stableChance: 0.55, stableMin: 0.02, stableMax: 0.07,
-    growChance: 0.35, growMin: 0.07, growMax: 0.15,
-  },
-};
+// ============================================
+// PRICE TIER SYSTEM — نظام جديد كامل
+//
+// القواعد:
+// - لاعب واحد فقط بسعر max (الـ elite) rating فوق 60
+//   نموه 20-30% أقصى شي في الموسم
+// - الباقي متفاوتين: كل ما زاد السعر زاد rating وزادت فرص النمو
+// - كل ما قل السعر قل rating وقلت فرص النمو وزادت فرص النزول
+// - أقصى نمو لأي لاعب = 30% في الموسم الواحد
+// ============================================
 
 function randBetween(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+// احسب نمو اللاعب بناءً على سعره النسبي من الميزانية
 export function applyPriceTierGrowth(
   currentPrice: number,
   budget: number
 ): number {
-  const tier = getPriceTier(currentPrice, budget);
-  const cfg = TIER_CONFIG[tier];
+  if (budget <= 0) return currentPrice;
+
+  const ratio = Math.min(1, currentPrice / budget); // 0.0 → 1.0
   const roll = Math.random();
 
-  let pct: number;
-  let direction: 1 | -1;
+  // كل ما زاد ratio:
+  // - قلت احتمالية النزول
+  // - زادت احتمالية النمو
+  // - زاد سقف النمو (لكن أقصاه 30%)
 
-  if (roll < cfg.dropChance) {
-    pct = randBetween(cfg.dropMin, cfg.dropMax);
-    direction = -1;
-  } else if (roll < cfg.dropChance + cfg.stableChance) {
-    pct = randBetween(cfg.stableMin, cfg.stableMax);
-    direction = 1;
+  const dropChance    = 0.65 - ratio * 0.55;   // 65% → 10%
+  const growBigChance = 0.05 + ratio * 0.25;   // 5% → 30%
+  // الباقي stable أو نمو بسيط
+
+  let changePct: number;
+
+  if (roll < dropChance) {
+    // ينزل: 3-20% حسب كم هو رخيص
+    const maxDrop = 0.20 - ratio * 0.15;       // 20% → 5%
+    changePct = -randBetween(0.02, Math.max(0.03, maxDrop));
+  } else if (roll < dropChance + growBigChance) {
+    // يصعد بشكل ملحوظ: حتى 30% للـ elite
+    const maxGrow = 0.08 + ratio * 0.22;       // 8% → 30%
+    changePct = randBetween(0.06, maxGrow);
   } else {
-    pct = randBetween(cfg.growMin, cfg.growMax);
-    direction = 1;
+    // نمو بسيط أو ثبات: 0-8%
+    changePct = randBetween(0.00, 0.08);
   }
 
-  const newPrice = currentPrice * (1 + direction * pct);
-  // أقصى قيمة = 4x الميزانية الأصلية — ارتفاع أكبر يكون فقط عبر أحداث خاصة
-  const cap = budget * 4;
-  return Math.max(1, Math.min(cap, Math.round(newPrice)));
+  // أقصى تغيير مطلق = 30%
+  changePct = Math.max(-0.30, Math.min(0.30, changePct));
+
+  const newPrice = Math.round(currentPrice * (1 + changePct));
+
+  // أقصى قيمة = 5x الميزانية (الارتفاع الأعلى يكون عبر أحداث خاصة فقط)
+  const cap = Math.round(budget * 5);
+  return Math.max(1, Math.min(cap, newPrice));
 }
 
 // ============================================
@@ -328,44 +311,55 @@ export function guaranteeAffordablePlayer(
 ): import("./types").Player[] {
   if (players.length === 0) return players;
 
-  const getVal = (p: import("./types").Player): number =>
+  const n = players.length;
+
+  // ترتيب اللاعبين من الأغلى للأرخص حسب قيمتهم الأصلية
+  const getOriginalVal = (p: import("./types").Player): number =>
     p.statsBySeason?.[season]?.value ??
     p.values?.[season] ??
     p.values?.[p.availableSeason] ??
     1;
 
-  const getRating = (p: import("./types").Player): number =>
+  const originalRating = (p: import("./types").Player): number =>
     p.statsBySeason?.[season]?.rating ?? p.rating ?? 70;
 
-  const rawVals = players.map(getVal);
-  const maxRaw = Math.max(...rawVals);
-  const minRaw = Math.min(...rawVals);
+  // رتّب من الأعلى قيمة للأدنى
+  const sorted = [...players]
+    .map((p, i) => ({ p, i, val: getOriginalVal(p) }))
+    .sort((a, b) => b.val - a.val);
 
-  // Price range: cheapest = 5% of budget, most expensive = 100%
-  const minPrice = Math.max(1, Math.round(budget * 0.05));
-  const maxPrice = Math.max(minPrice + 1, budget);
+  // أسعار موزّعة: واحد بـ 100%، الباقي بشكل تنازلي
+  // الأول = budget (100%)
+  // الثاني = 70-80%
+  // الثالث = 50-65%
+  // الرابع = 35-50%
+  // الخامس = 20-35%
+  const priceSlots: number[] = sorted.map((_, rank) => {
+    if (rank === 0) return budget;
+    // توزيع تدريجي
+    const ratio = Math.max(0.05, 1 - (rank / (n - 1 || 1)) * 0.95);
+    // أضف تشويش بسيط ±5%
+    const jitter = 1 + (Math.random() - 0.5) * 0.10;
+    return Math.max(1, Math.round(budget * ratio * jitter));
+  });
 
-  function scalePrice(raw: number): number {
-    if (maxRaw === minRaw) return Math.round(budget * 0.5);
-    const ratio = (raw - minRaw) / (maxRaw - minRaw);
-    return Math.max(minPrice, Math.min(maxPrice, Math.round(minPrice + ratio * (maxPrice - minPrice))));
+  // Rating حسب النسبة من الميزانية
+  function scaledRating(priceRatio: number, origRating: number): number {
+    if (priceRatio >= 0.90) return Math.max(61, Math.min(origRating, 90));  // elite: 61+
+    if (priceRatio >= 0.65) return Math.min(origRating, 75);                // premium: ≤75
+    if (priceRatio >= 0.40) return Math.min(origRating, 65);                // mid-high: ≤65
+    if (priceRatio >= 0.20) return Math.min(origRating, 55);                // mid-low: ≤55
+    return Math.min(origRating, 44);                                          // cheap: ≤44
   }
 
-  // Rating يتكيف مع السعر — الرخيص ≤ 49، الغالي يحتفظ بتقييمه الأصلي
-  function scaleRating(originalRating: number, newPrice: number): number {
-    const priceRatio = newPrice / budget;
-    if (priceRatio <= 0.10) return Math.min(originalRating, 44);      // أرخص 10% → max 44
-    if (priceRatio <= 0.20) return Math.min(originalRating, 54);      // 10-20% → max 54
-    if (priceRatio <= 0.40) return Math.min(originalRating, 65);      // 20-40% → max 65
-    if (priceRatio <= 0.70) return Math.min(originalRating, 78);      // 40-70% → max 78
-    return originalRating;                                              // +70% → تقييمه الأصلي
-  }
+  // طبّق الأسعار والتقييمات
+  const result = [...players];
+  sorted.forEach(({ p, i }, rank) => {
+    const newPrice = priceSlots[rank];
+    const ratio = newPrice / budget;
+    const newRating = scaledRating(ratio, originalRating(p));
 
-  return players.map((p, i) => {
-    const newPrice = scalePrice(rawVals[i]);
-    const originalRating = getRating(p);
-    const newRating = scaleRating(originalRating, newPrice);
-    return {
+    result[i] = {
       ...p,
       statsBySeason: p.statsBySeason ? {
         ...p.statsBySeason,
@@ -376,4 +370,6 @@ export function guaranteeAffordablePlayer(
       values: { ...(p.values ?? {}), [season]: newPrice },
     };
   });
+
+  return result;
 }

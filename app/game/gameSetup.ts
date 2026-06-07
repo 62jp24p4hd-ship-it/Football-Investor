@@ -16,7 +16,8 @@ import { applyPriceTierGrowth } from "./valueEngine";
 import { getSingleSeasonChances } from "./singleMode";
 import { getVersusSeasonChances } from "./versusMode";
 import { applyRetirementToSquad } from "./careerEngine";
-import { createRetirementNews, createNewSeasonNews, createGameStartNews } from "./newsEngine";
+import { createRetirementNews, createNewSeasonNews, createGameStartNews, createContractWarningNews, createContractExpiredNews } from "./newsEngine";
+import { isContractExpired, isContractLastSeason } from "./contractEngine";
 
 // ============================================
 // CREATE INITIAL GAME PLAYERS
@@ -120,10 +121,32 @@ export function setupNewSeason(
       );
     });
 
+    // Remove expired contracts (player leaves as free agent)
+    const afterContracts = (surviving as OwnedPlayer[]).filter((item) => {
+      if (isContractExpired(item.contract, newSeason)) {
+        retirementNews.push(createContractExpiredNews(newSeason, item.player.name, gp.name));
+        return false;
+      }
+      return true;
+    });
+
+    // Warn about contracts with 1 season remaining
+    afterContracts.forEach((item) => {
+      if (isContractLastSeason(item.contract, newSeason)) {
+        retirementNews.push(createContractWarningNews(newSeason, item.player.name, gp.name));
+      }
+    });
+
     // Apply price tier growth to each surviving owned player
-    const updatedOwned = (surviving as OwnedPlayer[]).map((item) => {
-      const newVal = applyPriceTierGrowth(item.currentValue, item.budgetAtBuy);
-      return { ...item, currentValue: newVal };
+    const updatedOwned = afterContracts.map((item) => {
+      const effectiveBudget = item.budgetAtBuy && item.budgetAtBuy > 0
+        ? item.budgetAtBuy
+        : Math.max(item.buyPrice * 3, 30); // fallback لو undefined
+      const safeCurrentValue = item.currentValue && item.currentValue > 0
+        ? item.currentValue
+        : item.buyPrice;
+      const newVal = applyPriceTierGrowth(safeCurrentValue, effectiveBudget);
+      return { ...item, currentValue: newVal, budgetAtBuy: effectiveBudget };
     });
 
     return { ...reset, owned: updatedOwned };

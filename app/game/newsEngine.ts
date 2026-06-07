@@ -346,3 +346,57 @@ export function getNewsToneIcon(tone: NewsTone): string {
   if (tone === "special") return "⭐";
   return "📰";
 }
+
+// ============================================
+// CONTRACT WARNING NEWS
+// ============================================
+
+export function createContractWarningNews(
+  season: number,
+  playerName: string,
+  ownerName: string
+): import("./types").NewsItem {
+  return {
+    id: randomId(),
+    season,
+    title: `📋 Contract Alert — ${playerName}`,
+    description: `${playerName} (${ownerName}) has only 1 season remaining on his contract. Renew now or lose him for free next season.`,
+    tone: "bad",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+}
+
+export function createContractExpiredNews(
+  season: number,
+  playerName: string,
+  ownerName: string
+): import("./types").NewsItem {
+  return {
+    id: randomId(),
+    season,
+    title: `🚪 Free Agent — ${playerName}`,
+    description: `${playerName} has left ${ownerName} as a free agent. His contract expired and was not renewed.`,
+    tone: "bad",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+}
+
+export function createContractRenewalNews(
+  season: number,
+  playerName: string,
+  ownerName: string,
+  duration: number,
+  salary: number
+): import("./types").NewsItem {
+  return {
+    id: randomId(),
+    season,
+    title: `✍️ Contract Renewed — ${playerName}`,
+    description: `${playerName} signs a new ${duration}-year contract with ${ownerName}. Salary: €${salary}M/yr.`,
+    tone: "good",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+}

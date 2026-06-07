@@ -99,77 +99,6 @@ export default function Home() {
   // ── Derived ───────────────────────────────
   const activePlayerIndex = mode === "versus" || mode === "ai" ? turnIndex : 0;
   const activePlayer = gamePlayers[activePlayerIndex];
-
-  // ── AI Turn: يشتغل تلقائياً عندما دور الـ AI ──
-  useEffect(() => {
-    if (mode !== "ai") return;
-    const aiPlayer = gamePlayers[1];
-    if (!aiPlayer?.isAI) return;
-    if (activePlayerIndex !== 1) return;
-    if (aiPlayer.purchaseChances <= 0) return;
-    if (pendingSlot || negotiation || auctionState) return;
-
-    // تأخير بسيط عشان يبدو طبيعي
-    const timeout = setTimeout(() => {
-      const decision = makeAIDecision(
-        aiPlayer.aiDifficulty ?? "manager",
-        allPlayers,
-        aiPlayer,
-        season
-      );
-
-      if (!decision) {
-        // ما لقى لاعب — ينهي الدور
-        endVersusTurn();
-        return;
-      }
-
-      // اشتري اللاعب تلقائياً
-      const value = getCurrentValue(decision.player, season, marketMultiplier);
-      const contract = {
-        salary: Math.max(1, Math.round(value * 0.08)),
-        duration: 2,
-        satisfaction: 80,
-        requiredSalary: Math.max(1, Math.round(value * 0.08)),
-        startSeason: season,
-        endSeason: season + 1,
-      };
-
-      const newOwned = {
-        player: decision.player,
-        slot: decision.slot,
-        buySeason: season,
-        buyPrice: value,
-        currentValue: value,
-        budgetAtBuy: aiPlayer.budget,
-        contract,
-        sponsorships: [],
-      };
-
-      setGamePlayers(prev => prev.map((p, i) => {
-        if (i !== 1) return p;
-        return {
-          ...p,
-          budget: p.budget - value,
-          purchaseChances: p.purchaseChances - 1,
-          owned: [...p.owned.filter(o => o.slot !== decision.slot), newOwned],
-        };
-      }));
-
-      addNewsItem({
-        id: Date.now(),
-        season,
-        title: `🤖 AI signed ${decision.player.name}`,
-        description: `${aiPlayer.name} signed ${decision.player.name} for €${value}M (${decision.reason})`,
-        tone: "neutral",
-      });
-
-      // بعد الشراء ينهي الدور
-      setTimeout(() => endVersusTurn(), 300);
-    }, 1200);
-
-    return () => clearTimeout(timeout);
-  }, [activePlayerIndex, mode, season, gamePlayers, pendingSlot, negotiation, auctionState]);
   const isFrozen = activePlayer?.frozenSeason === season;
 
   const marketMultiplier = seasonEvent?.marketMultiplier ?? 1;
@@ -200,6 +129,73 @@ export default function Home() {
     if (basePlayers.length > 0) return;
     setBasePlayers(buildAllBasePlayers());
   }, [basePlayers.length]);
+
+  // ── AI Turn: يشتغل تلقائياً عندما دور الـ AI ──
+  useEffect(() => {
+    if (mode !== "ai") return;
+    const aiPlayer = gamePlayers[1];
+    if (!aiPlayer?.isAI) return;
+    if (activePlayerIndex !== 1) return;
+    if (aiPlayer.purchaseChances <= 0) return;
+    if (pendingSlot || negotiation || auctionState) return;
+
+    const timeout = setTimeout(() => {
+      const decision = makeAIDecision(
+        aiPlayer.aiDifficulty ?? "manager",
+        allPlayers,
+        aiPlayer,
+        season
+      );
+
+      if (!decision) {
+        endVersusTurn();
+        return;
+      }
+
+      const value = getCurrentValue(decision.player, season, marketMultiplier);
+      const salary = Math.max(1, Math.round(value * 0.08));
+      const newOwned = {
+        player: decision.player,
+        slot: decision.slot,
+        buySeason: season,
+        buyPrice: value,
+        currentValue: value,
+        budgetAtBuy: aiPlayer.budget,
+        contract: {
+          salary,
+          duration: 2,
+          satisfaction: 80,
+          requiredSalary: salary,
+          startSeason: season,
+          endSeason: season + 1,
+        },
+        sponsorships: [],
+      };
+
+      setGamePlayers(prev => prev.map((p, i) => {
+        if (i !== 1) return p;
+        return {
+          ...p,
+          budget: p.budget - value,
+          purchaseChances: p.purchaseChances - 1,
+          owned: [...p.owned.filter(o => o.slot !== decision.slot), newOwned],
+        };
+      }));
+
+      addNewsItem({
+        id: Date.now(),
+        season,
+        title: `🤖 ${aiPlayer.name} signed ${decision.player.name}`,
+        description: `Transfer Fee: €${value}M | Contract: 2 years`,
+        tone: "neutral",
+      });
+
+      setTimeout(() => endVersusTurn(), 400);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlayerIndex, mode, season, turnIndex]);
 
   // ── Generate infinite mode players ────────
   useEffect(() => {
