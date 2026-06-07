@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { BudgetMode, GameMode, EventType } from "../game/types";
+import type { AIDifficulty } from "../game/aiEngine";
+import { AI_DIFFICULTY_CONFIG } from "../game/aiEngine";
 
 type StartConfig = {
   mode: GameMode;
@@ -12,6 +14,7 @@ type StartConfig = {
   eventType: EventType;
   timerSeconds: number | null;
   gameLengthMode: "classic" | "infinite";
+  aiDifficulty?: AIDifficulty;
 };
 
 type Props = { onStart: (config: StartConfig) => void };
@@ -90,10 +93,11 @@ export default function StartScreen({ onStart }: Props) {
   const [easterClicks, setEasterClicks] = useState(0);
   const [easterUnlocked, setEasterUnlocked] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>("manager");
 
   function handleStart() {
     if (!mode) return;
-    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode });
+    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, aiDifficulty });
   }
 
   const sectionStyle = {
@@ -148,13 +152,13 @@ export default function StartScreen({ onStart }: Props) {
 
         {/* How To Play */}
         <button onClick={() => setShowHowToPlay(!showHowToPlay)}
-          className="w-full mb-5 py-4 rounded-2xl font-bold text-base transition-all"
+          className="w-full mb-5 py-4 rounded-none font-bold text-base transition-all"
           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#9ca3af" }}>
           {showHowToPlay ? "▲ إخفاء الدليل — Hide Guide" : "📖 كيف تلعب — How To Play"}
         </button>
 
         {showHowToPlay && (
-          <div className="mb-5 rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="mb-5 rounded-none p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="space-y-4">
               {HOW_TO_PLAY.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 pb-3" style={{ borderBottom: i < HOW_TO_PLAY.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
@@ -172,36 +176,73 @@ export default function StartScreen({ onStart }: Props) {
         {/* Game Mode */}
         <div style={sectionStyle}>
           <div className={sectionTitle}>Game Mode — وضع اللعبة</div>
-          <div className="grid grid-cols-2 gap-4">
-            {([["single","👤","Single Player","لاعب واحد"],["versus","👥","Versus Friend","ضد صديق"]] as const).map(([m, emoji, en, ar]) => (
-              <button key={m} onClick={() => setMode(m as GameMode)}
-                className="py-5 rounded-2xl font-black transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                style={mode === m ? {
-                  borderColor: m === "single" ? "#10b981" : "#3b82f6",
-                  borderWidth: 2, borderStyle: "solid",
-                  background: m === "single" ? "rgba(16,185,129,0.15)" : "rgba(59,130,246,0.15)",
-                  boxShadow: m === "single" ? "0 0 25px rgba(16,185,129,0.25)" : "0 0 25px rgba(59,130,246,0.25)"
-                } : { border: "2px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
-                <div className="text-3xl mb-2">{emoji}</div>
-                <div className="text-white text-lg">{en}</div>
-                <div className="text-gray-400 text-sm font-normal mt-1">{ar}</div>
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-3">
+            {(["single","versus","ai"] as const).map((m) => {
+              const cfg = {
+                single: { emoji: "👤", en: "Single Player", ar: "لاعب واحد", color: "#10b981" },
+                versus: { emoji: "👥", en: "Versus Friend", ar: "ضد صديق", color: "#3b82f6" },
+                ai:     { emoji: "🤖", en: "vs AI", ar: "ضد الكمبيوتر", color: "#a855f7" },
+              }[m];
+              return (
+                <button key={m} onClick={() => setMode(m)}
+                  className="py-5 rounded-none font-black transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={mode === m ? {
+                    borderColor: cfg.color, borderWidth: 2, borderStyle: "solid",
+                    background: `${cfg.color}22`,
+                    boxShadow: `0 0 25px ${cfg.color}44`
+                  } : { border: "2px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
+                  <div className="text-3xl mb-2">{cfg.emoji}</div>
+                  <div className="text-white text-base">{cfg.en}</div>
+                  <div className="text-gray-400 text-sm font-normal mt-1">{cfg.ar}</div>
+                </button>
+              );
+            })}
           </div>
+
+          {/* AI Difficulty selector */}
+          {mode === "ai" && (
+            <div className="mt-4">
+              <div className="text-xs text-gray-500 uppercase tracking-widest mb-3 font-bold">AI Difficulty — صعوبة الخصم</div>
+              <div className="grid grid-cols-3 gap-3">
+                {(["scout","manager","director"] as const).map((d) => {
+                  const cfg = AI_DIFFICULTY_CONFIG[d];
+                  return (
+                    <button key={d} onClick={() => setAiDifficulty(d)}
+                      className="py-4 rounded-none font-black transition-all duration-200 hover:scale-[1.02]"
+                      style={aiDifficulty === d ? {
+                        borderColor: cfg.color, borderWidth: 2, borderStyle: "solid",
+                        background: `${cfg.color}22`, boxShadow: `0 0 20px ${cfg.color}33`
+                      } : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
+                      <div className="text-2xl mb-1">{cfg.emoji}</div>
+                      <div className="text-white text-sm">{cfg.label}</div>
+                      <div className="text-gray-500 text-xs font-normal mt-1 leading-tight">{cfg.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Team Names */}
         {mode && (
           <div style={sectionStyle}>
             <div className={sectionTitle}>Team Names — أسماء الفرق</div>
-            <div className={`grid gap-4 ${mode === "versus" ? "grid-cols-2" : "grid-cols-1"}`}>
+            <div className={`grid gap-4 ${mode === "versus" || mode === "ai" ? "grid-cols-2" : "grid-cols-1"}`}>
               <input value={team1Name} onChange={(e) => setTeam1Name(e.target.value)} placeholder="Team 1"
-                className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-xl"
+                className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-none"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }} />
               {mode === "versus" && (
                 <input value={team2Name} onChange={(e) => setTeam2Name(e.target.value)} placeholder="Team 2"
-                  className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-xl"
+                  className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-none"
                   style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }} />
+              )}
+              {mode === "ai" && (
+                <div className="px-4 py-4 font-bold text-base rounded-none flex items-center gap-2"
+                  style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)" }}>
+                  <span>🤖</span>
+                  <span className="text-purple-400">{AI_DIFFICULTY_CONFIG[aiDifficulty].label} AI</span>
+                </div>
               )}
             </div>
           </div>
@@ -213,7 +254,7 @@ export default function StartScreen({ onStart }: Props) {
           <div className="grid grid-cols-2 gap-4">
             {BUDGETS.map((b) => (
               <button key={b.key} onClick={() => setBudgetMode(b.key)}
-                className="py-5 px-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.02]"
+                className="py-5 px-4 rounded-none text-left transition-all duration-200 hover:scale-[1.02]"
                 style={budgetMode === b.key
                   ? { border: "2px solid rgba(16,185,129,0.7)", background: "rgba(16,185,129,0.12)", boxShadow: "0 0 20px rgba(16,185,129,0.15)" }
                   : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
@@ -231,7 +272,7 @@ export default function StartScreen({ onStart }: Props) {
           <div className={sectionTitle}>Season Mode — وضع الموسم</div>
           <div className="grid grid-cols-2 gap-4">
             <button onClick={() => setGameLengthMode("classic")}
-              className="py-5 rounded-2xl font-black transition-all hover:scale-[1.02]"
+              className="py-5 rounded-none font-black transition-all hover:scale-[1.02]"
               style={gameLengthMode === "classic"
                 ? { border: "2px solid #f59e0b", background: "rgba(245,158,11,0.12)", boxShadow: "0 0 20px rgba(245,158,11,0.2)" }
                 : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
@@ -240,7 +281,7 @@ export default function StartScreen({ onStart }: Props) {
               <div className="text-gray-400 text-sm font-normal mt-1">2008 — 2028</div>
             </button>
             <button onClick={() => setGameLengthMode("infinite")}
-              className="py-5 rounded-2xl font-black transition-all hover:scale-[1.02]"
+              className="py-5 rounded-none font-black transition-all hover:scale-[1.02]"
               style={gameLengthMode === "infinite"
                 ? { border: "2px solid #a855f7", background: "rgba(168,85,247,0.12)", boxShadow: "0 0 20px rgba(168,85,247,0.2)" }
                 : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
@@ -268,7 +309,7 @@ export default function StartScreen({ onStart }: Props) {
             <div className="flex gap-3">
               {(["all","positive","negative"] as EventType[]).map((e) => (
                 <button key={e} onClick={() => setEventType(e)}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold transition-all"
+                  className="flex-1 py-3 rounded-none text-sm font-bold transition-all"
                   style={eventType === e ? {
                     border: `2px solid ${e === "positive" ? "#10b981" : e === "negative" ? "#ef4444" : "rgba(255,255,255,0.4)"}`,
                     background: e === "positive" ? "rgba(16,185,129,0.15)" : e === "negative" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.1)",
@@ -287,7 +328,7 @@ export default function StartScreen({ onStart }: Props) {
           <div className="flex gap-3">
             {TIMER_OPTIONS.map((t) => (
               <button key={String(t.value)} onClick={() => setTimerSeconds(t.value)}
-                className="flex-1 py-4 rounded-xl text-base font-bold transition-all"
+                className="flex-1 py-4 rounded-none text-base font-bold transition-all"
                 style={timerSeconds === t.value
                   ? { border: "2px solid #f59e0b", background: "rgba(245,158,11,0.15)", color: "#fbbf24" }
                   : { border: "2px solid rgba(255,255,255,0.08)", background: "transparent", color: "#6b7280" }}>
@@ -299,7 +340,7 @@ export default function StartScreen({ onStart }: Props) {
 
         {/* Start Button */}
         <button onClick={handleStart} disabled={!mode}
-          className="w-full py-6 rounded-2xl font-black text-2xl tracking-wide transition-all duration-300"
+          className="w-full py-6 rounded-none font-black text-2xl tracking-wide transition-all duration-300"
           style={mode ? {
             background: "linear-gradient(135deg, #10b981, #059669)",
             boxShadow: "0 8px 30px rgba(16,185,129,0.4)",

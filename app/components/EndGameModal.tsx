@@ -7,7 +7,7 @@ import { calculateTotalProfit, calculateCurrentPortfolioValue, calculateNetWorth
 type Props = {
   gamePlayers: GamePlayer[];
   season: number;
-  mode: "single" | "versus";
+  mode: "single" | "versus" | "ai";
   onRestart: () => void;
 };
 
@@ -46,7 +46,7 @@ export default function EndGameModal({ gamePlayers, season, mode, onRestart }: P
               const isWinner = mode === "versus" && s.name === winnerName && !isDraw;
 
               return (
-                <div key={i} className={`rounded-2xl border p-5 ${
+                <div key={i} className={`rounded-none border p-5 ${
                   isWinner
                     ? "border-yellow-500/50 bg-yellow-950/20"
                     : "border-white/10 bg-white/5"
@@ -87,7 +87,7 @@ export default function EndGameModal({ gamePlayers, season, mode, onRestart }: P
           {/* Sale history toggle */}
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="w-full py-2 rounded-xl border border-white/10 text-gray-500 hover:text-white text-sm transition-all"
+            className="w-full py-2 rounded-none border border-white/10 text-gray-500 hover:text-white text-sm transition-all"
           >
             {showDetails ? "▲ Hide Sale History" : "▼ Show Sale History"}
           </button>
@@ -95,7 +95,7 @@ export default function EndGameModal({ gamePlayers, season, mode, onRestart }: P
           {showDetails && (
             <div className="space-y-2">
               {gamePlayers.flatMap((gp) => gp.sold).sort((a, b) => b.profit - a.profit).map((s, i) => (
-                <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-2.5">
+                <div key={i} className="flex items-center justify-between bg-white/5 rounded-none px-4 py-2.5">
                   <div>
                     <span className="text-sm text-white font-bold">{s.name}</span>
                     <span className="text-xs text-gray-500 ml-2">({s.owner})</span>
@@ -116,7 +116,7 @@ export default function EndGameModal({ gamePlayers, season, mode, onRestart }: P
         <div className="p-6 border-t border-white/5">
           <button
             onClick={onRestart}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-lg transition-all hover:scale-[1.02] active:scale-98"
+            className="w-full py-4 rounded-none bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-lg transition-all hover:scale-[1.02] active:scale-98"
           >
             🔄 Play Again
           </button>

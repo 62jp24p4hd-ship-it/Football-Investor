@@ -12,7 +12,7 @@ type Props = {
   season: number;
   marketMultiplier: number;
   isActive: boolean;
-  mode: "single" | "versus";
+  mode: "single" | "versus" | "ai";
   onUseCard: (playerIndex: number, card: RewardCard) => void;
   onShowStats: () => void;
   onSkipTurn?: () => void;
@@ -28,7 +28,7 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
     sum + getCurrentValue(item.player, season, marketMultiplier), 0);
 
   return (
-    <div className={`bg-[#0d1128] border-2 rounded-2xl overflow-hidden transition-all ${
+    <div className={`bg-[#0d1128] border-2 rounded-none overflow-hidden transition-all ${
       isActive ? "border-emerald-500/40 shadow-xl shadow-emerald-500/5" : "border-white/8"
     }`}>
 
@@ -45,11 +45,11 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
         </div>
         <div className="flex items-center gap-2">
           {mode === "versus" && isActive && onSkipTurn && (
-            <button onClick={onSkipTurn} className="text-xs px-2 py-1 rounded-lg bg-white/8 border border-white/10 text-gray-500 hover:text-white transition-all font-bold">
+            <button onClick={onSkipTurn} className="text-xs px-2 py-1 rounded-none bg-white/8 border border-white/10 text-gray-500 hover:text-white transition-all font-bold">
               Skip
             </button>
           )}
-          <button onClick={onShowStats} className="text-xs px-2 py-1 rounded-lg bg-white/8 border border-white/10 text-gray-500 hover:text-white transition-all">
+          <button onClick={onShowStats} className="text-xs px-2 py-1 rounded-none bg-white/8 border border-white/10 text-gray-500 hover:text-white transition-all">
             📊 Stats
           </button>
         </div>
@@ -93,11 +93,11 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
 
       {/* Chances */}
       <div className="px-4 py-2 flex items-center gap-4 border-b border-white/8">
-        <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/20 rounded-lg px-2 py-1">
+        <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/20 rounded-none px-2 py-1">
           <span className="text-sm">🎟</span>
           <span className="text-xs text-yellow-300 font-bold">{gamePlayer.purchaseChances} buy</span>
         </div>
-        <div className="flex items-center gap-1.5 bg-red-900/20 border border-red-500/20 rounded-lg px-2 py-1">
+        <div className="flex items-center gap-1.5 bg-red-900/20 border border-red-500/20 rounded-none px-2 py-1">
           <span className="text-sm">💰</span>
           <span className="text-xs text-red-300 font-bold">{gamePlayer.sellChances} sell</span>
         </div>
@@ -134,7 +134,7 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
             const info = getCardDisplayInfo(card);
             const status = getCardStatus(gamePlayer.cards[card], season);
             return (
-              <div key={card} className={`rounded-xl border px-3 py-2 flex items-center justify-between transition-all ${
+              <div key={card} className={`rounded-none border px-3 py-2 flex items-center justify-between transition-all ${
                 status === "ready" ? `${info.color} shadow-md` : "border-white/8 bg-transparent"
               }`}>
                 <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
                 </div>
                 {status === "ready" && (isActive || mode === "single") ? (
                   <button onClick={() => onUseCard(playerIndex, card)}
-                    className="text-xs px-2 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white font-black transition-all active:scale-95">
+                    className="text-xs px-2 py-1 rounded-none bg-white/20 hover:bg-white/30 text-white font-black transition-all active:scale-95">
                     Use
                   </button>
                 ) : status === "locked" ? (
