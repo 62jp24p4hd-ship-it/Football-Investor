@@ -236,10 +236,9 @@ export function getRatingBg(rating: number): string {
 }
 
 // ============================================
-// PRICE TIER SYSTEM
-// كل لاعب له tier حسب نسبة سعره من الميزانية
-// الرخيص: احتمال كبير ينزل، نادراً يصعد كثير
-// الغالي: مستقر أكثر مع نمو معقول
+// PRICE TIER SYSTEM — نمو واقعي
+// أقصى نمو عادي: 10% في الموسم
+// أقصى نمو استثنائي: 20% في الموسم
 // ============================================
 
 export type PriceTier = "cheap" | "mid" | "premium" | "elite";
@@ -252,39 +251,37 @@ export function getPriceTier(price: number, budget: number): PriceTier {
   return "elite";
 }
 
-// نسب التغيير الموسمية — واقعية ومتوازنة
 const TIER_CONFIG: Record<PriceTier, {
   dropChance: number;
   dropMin: number; dropMax: number;
-  riseSmallChance: number;
-  riseSmallMin: number; riseSmallMax: number;
-  riseBigChance: number;
-  riseBigMin: number; riseBigMax: number;
+  stableChance: number;
+  stableMin: number; stableMax: number;
+  growChance: number;
+  growMin: number; growMax: number;
 }> = {
   cheap: {
-    // رخيص — 65% ينزل، 15% يصعد بسيط، 20% يصعد كثير
-    // لكن أقصى ارتفاع 40% في موسم واحد
-    dropChance: 0.65, dropMin: 0.05, dropMax: 0.30,
-    riseSmallChance: 0.15, riseSmallMin: 0.03, riseSmallMax: 0.12,
-    riseBigChance: 0.20, riseBigMin: 0.15, riseBigMax: 0.40,
+    // رخيص — 55% ينزل، 25% ثابت، 20% يصعد (max 20%)
+    dropChance: 0.55, dropMin: 0.03, dropMax: 0.20,
+    stableChance: 0.25, stableMin: 0.00, stableMax: 0.03,
+    growChance: 0.20, growMin: 0.05, growMax: 0.20,
   },
   mid: {
-    // متوسط — 40% ينزل، 40% يصعد عادي، 20% يصعد كثير
-    dropChance: 0.40, dropMin: 0.03, dropMax: 0.20,
-    riseSmallChance: 0.40, riseSmallMin: 0.03, riseSmallMax: 0.15,
-    riseBigChance: 0.20, riseBigMin: 0.15, riseBigMax: 0.35,
+    // متوسط — 35% ينزل، 35% ثابت، 30% يصعد
+    dropChance: 0.35, dropMin: 0.02, dropMax: 0.15,
+    stableChance: 0.35, stableMin: 0.00, stableMax: 0.04,
+    growChance: 0.30, growMin: 0.04, growMax: 0.15,
   },
   premium: {
-    // غالي — 20% ينزل، 55% يصعد عادي، 25% يصعد كثير
-    dropChance: 0.20, dropMin: 0.02, dropMax: 0.12,
-    riseSmallChance: 0.55, riseSmallMin: 0.03, riseSmallMax: 0.12,
-    riseBigChance: 0.25, riseBigMin: 0.12, riseBigMax: 0.28,
+    // غالي — 20% ينزل، 45% ثابت/بسيط، 35% يصعد
+    dropChance: 0.20, dropMin: 0.01, dropMax: 0.10,
+    stableChance: 0.45, stableMin: 0.01, stableMax: 0.05,
+    growChance: 0.35, growMin: 0.05, growMax: 0.12,
   },
   elite: {
-    // أغلى — 10% ينزل، 65% يصعد عادي، 25% يصعد كثير
-    dropChance: 0.10, dropMin: 0.01, dropMax: 0.08,
-    riseSmallChance: 0.65, riseSmallMin: 0.02, riseSmallMax: 0.10,
-    riseBigChance: 0.25, riseBigMin: 0.10, riseBigMax: 0.22,
+    // elite — 10% ينزل، 55% نمو بسيط، 35% نمو جيد
+    dropChance: 0.10, dropMin: 0.01, dropMax: 0.07,
+    stableChance: 0.55, stableMin: 0.02, stableMax: 0.07,
+    growChance: 0.35, growMin: 0.07, growMax: 0.15,
   },
 };
 
@@ -300,20 +297,23 @@ export function applyPriceTierGrowth(
   const cfg = TIER_CONFIG[tier];
   const roll = Math.random();
 
-  let newPrice: number;
+  let pct: number;
+  let direction: 1 | -1;
+
   if (roll < cfg.dropChance) {
-    const pct = randBetween(cfg.dropMin, cfg.dropMax);
-    newPrice = currentPrice * (1 - pct);
-  } else if (roll < cfg.dropChance + cfg.riseSmallChance) {
-    const pct = randBetween(cfg.riseSmallMin, cfg.riseSmallMax);
-    newPrice = currentPrice * (1 + pct);
+    pct = randBetween(cfg.dropMin, cfg.dropMax);
+    direction = -1;
+  } else if (roll < cfg.dropChance + cfg.stableChance) {
+    pct = randBetween(cfg.stableMin, cfg.stableMax);
+    direction = 1;
   } else {
-    const pct = randBetween(cfg.riseBigMin, cfg.riseBigMax);
-    newPrice = currentPrice * (1 + pct);
+    pct = randBetween(cfg.growMin, cfg.growMax);
+    direction = 1;
   }
 
-  // أقصى قيمة = ضعف الميزانية (لمنع الارتفاعات الجنونية)
-  const cap = budget * 2;
+  const newPrice = currentPrice * (1 + direction * pct);
+  // أقصى قيمة = 4x الميزانية الأصلية — ارتفاع أكبر يكون فقط عبر أحداث خاصة
+  const cap = budget * 4;
   return Math.max(1, Math.min(cap, Math.round(newPrice)));
 }
 

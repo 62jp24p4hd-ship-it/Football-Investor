@@ -13,7 +13,7 @@ import { buildAllBasePlayers, getSecretPlayers } from "./game/playerDatabase";
 import { generateSeasonPlayerPool } from "./game/playerGenerator";
 import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
-import { createNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
+import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
 import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
@@ -296,6 +296,33 @@ export default function Home() {
     const contract = finalizeContract(negotiation, season);
     const value = currentValue(negotiation.player);
 
+    // Renewal: update contract only, no budget deduction
+    if (negotiation.isRenewal) {
+      const updatedPlayers = gamePlayers.map((p, i) => {
+        if (i !== activePlayerIndex) return p;
+        return {
+          ...p,
+          budget: p.budget - contract.salary, // pay first season salary
+          owned: p.owned.map((o) =>
+            o.slot === negotiation.slot
+              ? { ...o, contract }
+              : o
+          ),
+        };
+      });
+      setGamePlayers(updatedPlayers);
+      addNewsItem({
+        id: Date.now(),
+        season,
+        title: `📝 Contract Renewed — ${negotiation.player.name}`,
+        description: `${negotiation.player.name} signed a new ${contract.duration}-year deal. Salary: €${contract.salary}M/yr`,
+        tone: "good",
+      });
+      setNegotiation(null);
+      notify(`✅ ${negotiation.player.name} contract renewed!`);
+      return;
+    }
+
     if (gp.budget < value) return notify("Insufficient budget");
 
     const newOwned: OwnedPlayer = {
@@ -396,6 +423,18 @@ export default function Home() {
   }
 
   function handleKeepPlayer() {
+    setSelectedOwned(null);
+  }
+
+  function handleRenewPlayer() {
+    if (!selectedOwned) return;
+    const { playerIndex, ownedIndex } = selectedOwned;
+    const gp = gamePlayers[playerIndex];
+    const item = gp.owned[ownedIndex];
+    if (!item) return;
+    const value = item.currentValue ?? currentValue(item.player);
+    const renewal = createRenewalNegotiation(item, value);
+    setNegotiation(renewal);
     setSelectedOwned(null);
   }
 
@@ -862,6 +901,7 @@ export default function Home() {
           canSell={gamePlayers[selectedOwned.playerIndex]?.sellChances > 0}
           onSell={handleSellPlayer}
           onKeep={handleKeepPlayer}
+          onRenew={handleRenewPlayer}
         />
       )}
 
