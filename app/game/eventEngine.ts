@@ -181,7 +181,8 @@ export function getNegativePlayerEvents(): PlayerEventEffect[] {
 export function applyEventToPlayer(
   player: Player,
   targetSeason: number,
-  effect: PlayerEventEffect
+  effect: PlayerEventEffect,
+  currentOwnedValue?: number  // القيمة الحالية للاعب المملوك
 ): Player {
   const stats = getSeasonStats(player, targetSeason);
 
@@ -193,13 +194,17 @@ export function applyEventToPlayer(
     rating: Math.max(40, Math.min(99, stats.rating + effect.ratingChange)),
   };
 
-  const calculatedValue = calculateBaseValue(player, targetSeason, {
-    ...stats,
-    ...newStats,
-    value: 1,
-  });
+  // استخدم currentValue كأساس إذا متوفرة، وإلا استخدم قيمة قاعدة البيانات
+  const baseValue = currentOwnedValue && currentOwnedValue > 0
+    ? currentOwnedValue
+    : stats.value;
 
-  const finalValue = Math.max(1, Math.round(calculatedValue * effect.multiplier));
+  // حدّ التغيير: أقصاه 40% للـ positive، أدناه 50% للـ negative
+  const clampedMultiplier = effect.multiplier >= 1
+    ? Math.min(effect.multiplier, 1.40)   // max +40%
+    : Math.max(effect.multiplier, 0.50);  // max -50%
+
+  const finalValue = Math.max(1, Math.round(baseValue * clampedMultiplier));
 
   return applyStatsModifier(player, targetSeason, {
     ...newStats,
@@ -232,7 +237,12 @@ export function applyEventToRandomOwnedPlayer(
   const effect = pickRandom(effects);
 
   const playerBefore = picked.player;
-  const playerAfter = applyEventToPlayer(picked.player, season, effect);
+  const playerAfter = applyEventToPlayer(
+    picked.player,
+    season,
+    effect,
+    picked.currentValue && picked.currentValue > 0 ? picked.currentValue : picked.buyPrice
+  );
 
   const beforeStats = getSeasonStats(playerBefore, season);
   const afterStats = getSeasonStats(playerAfter, season);
@@ -259,7 +269,7 @@ export function applyEventToRandomOwnedPlayer(
       ...gp,
       owned: gp.owned.map((item) =>
         item.player.name === picked.player.name
-          ? { ...item, player: playerAfter }
+          ? { ...item, player: playerAfter, currentValue: afterStats.value }
           : item
       ),
     };
