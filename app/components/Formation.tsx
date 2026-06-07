@@ -12,14 +12,15 @@ type Props = {
   isActive: boolean;
   pendingSlot: string | null;
   marketMultiplier: number;
+  isVersus?: boolean;
   onSlotClick: (slot: string) => void;
   onOwnedClick: (playerIndex: number, ownedIndex: number) => void;
 };
 
-function getCardGlow(owned: OwnedPlayer): string {
+function getCardGlow(owned: OwnedPlayer, isVersus: boolean = false): string {
   if (owned.player.secret) return "border-yellow-400 bg-yellow-950/70 shadow-yellow-400/30";
-  if (owned.player.hiddenType === "talent") return "border-emerald-400 bg-emerald-950/70 shadow-emerald-400/30";
-  if (owned.player.hiddenType === "trap") return "border-orange-400 bg-orange-950/60 shadow-orange-400/20";
+  if (!isVersus && owned.player.hiddenType === "talent") return "border-emerald-400 bg-emerald-950/70 shadow-emerald-400/30";
+  if (!isVersus && owned.player.hiddenType === "trap") return "border-orange-400 bg-orange-950/60 shadow-orange-400/20";
   return "border-blue-400/80 bg-blue-950/60 shadow-blue-400/20";
 }
 
@@ -32,21 +33,21 @@ function getRatingBg(rating: number): string {
 
 function SlotCard({
   slot, owned, ownedIndex, isActive, isPending, playerIndex,
-  onSlotClick, onOwnedClick, season, marketMultiplier
+  onSlotClick, onOwnedClick, season, marketMultiplier, isVersus
 }: {
   slot: string; owned: OwnedPlayer | undefined; ownedIndex: number;
   isActive: boolean; isPending: boolean; playerIndex: number;
   onSlotClick: (s: string) => void; onOwnedClick: (pi: number, oi: number) => void;
-  season: number; marketMultiplier: number;
+  season: number; marketMultiplier: number; isVersus?: boolean;
 }) {
   if (owned) {
     const stats = getSeasonStats(owned.player, season);
-    const value = getCurrentValue(owned.player, season, marketMultiplier);
+    const value = owned.currentValue ?? getCurrentValue(owned.player, season, marketMultiplier);
     const profit = value - owned.buyPrice;
     return (
       <button
         onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
-        className={`border-2 rounded-none w-full h-full text-left p-3 flex flex-col transition-all duration-150 shadow-lg ${getCardGlow(owned)} ${
+        className={`border-2 rounded-none w-full h-full text-left p-3 flex flex-col transition-all duration-150 shadow-lg ${getCardGlow(owned, isVersus)} ${
           isActive ? "hover:brightness-125 hover:scale-[1.02] cursor-pointer" : "cursor-default"
         }`}
       >
@@ -84,7 +85,7 @@ function SlotCard({
   );
 }
 
-export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, onSlotClick, onOwnedClick }: Props) {
+export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, isVersus, onSlotClick, onOwnedClick }: Props) {
   const isFrozen = gamePlayer.frozenSeason === season;
 
   const owned = (slot: string) => gamePlayer.owned.find(o => o.slot === slot);
@@ -99,6 +100,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         playerIndex={playerIndex}
         onSlotClick={onSlotClick} onOwnedClick={onOwnedClick}
         season={season} marketMultiplier={marketMultiplier}
+        isVersus={isVersus}
       />
     );
   }

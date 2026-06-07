@@ -191,6 +191,8 @@ export function finishAuction(
     slot,
     buySeason: currentSeason,
     buyPrice: price,
+    currentValue: price,
+    budgetAtBuy: gamePlayers[winnerIndex]?.budget ?? price,
     contract,
     sponsorships: [],
   };

@@ -145,7 +145,7 @@ export function autoSellAllPlayers(
   currentSeason: number
 ): GamePlayer {
   const autoSold: SoldPlayer[] = gp.owned.map((item) => {
-    const sellPrice = getCurrentValue(item.player, currentSeason);
+    const sellPrice = item.currentValue ?? getCurrentValue(item.player, currentSeason);
     return {
       owner: gp.name,
       name: item.player.name,

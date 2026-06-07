@@ -236,6 +236,93 @@ export function getRatingBg(rating: number): string {
 }
 
 // ============================================
+// PRICE TIER SYSTEM
+// كل لاعب له tier حسب نسبة سعره من الميزانية
+// الرخيص: احتمال كبير ينزل، صغير يصعد كثير
+// الغالي: احتمال كبير يصعد بشكل معقول
+// ============================================
+
+export type PriceTier = "cheap" | "mid" | "premium" | "elite";
+
+export function getPriceTier(price: number, budget: number): PriceTier {
+  const ratio = price / budget;
+  if (ratio <= 0.2)  return "cheap";    // 0-20% of budget
+  if (ratio <= 0.5)  return "mid";      // 20-50%
+  if (ratio <= 0.8)  return "premium";  // 50-80%
+  return "elite";                        // 80-100%
+}
+
+// نسب التغيير الموسمية حسب الـ tier
+// { drop: احتمال النزول, dropRange, riseSmall: احتمال ارتفاع بسيط, riseBig: احتمال ارتفاع كبير }
+const TIER_CONFIG: Record<PriceTier, {
+  dropChance: number;    // احتمال ينزل
+  dropMin: number;       // أقل نسبة نزول
+  dropMax: number;       // أعلى نسبة نزول
+  riseSmallChance: number; // احتمال يصعد بشكل عادي
+  riseSmallMin: number;
+  riseSmallMax: number;
+  riseBigChance: number;   // احتمال يصعد كثير
+  riseBigMin: number;
+  riseBigMax: number;
+}> = {
+  cheap: {
+    // رخيص جداً — 65% ينزل، 15% يصعد عادي، 20% يصعد كثير
+    dropChance: 0.65, dropMin: 0.05, dropMax: 0.35,
+    riseSmallChance: 0.15, riseSmallMin: 0.05, riseSmallMax: 0.20,
+    riseBigChance: 0.20, riseBigMin: 0.30, riseBigMax: 1.50,
+  },
+  mid: {
+    // متوسط — 40% ينزل، 35% يصعد عادي، 25% يصعد كثير
+    dropChance: 0.40, dropMin: 0.05, dropMax: 0.25,
+    riseSmallChance: 0.35, riseSmallMin: 0.05, riseSmallMax: 0.25,
+    riseBigChance: 0.25, riseBigMin: 0.25, riseBigMax: 0.80,
+  },
+  premium: {
+    // غالي — 25% ينزل، 50% يصعد عادي، 25% يصعد كثير
+    dropChance: 0.25, dropMin: 0.03, dropMax: 0.15,
+    riseSmallChance: 0.50, riseSmallMin: 0.05, riseSmallMax: 0.20,
+    riseBigChance: 0.25, riseBigMin: 0.20, riseBigMax: 0.60,
+  },
+  elite: {
+    // أغلى لاعب — 15% ينزل، 60% يصعد عادي، 25% يصعد كثير
+    dropChance: 0.15, dropMin: 0.02, dropMax: 0.10,
+    riseSmallChance: 0.60, riseSmallMin: 0.05, riseSmallMax: 0.15,
+    riseBigChance: 0.25, riseBigMin: 0.15, riseBigMax: 0.45,
+  },
+};
+
+function randBetween(min: number, max: number): number {
+  return min + Math.random() * (max - min);
+}
+
+// احسب القيمة الجديدة بعد موسم واحد
+export function applyPriceTierGrowth(
+  currentPrice: number,
+  budget: number
+): number {
+  const tier = getPriceTier(currentPrice, budget);
+  const cfg = TIER_CONFIG[tier];
+  const roll = Math.random();
+
+  let newPrice: number;
+  if (roll < cfg.dropChance) {
+    // ينزل
+    const pct = randBetween(cfg.dropMin, cfg.dropMax);
+    newPrice = currentPrice * (1 - pct);
+  } else if (roll < cfg.dropChance + cfg.riseSmallChance) {
+    // يصعد عادي
+    const pct = randBetween(cfg.riseSmallMin, cfg.riseSmallMax);
+    newPrice = currentPrice * (1 + pct);
+  } else {
+    // يصعد كثير
+    const pct = randBetween(cfg.riseBigMin, cfg.riseBigMax);
+    newPrice = currentPrice * (1 + pct);
+  }
+
+  return Math.max(1, Math.round(newPrice));
+}
+
+// ============================================
 // AFFORDABLE PLAYER GUARANTEE
 // ============================================
 

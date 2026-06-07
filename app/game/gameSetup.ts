@@ -11,7 +11,10 @@ import type {
 } from "./types";
 import { randomId } from "./helpers";
 import { emptyCards } from "./rewardCardEngine";
-import { BUDGET_SETTINGS, GAME_START_SEASON, PURCHASE_CHANCES_PER_SEASON, PURCHASE_CHANCES_VERSUS, SELL_CHANCES_PER_SEASON } from "./constants";
+import { BUDGET_SETTINGS, GAME_START_SEASON } from "./constants";
+import { applyPriceTierGrowth } from "./valueEngine";
+import { getSingleSeasonChances } from "./singleMode";
+import { getVersusSeasonChances } from "./versusMode";
 import { applyRetirementToSquad } from "./careerEngine";
 import { createRetirementNews, createNewSeasonNews, createGameStartNews } from "./newsEngine";
 
@@ -26,15 +29,18 @@ export function createInitialGamePlayers(
   mode: GameMode = "versus"
 ): GamePlayer[] {
   const budget = BUDGET_SETTINGS[budgetMode].budget;
-  const initChances = mode === "single" ? PURCHASE_CHANCES_PER_SEASON : PURCHASE_CHANCES_VERSUS;
+  const dummyGp = { tripleNextSeason: false, frozenSeason: null } as GamePlayer;
+  const chances = mode === "single"
+    ? getSingleSeasonChances(dummyGp, GAME_START_SEASON)
+    : getVersusSeasonChances(dummyGp, GAME_START_SEASON);
 
   const base: GamePlayer = {
     name: "",
     budget,
     owned: [],
     sold: [],
-    purchaseChances: initChances,
-    sellChances: SELL_CHANCES_PER_SEASON,
+    purchaseChances: chances.purchaseChances,
+    sellChances: chances.sellChances,
     soldBonusUsedThisSeason: false,
     cards: emptyCards(),
     tripleNextSeason: false,
@@ -93,15 +99,15 @@ export function setupNewSeason(
   const salaryNews: NewsItem[] = [];
   const sponsorshipNews: NewsItem[] = [];
 
-  const baseChances = mode === "single" ? PURCHASE_CHANCES_PER_SEASON : PURCHASE_CHANCES_VERSUS;
+  const baseChances = mode === "single" ? getSingleSeasonChances : getVersusSeasonChances;
 
   // Step 1: Reset chances + retirements
   let updatedPlayers = gamePlayers.map((gp): GamePlayer => {
-    const chances = gp.tripleNextSeason ? baseChances + 2 : baseChances;
+    const { purchaseChances, sellChances } = baseChances(gp, newSeason);
     const reset: GamePlayer = {
       ...gp,
-      purchaseChances: gp.frozenSeason === newSeason ? 0 : chances,
-      sellChances: SELL_CHANCES_PER_SEASON,
+      purchaseChances,
+      sellChances,
       soldBonusUsedThisSeason: false,
       tripleNextSeason: false,
     };
@@ -114,7 +120,13 @@ export function setupNewSeason(
       );
     });
 
-    return { ...reset, owned: surviving as OwnedPlayer[] };
+    // Apply price tier growth to each surviving owned player
+    const updatedOwned = (surviving as OwnedPlayer[]).map((item) => {
+      const newVal = applyPriceTierGrowth(item.currentValue, item.budgetAtBuy);
+      return { ...item, currentValue: newVal };
+    });
+
+    return { ...reset, owned: updatedOwned };
   });
 
   // Step 2: Apply salaries

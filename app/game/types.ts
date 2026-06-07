@@ -93,7 +93,7 @@ export type SeasonStats = {
 // ============================================
 
 export type Player = {
-  id: string;
+  id?: string;
   name: string;
   position: Position;
   availableSeason: number;
@@ -101,7 +101,7 @@ export type Player = {
   nationality: string;
   height: number;
   league: string;
-  club: string;
+  club?: string;
   games?: number;
   goals?: number;
   assists?: number;
@@ -162,6 +162,8 @@ export type OwnedPlayer = {
   slot: string;
   buySeason: number;
   buyPrice: number;
+  currentValue: number;    // يتغير كل موسم حسب price tier
+  budgetAtBuy: number;     // ميزانية المستثمر وقت الشراء
   contract: Contract;
   sponsorships: Sponsorship[];
 };
@@ -246,7 +248,7 @@ export type NewsItem = {
 // ============================================
 
 export type SeasonEvent = {
-  id: string;
+  id?: string;
   title: string;
   description: string;
   tone: NewsTone;

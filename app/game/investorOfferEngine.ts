@@ -105,6 +105,8 @@ export function acceptInvestorOffer(
     slot,
     buySeason: currentSeason,
     buyPrice: price,
+    currentValue: price,
+    budgetAtBuy: gamePlayers[activeIndex]?.budget ?? price,
     contract,
     sponsorships: [],
   };

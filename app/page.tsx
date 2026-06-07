@@ -24,6 +24,8 @@ import { generateSponsorshipOffer, shouldReceiveSponsorshipOffer, addSponsorship
 import { createTransferNews, createSaleNews, createFreezeCardNews, createTripleBuyNews, createStealCardNews, createGeneratedClassNews } from "./game/newsEngine";
 import { shuffle, randomId, pickRandom } from "./game/helpers";
 import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS } from "./game/constants";
+import { singleCanNextSeason } from "./game/singleMode";
+import { versusCanNextSeason } from "./game/versusMode";
 
 // Components
 import StartScreen from "./components/StartScreen";
@@ -301,6 +303,8 @@ export default function Home() {
       slot: negotiation.slot,
       buySeason: season,
       buyPrice: value,
+      currentValue: value,
+      budgetAtBuy: gp.budget,
       contract,
       sponsorships: [],
     };
@@ -678,14 +682,10 @@ export default function Home() {
     return <StartScreen onStart={startGame} />;
   }
 
-  // versus: يمكن الانتقال بعد شراء لاعب واحد على الأقل (أو انتهاء الفرص)
-  // single: بعد انتهاء كل فرص الشراء
-  // dev unlock: حر تماماً بدون قيود
-  const versusCanNext = gamePlayers.every((gp) => gp.owned.length > 0 || gp.purchaseChances <= 0);
-  const singleCanNext = (gamePlayers[0]?.purchaseChances ?? 0) <= 0;
-
-  const canNextSeason = devSeasonUnlocked || (!pendingSlot && !auctionState && !investorOffer && !negotiation &&
-    (mode === "single" ? singleCanNext : versusCanNext));
+  const hasModal = !!(auctionState || investorOffer || negotiation);
+  const canNextSeason = mode === "single"
+    ? singleCanNextSeason(gamePlayers, devSeasonUnlocked, pendingSlot, hasModal)
+    : versusCanNextSeason(gamePlayers, devSeasonUnlocked, pendingSlot, hasModal);
 
   // ============================================
   // RENDER: GAME
@@ -774,6 +774,7 @@ export default function Home() {
                 isActive={0 === activePlayerIndex}
                 pendingSlot={0 === activePlayerIndex ? pendingSlot : null}
                 marketMultiplier={marketMultiplier}
+                isVersus={true}
                 onSlotClick={handleSlotClick}
                 onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
               />
@@ -800,6 +801,7 @@ export default function Home() {
                     isActive={1 === activePlayerIndex}
                     pendingSlot={1 === activePlayerIndex ? pendingSlot : null}
                     marketMultiplier={marketMultiplier}
+                    isVersus={true}
                     onSlotClick={handleSlotClick}
                     onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
                   />
