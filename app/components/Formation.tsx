@@ -1,7 +1,6 @@
 "use client";
 
 import type { GamePlayer, OwnedPlayer } from "../game/types";
-import { FORMATION_433 } from "../game/constants";
 import { getCurrentValue } from "../game/valueEngine";
 import { getSeasonStats } from "../game/statsEngine";
 import { positionBg } from "../game/helpers";
@@ -17,11 +16,20 @@ type Props = {
   onOwnedClick: (playerIndex: number, ownedIndex: number) => void;
 };
 
+// Each row: slots to render
+const ROWS: string[][] = [
+  ["LW", "ST", "RW"],
+  ["CAM"],
+  ["LCM", "RCM"],
+  ["LB", "LCB", "RCB", "RB"],
+  ["GK"],
+];
+
 function getCardGlow(owned: OwnedPlayer): string {
-  if (owned.player.secret) return "border-yellow-400 bg-yellow-950/60 shadow-yellow-400/20";
-  if (owned.player.hiddenType === "talent") return "border-emerald-400 bg-emerald-950/60 shadow-emerald-400/20";
-  if (owned.player.hiddenType === "trap") return "border-orange-400 bg-orange-950/50 shadow-orange-400/15";
-  return "border-blue-400/70 bg-blue-950/50 shadow-blue-400/10";
+  if (owned.player.secret) return "border-yellow-400 bg-yellow-950/60";
+  if (owned.player.hiddenType === "talent") return "border-emerald-400 bg-emerald-950/60";
+  if (owned.player.hiddenType === "trap") return "border-orange-400 bg-orange-950/50";
+  return "border-blue-400/70 bg-blue-950/50";
 }
 
 function getRatingBg(rating: number): string {
@@ -42,6 +50,60 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
     return gamePlayer.owned.findIndex((item) => item.slot === slot);
   }
 
+  function renderSlot(slot: string) {
+    const owned = getOwnedBySlot(slot);
+    const ownedIndex = getOwnedIndexBySlot(slot);
+    const isPending = pendingSlot === slot;
+
+    if (owned) {
+      const stats = getSeasonStats(owned.player, season);
+      const value = getCurrentValue(owned.player, season, marketMultiplier);
+      const profit = value - owned.buyPrice;
+
+      return (
+        <button
+          key={slot}
+          onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
+          className={`border-2 rounded-none w-full text-left p-2 transition-all duration-150 active:scale-95 ${getCardGlow(owned)} ${
+            isActive ? "hover:brightness-125 cursor-pointer" : "cursor-default"
+          }`}
+        >
+          <div className={`text-[10px] font-black px-1 rounded-none inline-block ${positionBg(slot)}`}>{slot}</div>
+          <div className="text-xs font-black text-white truncate mt-0.5">{owned.player.name.split(" ").pop()}</div>
+          <div className={`text-[10px] font-black px-1 rounded-none inline-block mt-0.5 ${getRatingBg(stats.rating)}`}>{stats.rating}</div>
+          <div className="text-[10px] text-yellow-300 font-bold">€{value}M</div>
+          <div className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {profit >= 0 ? "↑" : "↓"}{Math.abs(profit)}M
+          </div>
+        </button>
+      );
+    }
+
+    return (
+      <button
+        key={slot}
+        onClick={() => { if (!isActive) return; onSlotClick(slot); }}
+        className={`border-2 rounded-none w-full p-2 transition-all duration-200 active:scale-95 flex flex-col items-center justify-center ${
+          isPending
+            ? "border-yellow-500/80 bg-yellow-900/40"
+            : isActive
+            ? "border-white/15 bg-white/5 hover:border-emerald-500/60 hover:bg-emerald-900/20 cursor-pointer"
+            : "border-white/5 bg-white/3 cursor-default"
+        }`}
+        style={{ minHeight: "72px" }}
+      >
+        <div className={`text-[10px] font-black px-1 rounded-none inline-block ${positionBg(slot)}`}>{slot}</div>
+        <div className="mt-1">
+          {isPending
+            ? <span className="text-yellow-400 text-base animate-pulse">⋯</span>
+            : isActive
+            ? <span className="text-white/30 text-xl font-black">+</span>
+            : null}
+        </div>
+      </button>
+    );
+  }
+
   return (
     <div className={`relative rounded-none overflow-hidden border-2 transition-all duration-300 ${
       isActive ? "border-emerald-500/60 shadow-2xl shadow-emerald-500/10" : "border-white/8 opacity-70"
@@ -49,102 +111,47 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
 
       {/* Pitch background */}
       <div className="absolute inset-0 pitch-bg">
-        {/* Pitch lines */}
-        <div className="absolute inset-3 border border-white/8" />
-        <div className="absolute top-1/2 left-3 right-3 h-px bg-white/8" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full border border-white/8" />
-        <div className="absolute top-3 left-1/4 right-1/4 h-6 border-b border-l border-r border-white/8 rounded-b-lg" />
-        <div className="absolute bottom-3 left-1/4 right-1/4 h-6 border-t border-l border-r border-white/8 rounded-t-lg" />
+        <div className="absolute inset-2 border border-white/8" />
+        <div className="absolute top-1/2 left-2 right-2 h-px bg-white/8" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/8" />
+        <div className="absolute top-2 left-1/4 right-1/4 h-4 border-b border-l border-r border-white/8" />
+        <div className="absolute bottom-2 left-1/4 right-1/4 h-4 border-t border-l border-r border-white/8" />
       </div>
 
-      <div className="relative z-10 p-3">
+      <div className="relative z-10 p-2 flex flex-col gap-1.5">
 
         {/* Team header */}
-        <div className={`flex items-center justify-between mb-3 px-3 py-2 rounded-none backdrop-blur-sm ${
+        <div className={`flex items-center justify-between px-2 py-1.5 rounded-none backdrop-blur-sm ${
           isActive ? "bg-emerald-900/40 border border-emerald-500/30" : "bg-black/40 border border-white/8"
         }`}>
           <div>
-            <div className="font-black text-white text-sm">{gamePlayer.name}</div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-emerald-400 font-bold">€{gamePlayer.budget}M</span>
-              <span className="text-gray-600 text-xs">•</span>
-              <span className="text-xs text-yellow-400">🎟 {gamePlayer.purchaseChances}</span>
-              {isFrozen && <span className="text-xs text-blue-400 font-bold">🧊 Frozen</span>}
+            <div className="font-black text-white text-xs">{gamePlayer.name}</div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] text-emerald-400 font-bold">€{gamePlayer.budget}M</span>
+              <span className="text-gray-600 text-[10px]">•</span>
+              <span className="text-[10px] text-yellow-400">🎟 {gamePlayer.purchaseChances}</span>
+              {isFrozen && <span className="text-[10px] text-blue-400 font-bold">🧊</span>}
             </div>
           </div>
           {isActive && (
-            <div className="flex items-center gap-2.5">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/80 animate-pulse" />
-              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Active</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">Active</span>
             </div>
           )}
         </div>
 
-        {/* Formation grid */}
-        <div className="grid grid-cols-5 gap-2" style={{minHeight: "1520px"}}>
-          {FORMATION_433.flat().map((slot, index) => {
-            if (!slot) return <div key={index} className="h-[433px]" style={{}} />;
+        {/* Formation rows */}
+        {ROWS.map((row, rowIndex) => (
+          <div key={rowIndex} className="flex gap-1.5">
+            {row.map((slot) => (
+              <div key={slot} className="flex-1">
+                {renderSlot(slot)}
+              </div>
+            ))}
+          </div>
+        ))}
 
-            const owned = getOwnedBySlot(slot);
-            const ownedIndex = getOwnedIndexBySlot(slot);
-            const isPending = pendingSlot === slot;
-
-            if (owned) {
-              const stats = getSeasonStats(owned.player, season);
-              const value = getCurrentValue(owned.player, season, marketMultiplier);
-              const profit = value - owned.buyPrice;
-
-              return (
-                <button
-                  key={index}
-                  onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
-                  className={`border-2 rounded-none p-3 h-[433px] transition-all duration-150 active:scale-95 shadow-lg ${getCardGlow(owned)} ${
-                    isActive ? "hover:brightness-125 hover:scale-105 cursor-pointer" : "cursor-default"
-                  }`}
-                >
-                  <div className={`text-sm font-black mb-3 inline-block px-2 rounded-none ${positionBg(slot)}`}>
-                    {slot}
-                  </div>
-                  <div className="text-base font-black text-white leading-tight truncate">
-                    {owned.player.name.split(" ").pop()}
-                  </div>
-                  <div className={`text-sm font-black px-2 rounded-none mt-2 inline-block ${getRatingBg(stats.rating)}`}>
-                    {stats.rating}
-                  </div>
-                  <div className="text-sm text-yellow-300 font-bold mt-3">€{value}M</div>
-                  <div className={`text-sm font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    {profit >= 0 ? "↑" : "↓"}{Math.abs(profit)}M
-                  </div>
-                </button>
-              );
-            }
-
-            return (
-              <button
-                key={index}
-                onClick={() => { if (!isActive) return; onSlotClick(slot); }}
-                className={`border-2 rounded-none p-3 h-[433px] transition-all duration-200 active:scale-95 ${
-                  isPending
-                    ? "border-yellow-500/80 bg-yellow-900/40 shadow-lg shadow-yellow-500/20"
-                    : isActive
-                    ? "border-white/15 bg-white/5 hover:border-emerald-500/60 hover:bg-emerald-900/20 hover:scale-105 cursor-pointer"
-                    : "border-white/5 bg-white/3 cursor-default"
-                }`}
-              >
-                <div className={`text-sm font-black mb-3 inline-block px-2 rounded-none ${positionBg(slot)}`}>
-                  {slot}
-                </div>
-                <div className="text-center mt-4">
-                  {isPending
-                    ? <span className="text-yellow-400 text-2xl animate-pulse">⋯</span>
-                    : isActive
-                    ? <span className="text-white/20 text-3xl font-black">+</span>
-                    : null}
-                </div>
-              </button>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
