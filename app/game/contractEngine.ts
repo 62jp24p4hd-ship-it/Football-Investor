@@ -140,11 +140,12 @@ export function getContractSeasonsRemaining(contract: Contract, currentSeason: n
 }
 
 export function isContractExpired(contract: Contract, currentSeason: number): boolean {
-  return getContractSeasonsRemaining(contract, currentSeason) <= 0;
+  // العقد ينتهي إذا الموسم الحالي أكبر من endSeason
+  return currentSeason > contract.endSeason;
 }
 
 export function isContractLastSeason(contract: Contract, currentSeason: number): boolean {
-  return getContractSeasonsRemaining(contract, currentSeason) === 1;
+  return contract.endSeason === currentSeason;
 }
 
 // يولّد أخبار تحذير العقود التي تنتهي قريباً
