@@ -11,7 +11,7 @@ import type {
 } from "./types";
 import { randomId } from "./helpers";
 import { emptyCards } from "./rewardCardEngine";
-import { BUDGET_SETTINGS, GAME_START_SEASON, PURCHASE_CHANCES_PER_SEASON } from "./constants";
+import { BUDGET_SETTINGS, GAME_START_SEASON, PURCHASE_CHANCES_PER_SEASON, SELL_CHANCES_PER_SEASON } from "./constants";
 import { applyRetirementToSquad } from "./careerEngine";
 import { createRetirementNews, createNewSeasonNews, createGameStartNews } from "./newsEngine";
 
@@ -22,7 +22,8 @@ import { createRetirementNews, createNewSeasonNews, createGameStartNews } from "
 export function createInitialGamePlayers(
   budgetMode: BudgetMode,
   team1Name: string,
-  team2Name: string
+  team2Name: string,
+  mode: GameMode = "versus"
 ): GamePlayer[] {
   const budget = BUDGET_SETTINGS[budgetMode].budget;
 
@@ -32,7 +33,7 @@ export function createInitialGamePlayers(
     owned: [],
     sold: [],
     purchaseChances: PURCHASE_CHANCES_PER_SEASON,
-    sellChances: 2,
+    sellChances: SELL_CHANCES_PER_SEASON,
     soldBonusUsedThisSeason: false,
     cards: emptyCards(),
     tripleNextSeason: false,
@@ -40,6 +41,10 @@ export function createInitialGamePlayers(
     totalSalaryBudget: 0,
     sponsorships: [],
   };
+
+  if (mode === "single") {
+    return [{ ...base, name: team1Name }];
+  }
 
   return [
     { ...base, name: team1Name },
@@ -88,11 +93,11 @@ export function setupNewSeason(
 
   // Step 1: Reset chances + retirements
   let updatedPlayers = gamePlayers.map((gp): GamePlayer => {
-    const chances = gp.tripleNextSeason ? 3 : 1;
+    const chances = gp.tripleNextSeason ? PURCHASE_CHANCES_PER_SEASON + 2 : PURCHASE_CHANCES_PER_SEASON;
     const reset: GamePlayer = {
       ...gp,
       purchaseChances: gp.frozenSeason === newSeason ? 0 : chances,
-      sellChances: 2,
+      sellChances: SELL_CHANCES_PER_SEASON,
       soldBonusUsedThisSeason: false,
       tripleNextSeason: false,
     };
@@ -193,7 +198,7 @@ export function buildInitialState(
   team2Name: string,
   mode: GameMode
 ): FullGameState {
-  const gamePlayers = createInitialGamePlayers(budgetMode, team1Name, team2Name);
+  const gamePlayers = createInitialGamePlayers(budgetMode, team1Name, team2Name, mode);
   const startNews = buildGameStartNews(budgetMode, team1Name, team2Name, mode);
   return { gamePlayers, news: [startNews] };
 }

@@ -46,7 +46,7 @@ export default function PlayerSelectionModal({
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-40 p-4"
       style={{ background: "rgba(0,0,0,0.88)" }}>
-      <div className="rounded-3xl w-full max-w-7xl overflow-hidden shadow-2xl"
+      <div className="rounded-none w-full max-w-[98vw] overflow-hidden shadow-2xl"
         style={{ background: "#0a0914", border: "2px solid rgba(168,85,247,0.4)" }}>
 
         {/* Header */}
@@ -54,7 +54,7 @@ export default function PlayerSelectionModal({
           style={{ background: "rgba(168,85,247,0.1)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
             <h2 className="text-2xl font-black text-white">
-              Choose <span className={`px-2 py-0.5 rounded-lg text-lg ${positionBg(slot)}`}>{slot}</span>
+              Choose <span className={`px-2 py-0.5 rounded-none text-lg ${positionBg(slot)}`}>{slot}</span>
             </h2>
             <p className="text-sm mt-0.5" style={{ color: "#9ca3af" }}>
               {activePlayer.name} • Budget: <span style={{ color: "#34d399", fontWeight: 700 }}>€{budget}M</span>
@@ -62,7 +62,7 @@ export default function PlayerSelectionModal({
           </div>
           <div className="flex items-center gap-3">
             {timerSeconds !== null && (
-              <div className="px-4 py-2 rounded-xl font-black text-3xl tabular-nums"
+              <div className="px-4 py-2 rounded-none font-black text-3xl tabular-nums"
                 style={{
                   border: timerDanger ? "1px solid rgba(239,68,68,0.6)" : "1px solid rgba(245,158,11,0.4)",
                   background: timerDanger ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.08)",
@@ -73,7 +73,7 @@ export default function PlayerSelectionModal({
               </div>
             )}
             <button onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+              className="px-5 py-2.5 rounded-none text-sm font-bold transition-all"
               style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af" }}>
               Close
             </button>
@@ -89,7 +89,7 @@ export default function PlayerSelectionModal({
                 <div>No players available for {slot} in {season}</div>
               </div>
             ) : (
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-5 gap-5">
                 {options.map((player, i) => {
                   const stats = getSeasonStats(player, season);
                   const value = getCurrentValue(player, season, marketMultiplier);
@@ -100,7 +100,7 @@ export default function PlayerSelectionModal({
                     <button
                       key={i}
                       onClick={() => setSelected(player)}
-                      className="rounded-2xl p-5 text-left transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-lg relative overflow-hidden"
+                      className="rounded-none p-10 text-left transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-lg relative overflow-hidden"
                       style={{
                         border: `2px solid`,
                         borderColor: affordable ? (player.hiddenType === "talent" ? "#34d399" : player.hiddenType === "trap" ? "#fb923c" : "#7c3aed") : "#991b1b",
@@ -112,25 +112,25 @@ export default function PlayerSelectionModal({
 
                       {/* Affordable badge */}
                       {affordable && (
-                        <div className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-md"
+                        <div className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-none"
                           style={{ background: "rgba(16,185,129,0.3)", color: "#34d399" }}>
                           ✓ CAN BUY
                         </div>
                       )}
                       {!affordable && (
-                        <div className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-md"
+                        <div className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-none"
                           style={{ background: "rgba(239,68,68,0.3)", color: "#f87171" }}>
                           TOO COSTLY
                         </div>
                       )}
 
                       {/* Position */}
-                      <div className={`text-[10px] font-black px-1.5 py-0.5 rounded-lg inline-block mb-2 ${positionBg(player.position)}`}>
+                      <div className={`text-[10px] font-black px-1.5 py-0.5 rounded-none inline-block mb-2 ${positionBg(player.position)}`}>
                         {player.position}
                       </div>
 
                       {/* Name */}
-                      <div className="font-black text-white text-base leading-tight mb-1.5 truncate">{player.name}</div>
+                      <div className="font-black text-white text-lg leading-tight mb-2 truncate">{player.name}</div>
 
                       {/* Flag + Age */}
                       <div className="text-sm mb-2" style={{ color: "#9ca3af" }}>
@@ -141,12 +141,12 @@ export default function PlayerSelectionModal({
                       <div className="text-xs mb-3 truncate" style={{ color: "#6b7280" }}>{player.league}</div>
 
                       {/* Rating */}
-                      <div className={`text-xs font-black px-2 py-1 rounded-md inline-block mb-2 ${getRatingBg(stats.rating)}`}>
+                      <div className={`text-xs font-black px-2 py-1 rounded-none inline-block mb-2 ${getRatingBg(stats.rating)}`}>
                         {stats.rating} RTG
                       </div>
 
                       {/* Stats */}
-                      <div className="grid grid-cols-3 gap-1 mb-3 text-center rounded-xl p-2"
+                      <div className="grid grid-cols-3 gap-1 mb-3 text-center rounded-none p-2"
                         style={{ background: "rgba(0,0,0,0.3)" }}>
                         {player.position === "GK" ? (
                           <>
@@ -163,7 +163,7 @@ export default function PlayerSelectionModal({
                       </div>
 
                       {/* Value */}
-                      <div className="font-black text-xl mt-1" style={{ color: affordable ? "#fbbf24" : "#f87171" }}>
+                      <div className="font-black text-2xl mt-2" style={{ color: affordable ? "#fbbf24" : "#f87171" }}>
                         €{value}M
                       </div>
                     </button>
@@ -182,7 +182,7 @@ export default function PlayerSelectionModal({
                 const affordable = value <= budget;
 
                 return (
-                  <div className="rounded-3xl p-6 shadow-2xl"
+                  <div className="rounded-none p-8 shadow-2xl"
                     style={{
                       border: `2px solid ${affordable ? "#7c3aed" : "#991b1b"}`,
                       background: getCardBg(selected, affordable)
@@ -191,7 +191,7 @@ export default function PlayerSelectionModal({
                     <div className="text-center mb-6">
                       <div className="text-4xl mb-2">{nationalityFlag(selected.nationality)}</div>
                       <h3 className="text-3xl font-black text-white leading-tight">{selected.name}</h3>
-                      <div className={`inline-block mt-2 text-xs font-black px-2.5 py-1 rounded-xl ${positionBg(selected.position)}`}>
+                      <div className={`inline-block mt-2 text-xs font-black px-2.5 py-1 rounded-none ${positionBg(selected.position)}`}>
                         {selected.position}
                       </div>
                     </div>
@@ -203,14 +203,14 @@ export default function PlayerSelectionModal({
                         ["Height", `${selected.height} cm`],
                         ["League", selected.league],
                       ].map(([label, val]) => (
-                        <div key={label} className="rounded-xl p-2.5" style={{ background: "rgba(0,0,0,0.3)" }}>
+                        <div key={label} className="rounded-none p-2.5" style={{ background: "rgba(0,0,0,0.3)" }}>
                           <div className="text-[10px] uppercase tracking-wider" style={{ color: "#6b7280" }}>{label}</div>
                           <div className="text-white font-bold text-xs truncate">{val}</div>
                         </div>
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2 mb-4 rounded-2xl p-3 text-center"
+                    <div className="grid grid-cols-4 gap-2 mb-4 rounded-none p-3 text-center"
                       style={{ background: "rgba(0,0,0,0.3)" }}>
                       <div>
                         <div className={`font-black text-xl ${getRatingColor(stats.rating)}`}>{stats.rating}</div>
@@ -252,7 +252,7 @@ export default function PlayerSelectionModal({
                     </div>
 
                     {warning && (
-                      <div className="text-sm text-center font-bold px-3 py-2 rounded-xl mb-4"
+                      <div className="text-sm text-center font-bold px-3 py-2 rounded-none mb-4"
                         style={{ background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.3)", color: "#fb923c" }}>
                         {warning}
                       </div>
@@ -260,12 +260,12 @@ export default function PlayerSelectionModal({
 
                     <div className="flex gap-3">
                       <button onClick={() => setSelected(null)}
-                        className="flex-1 py-3 rounded-xl font-bold transition-all"
+                        className="flex-1 py-3 rounded-none font-bold transition-all"
                         style={{ border: "1px solid rgba(255,255,255,0.15)", color: "#9ca3af" }}>
                         ← Change
                       </button>
                       <button onClick={() => onBuy(selected)} disabled={!affordable}
-                        className="flex-[2] py-3 rounded-xl font-black text-base transition-all"
+                        className="flex-[2] py-3 rounded-none font-black text-base transition-all"
                         style={affordable ? {
                           background: "linear-gradient(135deg, #10b981, #059669)",
                           color: "black",

@@ -79,6 +79,8 @@ export default function Home() {
   const [showStats, setShowStats] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
+  const [devSeasonClicks, setDevSeasonClicks] = useState(0);
 
   // ── Modals ────────────────────────────────
   const [negotiation, setNegotiation] = useState<ContractNegotiation | null>(null);
@@ -107,13 +109,14 @@ export default function Home() {
   const slotOptions = useMemo<Player[]>(() => {
     if (!selectedSlot) return [];
     const ownedNames = new Set(gamePlayers.flatMap((gp) => gp.owned.map((o) => o.player.name)));
-    const filtered = shuffle(
-      allPlayers.filter(
-        (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name)
-      )
-    ).slice(0, 5);
+    // Get all available players for this position/season
+    const allAvailable = allPlayers.filter(
+      (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name)
+    );
+    // Shuffle and pick 5 random from all available
+    const picked = shuffle(allAvailable).slice(0, 5);
     const budget = gamePlayers[activePlayerIndex]?.budget ?? 0;
-    return guaranteeAffordablePlayer(filtered, budget, season);
+    return guaranteeAffordablePlayer(picked, budget, season);
   }, [selectedSlot, season, gamePlayers, allPlayers, activePlayerIndex]);
 
   // ── Init base players ─────────────────────
@@ -254,6 +257,11 @@ export default function Home() {
   function closePlayerSelection() {
     setSelectedSlot("");
     setTimerActive(false);
+    // In single mode, closing without buying should clear the pendingSlot
+    // (the purchase chance was not spent, slot returns to available)
+    if (mode === "single") {
+      setPendingSlot(null);
+    }
   }
 
   // ============================================
@@ -621,6 +629,15 @@ export default function Home() {
     setShowEndModal(true);
   }
 
+  function handleDevSeasonClick() {
+    const next = devSeasonClicks + 1;
+    setDevSeasonClicks(next);
+    if (next >= 20) {
+      setDevSeasonUnlocked(true);
+      notify("🔓 Dev Mode: Season navigation unlocked!");
+    }
+  }
+
   function handleSkipTurn() {
     spendPurchaseChance(activePlayerIndex);
     if (mode === "versus") endVersusTurn();
@@ -661,8 +678,10 @@ export default function Home() {
     return <StartScreen onStart={startGame} />;
   }
 
-  const canNextSeason = !pendingSlot && !auctionState && !investorOffer && !negotiation &&
-    gamePlayers.every((gp) => gp.purchaseChances <= 0);
+  const canNextSeason = devSeasonUnlocked || (!pendingSlot && !auctionState && !investorOffer && !negotiation &&
+    (mode === "single"
+      ? (gamePlayers[0]?.purchaseChances ?? 0) <= 0
+      : gamePlayers.every((gp) => gp.purchaseChances <= 0)));
 
   // ============================================
   // RENDER: GAME
@@ -673,7 +692,7 @@ export default function Home() {
 
       {/* Toast message */}
       {message && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-yellow-500/50 px-5 py-3 rounded-xl z-[100] text-sm font-bold shadow-xl">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-yellow-500/50 px-5 py-3 rounded-none z-[100] text-sm font-bold shadow-xl">
           {message}
         </div>
       )}
@@ -692,6 +711,14 @@ export default function Home() {
         onNextSeason={() => nextSeason()}
         onSeasonClick={handleSeasonClick}
         onFinishGame={() => finishGame()}
+        onSecretClick={() => {
+          const next = devSeasonClicks + 1;
+          setDevSeasonClicks(next);
+          if (next >= 20) {
+            setDevSeasonUnlocked(true);
+            notify("🔓 Season navigation unlocked!");
+          }
+        }}
         canNextSeason={canNextSeason}
       />
 
@@ -881,7 +908,7 @@ export default function Home() {
                   <button
                     key={i}
                     onClick={() => setStealChallenge({ ...stealChallenge, ownIndex: i })}
-                    className={`w-full text-left p-2.5 rounded-xl mb-1.5 text-sm transition-all ${
+                    className={`w-full text-left p-2.5 rounded-none mb-1.5 text-sm transition-all ${
                       stealChallenge.ownIndex === i ? "bg-blue-700 text-white" : "bg-white/5 text-gray-300 hover:bg-white/10"
                     }`}
                   >
@@ -895,7 +922,7 @@ export default function Home() {
                   <button
                     key={i}
                     onClick={() => setStealChallenge({ ...stealChallenge, enemyIndex: i })}
-                    className={`w-full text-left p-2.5 rounded-xl mb-1.5 text-sm transition-all ${
+                    className={`w-full text-left p-2.5 rounded-none mb-1.5 text-sm transition-all ${
                       stealChallenge.enemyIndex === i ? "bg-red-700 text-white" : "bg-white/5 text-gray-300 hover:bg-white/10"
                     }`}
                   >
@@ -905,11 +932,11 @@ export default function Home() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setStealChallenge(null)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 font-bold">Cancel</button>
+              <button onClick={() => setStealChallenge(null)} className="flex-1 py-3 rounded-none border border-white/10 text-gray-400 font-bold">Cancel</button>
               <button
                 onClick={handleStealSwap}
                 disabled={stealChallenge.ownIndex === null || stealChallenge.enemyIndex === null}
-                className="flex-1 py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-black disabled:bg-white/5 disabled:text-gray-600 transition-all"
+                className="flex-1 py-3 rounded-none bg-purple-700 hover:bg-purple-600 text-white font-black disabled:bg-white/5 disabled:text-gray-600 transition-all"
               >
                 Confirm Swap
               </button>

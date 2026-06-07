@@ -6,7 +6,7 @@ import type { GamePlayer, FinancialDashboard, SoldPlayer, OwnedPlayer } from "./
 import { getCurrentValue } from "./valueEngine";
 import { calculateAnnualSalaries } from "./contractEngine";
 import { calculateTeamSponsorshipIncome } from "./sponsorshipEngine";
-import { NEGATIVE_BUDGET_WARNING } from "./constants";
+import { NEGATIVE_BUDGET_WARNING, PURCHASE_CHANCES_PER_SEASON, SELL_CHANCES_PER_SEASON } from "./constants";
 
 // ============================================
 // APPLY SEASON SALARIES
@@ -238,11 +238,11 @@ export function resetSeasonChances(
   gp: GamePlayer,
   newSeason: number
 ): GamePlayer {
-  const chances = gp.tripleNextSeason ? 3 : 1;
+  const chances = gp.tripleNextSeason ? PURCHASE_CHANCES_PER_SEASON + 2 : PURCHASE_CHANCES_PER_SEASON;
   return {
     ...gp,
     purchaseChances: gp.frozenSeason === newSeason ? 0 : chances,
-    sellChances: 2,
+    sellChances: SELL_CHANCES_PER_SEASON,
     soldBonusUsedThisSeason: false,
     tripleNextSeason: false,
   };

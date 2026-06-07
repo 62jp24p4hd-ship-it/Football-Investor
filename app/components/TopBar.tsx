@@ -15,10 +15,11 @@ type Props = {
   onNextSeason: () => void;
   onSeasonClick: () => void;
   onFinishGame?: () => void;
+  onSecretClick?: () => void;
   canNextSeason: boolean;
 };
 
-export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex, gamePlayers, timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick, onFinishGame, canNextSeason }: Props) {
+export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex, gamePlayers, timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick, onFinishGame, onSecretClick, canNextSeason }: Props) {
   const isTimerActive = pendingSlot !== null && timerSeconds !== null;
   const timerDanger = timer <= 5;
   const seasonsLeft = 2028 - season;
@@ -50,7 +51,7 @@ export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex
             </button>
 
             {gameLengthMode === "infinite" && (
-              <span className="text-xs text-purple-400 font-bold bg-purple-900/30 border border-purple-500/30 px-2 py-0.5 rounded-lg">♾️ Infinite</span>
+              <span className="text-xs text-purple-400 font-bold bg-purple-900/30 border border-purple-500/30 px-2 py-0.5 rounded-none">♾️ Infinite</span>
             )}
           </div>
 
@@ -58,7 +59,7 @@ export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex
           {mode === "versus" && (
             <div className="flex items-center gap-2">
               {gamePlayers.map((gp, i) => (
-                <div key={gp.name} className={`px-3 py-1.5 rounded-xl text-sm font-black transition-all border ${
+                <div key={gp.name} className={`px-3 py-1.5 rounded-none text-sm font-black transition-all border ${
                   i === activePlayerIndex
                     ? "border-yellow-500/60 bg-yellow-900/30 text-yellow-300 shadow-lg shadow-yellow-500/10"
                     : "border-white/8 bg-white/5 text-gray-500"
@@ -71,7 +72,7 @@ export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex
 
           {/* Timer */}
           {isTimerActive && (
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-none border ${
               timerDanger
                 ? "border-red-500/60 bg-red-900/30 animate-pulse"
                 : "border-yellow-500/30 bg-yellow-900/20"
@@ -94,18 +95,20 @@ export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex
               </div>
             )}
 
-            <button onClick={onNextSeason} disabled={!canNextSeason}
-              className={`px-5 py-2.5 rounded-xl font-black text-sm transition-all duration-200 ${
+            <button
+              onClick={() => { if (canNextSeason) onNextSeason(); else onSecretClick?.(); }}
+              className={`px-5 py-2.5 rounded-none font-black text-sm transition-all duration-200 ${
                 canNextSeason
                   ? "btn-primary text-black hover:scale-105 active:scale-95"
                   : "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
-              }`}>
+              }`}
+              title={canNextSeason ? "" : "Next Season (locked)"}>
               Next Season →
             </button>
 
             {gameLengthMode === "infinite" && onFinishGame && (
               <button onClick={onFinishGame}
-                className="px-4 py-2.5 rounded-xl font-bold text-sm bg-red-900/40 border border-red-500/30 text-red-400 hover:bg-red-800/40 transition-all">
+                className="px-4 py-2.5 rounded-none font-bold text-sm bg-red-900/40 border border-red-500/30 text-red-400 hover:bg-red-800/40 transition-all">
                 End
               </button>
             )}

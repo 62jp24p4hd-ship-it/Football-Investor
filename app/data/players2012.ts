@@ -1,230 +1,167 @@
-export const players2012 = [
-  {
-    name: "Son Heung Min", position: "LW", availableSeason: 2012, startAge: 20, nationality: "South Korea", height: 183, league: "Bundesliga", games: 34, goals: 12, assists: 3, rating: 7.5,
-    values: { 2012: 8, 2013: 16, 2014: 25, 2015: 35, 2016: 50, 2017: 65, 2018: 80, 2019: 90, 2020: 100, 2021: 90 }
-  },
-  {
-    name: "Memphis Depay", position: "LW", availableSeason: 2012, startAge: 18, nationality: "Netherlands", height: 176, league: "Eredivisie", games: 30, goals: 9, assists: 7, rating: 7.3,
-    values: { 2012: 3, 2013: 10, 2014: 25, 2015: 40, 2016: 30, 2017: 22, 2018: 30, 2019: 35, 2020: 45, 2021: 35 }
-  },
-  {
-    name: "Julian Draxler", position: "LW", availableSeason: 2012, startAge: 19, nationality: "Germany", height: 187, league: "Bundesliga", games: 39, goals: 13, assists: 8, rating: 7.8,
-    values: { 2012: 8, 2013: 25, 2014: 35, 2015: 40, 2016: 38, 2017: 32, 2018: 25, 2019: 18, 2020: 10, 2021: 5 }
-  },
-  {
-    name: "M'Baye Niang", position: "LW", availableSeason: 2012, startAge: 17, nationality: "France", height: 184, league: "Serie A", games: 25, goals: 5, assists: 4, rating: 7.0,
-    values: { 2012: 6, 2013: 10, 2014: 8, 2015: 6, 2016: 5, 2017: 4, 2018: 3, 2019: 2, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Zakaria Bakkali", position: "LW", availableSeason: 2012, startAge: 16, nationality: "Belgium", height: 168, league: "Eredivisie", games: 18, goals: 5, assists: 5, rating: 7.0,
-    values: { 2012: 4, 2013: 8, 2014: 6, 2015: 4, 2016: 2, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Paulo Dybala", position: "ST", availableSeason: 2012, startAge: 18, nationality: "Argentina", height: 177, league: "Serie A", games: 32, goals: 8, assists: 5, rating: 7.3,
-    values: { 2012: 4, 2013: 10, 2014: 25, 2015: 50, 2016: 70, 2017: 90, 2018: 100, 2019: 85, 2020: 65, 2021: 50 }
-  },
-  {
-    name: "Timo Werner", position: "ST", availableSeason: 2012, startAge: 16, nationality: "Germany", height: 180, league: "Bundesliga", games: 24, goals: 6, assists: 3, rating: 7.0,
-    values: { 2012: 2, 2013: 8, 2014: 15, 2015: 25, 2016: 35, 2017: 50, 2018: 65, 2019: 75, 2020: 60, 2021: 35 }
-  },
-  {
-    name: "Alvaro Morata", position: "ST", availableSeason: 2012, startAge: 20, nationality: "Spain", height: 190, league: "La Liga", games: 25, goals: 8, assists: 3, rating: 7.1,
-    values: { 2012: 8, 2013: 18, 2014: 30, 2015: 45, 2016: 60, 2017: 65, 2018: 55, 2019: 40, 2020: 35, 2021: 30 }
-  },
-  {
-    name: "Luciano Vietto", position: "ST", availableSeason: 2012, startAge: 18, nationality: "Argentina", height: 173, league: "Argentina", games: 36, goals: 15, assists: 7, rating: 7.6,
-    values: { 2012: 3, 2013: 12, 2014: 25, 2015: 30, 2016: 18, 2017: 10, 2018: 5, 2019: 2, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Carlos Fierro", position: "ST", availableSeason: 2012, startAge: 18, nationality: "Mexico", height: 175, league: "Liga MX", games: 29, goals: 10, assists: 4, rating: 7.4,
-    values: { 2012: 5, 2013: 6, 2014: 4, 2015: 3, 2016: 2, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Mohamed Salah", position: "RW", availableSeason: 2012, startAge: 20, nationality: "Egypt", height: 175, league: "Swiss Super League", games: 42, goals: 10, assists: 9, rating: 7.6,
-    values: { 2012: 4, 2013: 12, 2014: 22, 2015: 28, 2016: 35, 2017: 50, 2018: 120, 2019: 150, 2020: 140, 2021: 100 }
-  },
-  {
-    name: "Bernardo Silva", position: "RW", availableSeason: 2012, startAge: 18, nationality: "Portugal", height: 173, league: "Portugal", games: 24, goals: 5, assists: 8, rating: 7.2,
-    values: { 2012: 2, 2013: 8, 2014: 18, 2015: 35, 2016: 50, 2017: 70, 2018: 85, 2019: 100, 2020: 90, 2021: 70 }
-  },
-  {
-    name: "Serge Gnabry", position: "RW", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 176, league: "Premier League", games: 18, goals: 4, assists: 4, rating: 7.0,
-    values: { 2012: 2, 2013: 6, 2014: 5, 2015: 4, 2016: 10, 2017: 25, 2018: 45, 2019: 70, 2020: 80, 2021: 60 }
-  },
-  {
-    name: "Jese Rodriguez", position: "RW", availableSeason: 2012, startAge: 19, nationality: "Spain", height: 178, league: "La Liga", games: 38, goals: 22, assists: 8, rating: 8.0,
-    values: { 2012: 8, 2013: 18, 2014: 22, 2015: 16, 2016: 8, 2017: 4, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Adnan Januzaj", position: "RW", availableSeason: 2012, startAge: 17, nationality: "Belgium", height: 186, league: "Premier League", games: 20, goals: 5, assists: 6, rating: 7.3,
-    values: { 2012: 6, 2013: 18, 2014: 20, 2015: 12, 2016: 8, 2017: 6, 2018: 5, 2019: 4, 2020: 3, 2021: 2 }
-  },
-
-  {
-    name: "Bruno Fernandes", position: "CAM", availableSeason: 2012, startAge: 18, nationality: "Portugal", height: 179, league: "Serie A", games: 31, goals: 6, assists: 6, rating: 7.1,
-    values: { 2012: 2, 2013: 8, 2014: 14, 2015: 20, 2016: 28, 2017: 45, 2018: 60, 2019: 75, 2020: 90, 2021: 80 }
-  },
-  {
-    name: "Hakim Ziyech", position: "CAM", availableSeason: 2012, startAge: 19, nationality: "Morocco", height: 181, league: "Eredivisie", games: 34, goals: 8, assists: 10, rating: 7.6,
-    values: { 2012: 3, 2013: 10, 2014: 18, 2015: 25, 2016: 35, 2017: 45, 2018: 50, 2019: 45, 2020: 35, 2021: 25 }
-  },
-  {
-    name: "Ross Barkley Trap", position: "CAM", availableSeason: 2012, startAge: 19, nationality: "England", height: 189, league: "Premier League", games: 24, goals: 6, assists: 6, rating: 7.4,
-    values: { 2012: 12, 2013: 22, 2014: 30, 2015: 28, 2016: 20, 2017: 12, 2018: 6, 2019: 3, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Will Hughes", position: "CAM", availableSeason: 2012, startAge: 17, nationality: "England", height: 185, league: "Championship", games: 37, goals: 4, assists: 8, rating: 7.3,
-    values: { 2012: 5, 2013: 12, 2014: 10, 2015: 7, 2016: 5, 2017: 4, 2018: 3, 2019: 2, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Suso", position: "CAM", availableSeason: 2012, startAge: 18, nationality: "Spain", height: 177, league: "Premier League", games: 22, goals: 3, assists: 5, rating: 7.0,
-    values: { 2012: 4, 2013: 8, 2014: 10, 2015: 15, 2016: 25, 2017: 35, 2018: 40, 2019: 35, 2020: 25, 2021: 15 }
-  },
-
-  {
-    name: "Casemiro", position: "CM", availableSeason: 2012, startAge: 20, nationality: "Brazil", height: 185, league: "Brazil", games: 39, goals: 4, assists: 4, rating: 7.4,
-    values: { 2012: 5, 2013: 15, 2014: 22, 2015: 35, 2016: 50, 2017: 65, 2018: 70, 2019: 80, 2020: 75, 2021: 60 }
-  },
-  {
-    name: "Tanguy Ndombele", position: "CM", availableSeason: 2012, startAge: 15, nationality: "France", height: 181, league: "France Youth", games: 20, goals: 3, assists: 5, rating: 7.0,
-    values: { 2012: 1, 2013: 3, 2014: 6, 2015: 12, 2016: 20, 2017: 35, 2018: 60, 2019: 70, 2020: 45, 2021: 25 }
-  },
-  {
-    name: "Adrien Rabiot", position: "CM", availableSeason: 2012, startAge: 17, nationality: "France", height: 188, league: "Ligue 1", games: 24, goals: 2, assists: 5, rating: 7.0,
-    values: { 2012: 2, 2013: 8, 2014: 18, 2015: 25, 2016: 30, 2017: 35, 2018: 40, 2019: 35, 2020: 25, 2021: 20 }
-  },
-  {
-    name: "Leandro Paredes", position: "CM", availableSeason: 2012, startAge: 18, nationality: "Argentina", height: 180, league: "Argentina", games: 28, goals: 4, assists: 6, rating: 7.2,
-    values: { 2012: 3, 2013: 8, 2014: 12, 2015: 18, 2016: 25, 2017: 30, 2018: 35, 2019: 40, 2020: 35, 2021: 25 }
-  },
-  {
-    name: "Mateo Kovacic", position: "CM", availableSeason: 2012, startAge: 18, nationality: "Croatia", height: 176, league: "Croatia", games: 36, goals: 6, assists: 7, rating: 7.6,
-    values: { 2012: 6, 2013: 18, 2014: 25, 2015: 35, 2016: 40, 2017: 45, 2018: 50, 2019: 55, 2020: 50, 2021: 40 }
-  },
-  {
-    name: "Emre Can", position: "CM", availableSeason: 2012, startAge: 18, nationality: "Germany", height: 186, league: "Bundesliga", games: 22, goals: 2, assists: 4, rating: 7.0,
-    values: { 2012: 3, 2013: 10, 2014: 18, 2015: 25, 2016: 35, 2017: 40, 2018: 35, 2019: 28, 2020: 20, 2021: 12 }
-  },
-  {
-    name: "Oliver Torres", position: "CM", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 175, league: "La Liga", games: 18, goals: 3, assists: 5, rating: 7.1,
-    values: { 2012: 5, 2013: 14, 2014: 20, 2015: 16, 2016: 10, 2017: 7, 2018: 5, 2019: 3, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Bryan Cristante", position: "CM", availableSeason: 2012, startAge: 17, nationality: "Italy", height: 186, league: "Serie A", games: 18, goals: 2, assists: 4, rating: 7.0,
-    values: { 2012: 4, 2013: 8, 2014: 6, 2015: 5, 2016: 10, 2017: 20, 2018: 30, 2019: 28, 2020: 20, 2021: 12 }
-  },
-  {
-    name: "John Swift", position: "CM", availableSeason: 2012, startAge: 17, nationality: "England", height: 182, league: "England Youth", games: 22, goals: 5, assists: 6, rating: 7.1,
-    values: { 2012: 3, 2013: 5, 2014: 4, 2015: 3, 2016: 2, 2017: 1, 2018: 1, 2019: 1, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Mahmoud Dahoud", position: "CM", availableSeason: 2012, startAge: 16, nationality: "Germany", height: 178, league: "Germany Youth", games: 20, goals: 4, assists: 6, rating: 7.0,
-    values: { 2012: 2, 2013: 5, 2014: 10, 2015: 18, 2016: 25, 2017: 30, 2018: 24, 2019: 18, 2020: 12, 2021: 8 }
-  },
-
-  {
-    name: "Ben Chilwell", position: "LB", availableSeason: 2012, startAge: 15, nationality: "England", height: 178, league: "England Youth", games: 20, goals: 1, assists: 4, rating: 7.0,
-    values: { 2012: 1, 2013: 4, 2014: 8, 2015: 15, 2016: 25, 2017: 35, 2018: 45, 2019: 55, 2020: 60, 2021: 45 }
-  },
-  {
-    name: "Theo Hernandez", position: "LB", availableSeason: 2012, startAge: 15, nationality: "France", height: 184, league: "Spain Youth", games: 18, goals: 1, assists: 3, rating: 6.9,
-    values: { 2012: 1, 2013: 3, 2014: 8, 2015: 14, 2016: 25, 2017: 35, 2018: 40, 2019: 50, 2020: 60, 2021: 55 }
-  },
-  {
-    name: "Jose Gaya", position: "LB", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 172, league: "La Liga", games: 20, goals: 1, assists: 5, rating: 7.0,
-    values: { 2012: 2, 2013: 8, 2014: 18, 2015: 28, 2016: 35, 2017: 40, 2018: 40, 2019: 35, 2020: 30, 2021: 25 }
-  },
-  {
-    name: "Abdul Rahman Baba", position: "LB", availableSeason: 2012, startAge: 18, nationality: "Ghana", height: 179, league: "Bundesliga", games: 27, goals: 1, assists: 5, rating: 7.1,
-    values: { 2012: 3, 2013: 8, 2014: 18, 2015: 25, 2016: 18, 2017: 10, 2018: 5, 2019: 2, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Jetro Willems", position: "LB", availableSeason: 2012, startAge: 18, nationality: "Netherlands", height: 169, league: "Eredivisie", games: 32, goals: 1, assists: 7, rating: 7.2,
-    values: { 2012: 6, 2013: 12, 2014: 18, 2015: 20, 2016: 16, 2017: 10, 2018: 6, 2019: 3, 2020: 1, 2021: 1 }
-  },
-
-  {
-    name: "Jose Gimenez", position: "CB", availableSeason: 2012, startAge: 17, nationality: "Uruguay", height: 185, league: "Uruguay", games: 24, goals: 2, assists: 1, rating: 7.0,
-    values: { 2012: 1, 2013: 8, 2014: 18, 2015: 30, 2016: 40, 2017: 50, 2018: 60, 2019: 70, 2020: 65, 2021: 45 }
-  },
-  {
-    name: "Harry Maguire", position: "CB", availableSeason: 2012, startAge: 19, nationality: "England", height: 194, league: "League One", games: 44, goals: 5, assists: 2, rating: 7.4,
-    values: { 2012: 2, 2013: 5, 2014: 10, 2015: 15, 2016: 22, 2017: 35, 2018: 45, 2019: 80, 2020: 55, 2021: 35 }
-  },
-  {
-    name: "Alessio Romagnoli", position: "CB", availableSeason: 2012, startAge: 17, nationality: "Italy", height: 185, league: "Serie A", games: 20, goals: 1, assists: 1, rating: 7.0,
-    values: { 2012: 2, 2013: 8, 2014: 18, 2015: 30, 2016: 40, 2017: 45, 2018: 50, 2019: 45, 2020: 35, 2021: 25 }
-  },
-  {
-    name: "Samuel Umtiti", position: "CB", availableSeason: 2012, startAge: 18, nationality: "France", height: 182, league: "Ligue 1", games: 30, goals: 2, assists: 1, rating: 7.2,
-    values: { 2012: 3, 2013: 10, 2014: 18, 2015: 28, 2016: 45, 2017: 60, 2018: 55, 2019: 35, 2020: 20, 2021: 10 }
-  },
-  {
-    name: "Michael Keane", position: "CB", availableSeason: 2012, startAge: 19, nationality: "England", height: 191, league: "England", games: 25, goals: 2, assists: 1, rating: 7.0,
-    values: { 2012: 2, 2013: 6, 2014: 10, 2015: 16, 2016: 25, 2017: 35, 2018: 30, 2019: 22, 2020: 15, 2021: 8 }
-  },
-  {
-    name: "Calum Chambers", position: "CB", availableSeason: 2012, startAge: 17, nationality: "England", height: 182, league: "Premier League", games: 18, goals: 1, assists: 2, rating: 6.9,
-    values: { 2012: 3, 2013: 10, 2014: 18, 2015: 15, 2016: 10, 2017: 7, 2018: 5, 2019: 3, 2020: 2, 2021: 1 }
-  },
-  {
-    name: "Eliaquim Mangala", position: "CB", availableSeason: 2012, startAge: 21, nationality: "France", height: 188, league: "Primeira Liga", games: 38, goals: 4, assists: 1, rating: 7.5,
-    values: { 2012: 15, 2013: 25, 2014: 45, 2015: 35, 2016: 20, 2017: 10, 2018: 5, 2019: 2, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Kostas Manolas", position: "CB", availableSeason: 2012, startAge: 21, nationality: "Greece", height: 189, league: "Greece", games: 36, goals: 3, assists: 1, rating: 7.3,
-    values: { 2012: 8, 2013: 14, 2014: 25, 2015: 35, 2016: 40, 2017: 38, 2018: 35, 2019: 28, 2020: 18, 2021: 8 }
-  },
-  {
-    name: "Niklas Sule", position: "CB", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 195, league: "Bundesliga", games: 20, goals: 2, assists: 1, rating: 7.0,
-    values: { 2012: 2, 2013: 8, 2014: 18, 2015: 30, 2016: 40, 2017: 50, 2018: 55, 2019: 50, 2020: 40, 2021: 30 }
-  },
-  {
-    name: "Jesus Vallejo", position: "CB", availableSeason: 2012, startAge: 15, nationality: "Spain", height: 184, league: "Spain Youth", games: 18, goals: 1, assists: 1, rating: 6.9,
-    values: { 2012: 2, 2013: 5, 2014: 10, 2015: 18, 2016: 22, 2017: 15, 2018: 8, 2019: 4, 2020: 2, 2021: 1 }
-  },
-
-  {
-    name: "Joao Cancelo", position: "RB", availableSeason: 2012, startAge: 18, nationality: "Portugal", height: 182, league: "Portugal", games: 25, goals: 2, assists: 6, rating: 7.1,
-    values: { 2012: 2, 2013: 8, 2014: 18, 2015: 30, 2016: 40, 2017: 50, 2018: 70, 2019: 80, 2020: 75, 2021: 60 }
-  },
-  {
-    name: "Joshua Kimmich", position: "RB", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 177, league: "Germany Youth", games: 23, goals: 2, assists: 6, rating: 7.0,
-    values: { 2012: 1, 2013: 5, 2014: 12, 2015: 25, 2016: 45, 2017: 60, 2018: 70, 2019: 85, 2020: 90, 2021: 75 }
-  },
-  {
-    name: "Kenny Tete", position: "RB", availableSeason: 2012, startAge: 17, nationality: "Netherlands", height: 180, league: "Eredivisie", games: 18, goals: 1, assists: 3, rating: 6.9,
-    values: { 2012: 2, 2013: 5, 2014: 10, 2015: 15, 2016: 18, 2017: 14, 2018: 8, 2019: 4, 2020: 2, 2021: 1 }
-  },
-  {
-    name: "Calum Paterson", position: "RB", availableSeason: 2012, startAge: 18, nationality: "Scotland", height: 183, league: "Scotland", games: 34, goals: 5, assists: 5, rating: 7.1,
-    values: { 2012: 2, 2013: 4, 2014: 6, 2015: 5, 2016: 4, 2017: 3, 2018: 2, 2019: 1, 2020: 1, 2021: 1 }
-  },
-  {
-    name: "Elseid Hysaj", position: "RB", availableSeason: 2012, startAge: 18, nationality: "Albania", height: 182, league: "Serie B", games: 35, goals: 1, assists: 5, rating: 7.2,
-    values: { 2012: 3, 2013: 8, 2014: 15, 2015: 22, 2016: 28, 2017: 30, 2018: 25, 2019: 18, 2020: 10, 2021: 5 }
-  },
-
-  {
-    name: "Jan Oblak", position: "GK", availableSeason: 2012, startAge: 19, nationality: "Slovenia", height: 188, league: "Portugal", games: 28, goals: 0, assists: 0, rating: 7.4,
-    values: { 2012: 3, 2013: 12, 2014: 30, 2015: 50, 2016: 65, 2017: 80, 2018: 90, 2019: 100, 2020: 100, 2021: 80 }
-  },
-  {
-    name: "Jordan Pickford", position: "GK", availableSeason: 2012, startAge: 18, nationality: "England", height: 185, league: "England", games: 28, goals: 0, assists: 0, rating: 7.0,
-    values: { 2012: 1, 2013: 4, 2014: 8, 2015: 12, 2016: 20, 2017: 35, 2018: 45, 2019: 40, 2020: 35, 2021: 25 }
-  },
-  {
-    name: "Kepa Arrizabalaga", position: "GK", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 186, league: "La Liga", games: 18, goals: 0, assists: 0, rating: 6.9,
-    values: { 2012: 2, 2013: 6, 2014: 12, 2015: 20, 2016: 30, 2017: 45, 2018: 80, 2019: 60, 2020: 35, 2021: 20 }
-  },
-  {
-    name: "Alex Meret", position: "GK", availableSeason: 2012, startAge: 15, nationality: "Italy", height: 190, league: "Italy Youth", games: 18, goals: 0, assists: 0, rating: 6.8,
-    values: { 2012: 1, 2013: 3, 2014: 8, 2015: 15, 2016: 25, 2017: 30, 2018: 35, 2019: 35, 2020: 28, 2021: 18 }
-  },
-  {
-    name: "Timo Horn", position: "GK", availableSeason: 2012, startAge: 19, nationality: "Germany", height: 192, league: "Bundesliga", games: 34, goals: 0, assists: 0, rating: 7.2,
-    values: { 2012: 4, 2013: 10, 2014: 18, 2015: 25, 2016: 30, 2017: 28, 2018: 20, 2019: 12, 2020: 6, 2021: 2 }
-  }
+export const players2012: any[] = [
+  { name: "Son Heung-Min LW12", position: "LW", availableSeason: 2012, startAge: 19, nationality: "South Korea", height: 183, league: "Bundesliga", rating: 74, hiddenType: "talent" },
+  { name: "Memphis Depay", position: "LW", availableSeason: 2012, startAge: 18, nationality: "Netherlands", height: 176, league: "PSV", rating: 73, hiddenType: "talent" },
+  { name: "Julian Draxler LW12", position: "LW", availableSeason: 2012, startAge: 18, nationality: "Germany", height: 184, league: "Bundesliga", rating: 74, hiddenType: "talent" },
+  { name: "M'Baye Niang", position: "LW", availableSeason: 2012, startAge: 19, nationality: "France", height: 185, league: "Serie A", rating: 71, hiddenType: "talent" },
+  { name: "Kingsley Coman LW12", position: "LW", availableSeason: 2012, startAge: 16, nationality: "France", height: 179, league: "Juventus", rating: 66, hiddenType: "talent" },
+  { name: "Anthony Martial LW12", position: "LW", availableSeason: 2012, startAge: 16, nationality: "France", height: 181, league: "Monaco", rating: 66, hiddenType: "talent" },
+  { name: "Zakaria Bakkali", position: "LW", availableSeason: 2012, startAge: 16, nationality: "Belgium", height: 176, league: "La Liga", rating: 68, hiddenType: "talent" },
+  { name: "Sadio Mane LW12", position: "LW", availableSeason: 2012, startAge: 20, nationality: "Senegal", height: 174, league: "Southampton", rating: 76, hiddenType: "talent" },
+  { name: "Eden Hazard LW12", position: "LW", availableSeason: 2012, startAge: 21, nationality: "Belgium", height: 173, league: "Chelsea", rating: 82, hiddenType: "normal" },
+  { name: "Neymar LW12", position: "LW", availableSeason: 2012, startAge: 20, nationality: "Brazil", height: 175, league: "Barcelona", rating: 85, hiddenType: "normal" },
+  { name: "Raheem Sterling LW12", position: "LW", availableSeason: 2012, startAge: 17, nationality: "England", height: 170, league: "Liverpool", rating: 72, hiddenType: "talent" },
+  { name: "Adam Armstrong", position: "LW", availableSeason: 2012, startAge: 15, nationality: "England", height: 171, league: "Academy", rating: 62, hiddenType: "talent" },
+  { name: "Demarai Gray LW12", position: "LW", availableSeason: 2012, startAge: 16, nationality: "England", height: 179, league: "Championship", rating: 65, hiddenType: "talent" },
+  { name: "Lazar Markovic LW12", position: "LW", availableSeason: 2012, startAge: 18, nationality: "Serbia", height: 177, league: "Premier League", rating: 72, hiddenType: "trap" },
+  { name: "Joao Felix", position: "LW", availableSeason: 2012, startAge: 12, nationality: "Portugal", height: 181, league: "Academy", rating: 58, hiddenType: "talent" },
+  { name: "Paulo Dybala", position: "ST", availableSeason: 2012, startAge: 18, nationality: "Argentina", height: 177, league: "Argentine Primera Division", rating: 72, hiddenType: "talent" },
+  { name: "Timo Werner", position: "ST", availableSeason: 2012, startAge: 16, nationality: "Germany", height: 180, league: "Bundesliga", rating: 70, hiddenType: "talent" },
+  { name: "Alvaro Morata", position: "ST", availableSeason: 2012, startAge: 19, nationality: "Spain", height: 190, league: "La Liga", rating: 72, hiddenType: "normal" },
+  { name: "Luciano Vietto", position: "ST", availableSeason: 2012, startAge: 19, nationality: "Argentina", height: 177, league: "Argentine Primera Division", rating: 72, hiddenType: "talent" },
+  { name: "Marcus Rashford", position: "ST", availableSeason: 2012, startAge: 14, nationality: "England", height: 180, league: "Academy", rating: 62, hiddenType: "talent" },
+  { name: "Kelechi Iheanacho", position: "ST", availableSeason: 2012, startAge: 15, nationality: "Nigeria", height: 181, league: "Academy", rating: 64, hiddenType: "talent" },
+  { name: "Tammy Abraham ST12", position: "ST", availableSeason: 2012, startAge: 15, nationality: "England", height: 187, league: "Academy", rating: 63, hiddenType: "talent" },
+  { name: "Divock Origi ST12", position: "ST", availableSeason: 2012, startAge: 16, nationality: "Belgium", height: 185, league: "Ligue 1", rating: 70, hiddenType: "normal" },
+  { name: "Michy Batshuayi ST12", position: "ST", availableSeason: 2012, startAge: 21, nationality: "Belgium", height: 186, league: "Marseille", rating: 72, hiddenType: "normal" },
+  { name: "Arkadiusz Milik ST12", position: "ST", availableSeason: 2012, startAge: 18, nationality: "Poland", height: 180, league: "Ajax", rating: 73, hiddenType: "normal" },
+  { name: "Carlos Bacca ST12", position: "ST", availableSeason: 2012, startAge: 26, nationality: "Colombia", height: 177, league: "Sevilla", rating: 76, hiddenType: "normal" },
+  { name: "Carlos Fierro", position: "ST", availableSeason: 2012, startAge: 20, nationality: "Mexico", height: 178, league: "Mexican Liga MX", rating: 68, hiddenType: "trap" },
+  { name: "Luka Jovic", position: "ST", availableSeason: 2012, startAge: 14, nationality: "Serbia", height: 181, league: "Partizan", rating: 60, hiddenType: "talent" },
+  { name: "Breel Embolo", position: "ST", availableSeason: 2012, startAge: 15, nationality: "Switzerland", height: 189, league: "Basel", rating: 65, hiddenType: "talent" },
+  { name: "Benik Afobe", position: "ST", availableSeason: 2012, startAge: 19, nationality: "England", height: 179, league: "Championship", rating: 70, hiddenType: "trap" },
+  { name: "Mohamed Salah", position: "RW", availableSeason: 2012, startAge: 20, nationality: "Egypt", height: 175, league: "Chelsea", rating: 72, hiddenType: "talent" },
+  { name: "Bernardo Silva", position: "RW", availableSeason: 2012, startAge: 17, nationality: "Portugal", height: 173, league: "Sporting CP", rating: 70, hiddenType: "talent" },
+  { name: "Serge Gnabry RW12", position: "RW", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 175, league: "Arsenal", rating: 67, hiddenType: "talent" },
+  { name: "Jese Rodriguez", position: "RW", availableSeason: 2012, startAge: 19, nationality: "Spain", height: 177, league: "La Liga", rating: 72, hiddenType: "normal" },
+  { name: "Adnan Januzaj", position: "RW", availableSeason: 2012, startAge: 17, nationality: "Belgium", height: 185, league: "Premier League", rating: 71, hiddenType: "talent" },
+  { name: "Andros Townsend RW12", position: "RW", availableSeason: 2012, startAge: 20, nationality: "England", height: 179, league: "Premier League", rating: 72, hiddenType: "normal" },
+  { name: "Victor Moses RW12", position: "RW", availableSeason: 2012, startAge: 21, nationality: "Nigeria", height: 175, league: "Chelsea", rating: 73, hiddenType: "normal" },
+  { name: "Gelson Martins RW12", position: "RW", availableSeason: 2012, startAge: 18, nationality: "Portugal", height: 175, league: "Sporting", rating: 70, hiddenType: "talent" },
+  { name: "Sofiane Boufal RW12", position: "RW", availableSeason: 2012, startAge: 21, nationality: "Morocco", height: 175, league: "Lille", rating: 70, hiddenType: "normal" },
+  { name: "Christian Atsu", position: "RW", availableSeason: 2012, startAge: 21, nationality: "Ghana", height: 172, league: "Chelsea", rating: 70, hiddenType: "normal" },
+  { name: "Hatem Ben Arfa RW12", position: "RW", availableSeason: 2012, startAge: 25, nationality: "France", height: 179, league: "Newcastle", rating: 75, hiddenType: "trap" },
+  { name: "Nani RW12", position: "RW", availableSeason: 2012, startAge: 25, nationality: "Portugal", height: 178, league: "Manchester Utd", rating: 77, hiddenType: "normal" },
+  { name: "Sone Aluko RW12", position: "RW", availableSeason: 2012, startAge: 23, nationality: "Nigeria", height: 175, league: "Hull City", rating: 71, hiddenType: "normal" },
+  { name: "Junior Stanislas RW12", position: "RW", availableSeason: 2012, startAge: 22, nationality: "England", height: 178, league: "Bournemouth", rating: 69, hiddenType: "normal" },
+  { name: "Samuel Chukwueze", position: "RW", availableSeason: 2012, startAge: 12, nationality: "Nigeria", height: 169, league: "Academy", rating: 59, hiddenType: "talent" },
+  { name: "Bruno Fernandes", position: "CAM", availableSeason: 2012, startAge: 17, nationality: "Portugal", height: 179, league: "Sporting CP", rating: 71, hiddenType: "talent" },
+  { name: "Hakim Ziyech CAM12", position: "CAM", availableSeason: 2012, startAge: 19, nationality: "Morocco", height: 181, league: "Ajax", rating: 72, hiddenType: "talent" },
+  { name: "Will Hughes", position: "CAM", availableSeason: 2012, startAge: 17, nationality: "England", height: 180, league: "Championship", rating: 69, hiddenType: "talent" },
+  { name: "Ross Barkley CAM12", position: "CAM", availableSeason: 2012, startAge: 18, nationality: "England", height: 189, league: "Everton", rating: 73, hiddenType: "normal" },
+  { name: "Dele Alli CAM12", position: "CAM", availableSeason: 2012, startAge: 16, nationality: "England", height: 188, league: "MK Dons", rating: 68, hiddenType: "talent" },
+  { name: "Martin Odegaard CAM12", position: "CAM", availableSeason: 2012, startAge: 13, nationality: "Norway", height: 178, league: "Academy", rating: 60, hiddenType: "talent" },
+  { name: "Joao Mario CAM12", position: "CAM", availableSeason: 2012, startAge: 20, nationality: "Portugal", height: 183, league: "Sporting CP", rating: 72, hiddenType: "normal" },
+  { name: "Fabian Delph CAM12", position: "CAM", availableSeason: 2012, startAge: 22, nationality: "England", height: 178, league: "Premier League", rating: 73, hiddenType: "normal" },
+  { name: "David Silva CAM12", position: "CAM", availableSeason: 2012, startAge: 26, nationality: "Spain", height: 170, league: "Manchester City", rating: 86, hiddenType: "normal" },
+  { name: "Mesut Ozil CAM12", position: "CAM", availableSeason: 2012, startAge: 23, nationality: "Germany", height: 182, league: "Arsenal", rating: 86, hiddenType: "normal" },
+  { name: "Christian Eriksen CAM12", position: "CAM", availableSeason: 2012, startAge: 20, nationality: "Denmark", height: 182, league: "Tottenham", rating: 79, hiddenType: "normal" },
+  { name: "Mario Gotze CAM12", position: "CAM", availableSeason: 2012, startAge: 20, nationality: "Germany", height: 176, league: "Bayern", rating: 82, hiddenType: "normal" },
+  { name: "Isco CAM12", position: "CAM", availableSeason: 2012, startAge: 20, nationality: "Spain", height: 176, league: "Real Madrid", rating: 80, hiddenType: "normal" },
+  { name: "Phil Foden", position: "CAM", availableSeason: 2012, startAge: 12, nationality: "England", height: 171, league: "Academy", rating: 58, hiddenType: "talent" },
+  { name: "Suso", position: "CAM", availableSeason: 2012, startAge: 19, nationality: "Spain", height: 175, league: "Serie A", rating: 71, hiddenType: "normal" },
+  { name: "Casemiro", position: "LCM", availableSeason: 2012, startAge: 20, nationality: "Brazil", height: 185, league: "La Liga", rating: 72, hiddenType: "talent" },
+  { name: "Tanguy Ndombele", position: "LCM", availableSeason: 2012, startAge: 15, nationality: "France", height: 181, league: "Ligue 2", rating: 67, hiddenType: "talent" },
+  { name: "Adrien Rabiot", position: "LCM", availableSeason: 2012, startAge: 17, nationality: "France", height: 188, league: "Ligue 1", rating: 71, hiddenType: "talent" },
+  { name: "Leandro Paredes", position: "LCM", availableSeason: 2012, startAge: 18, nationality: "Argentina", height: 180, league: "Argentine Primera Division", rating: 70, hiddenType: "talent" },
+  { name: "Mateo Kovacic", position: "LCM", availableSeason: 2012, startAge: 17, nationality: "Croatia", height: 177, league: "La Liga", rating: 72, hiddenType: "talent" },
+  { name: "Emre Can", position: "LCM", availableSeason: 2012, startAge: 18, nationality: "Germany", height: 184, league: "Bundesliga", rating: 71, hiddenType: "talent" },
+  { name: "Youri Tielemans", position: "LCM", availableSeason: 2012, startAge: 15, nationality: "Belgium", height: 176, league: "Anderlecht", rating: 67, hiddenType: "talent" },
+  { name: "Ruben Neves", position: "LCM", availableSeason: 2012, startAge: 15, nationality: "Portugal", height: 182, league: "Porto", rating: 67, hiddenType: "talent" },
+  { name: "Dani Ceballos", position: "LCM", availableSeason: 2012, startAge: 15, nationality: "Spain", height: 175, league: "Real Betis", rating: 66, hiddenType: "talent" },
+  { name: "N'Golo Kante LCM12", position: "LCM", availableSeason: 2012, startAge: 21, nationality: "France", height: 168, league: "Caen", rating: 74, hiddenType: "talent" },
+  { name: "Leon Goretzka", position: "LCM", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 189, league: "Schalke", rating: 71, hiddenType: "talent" },
+  { name: "Mahmoud Dahoud", position: "LCM", availableSeason: 2012, startAge: 16, nationality: "Germany", height: 177, league: "Borussia MG", rating: 68, hiddenType: "talent" },
+  { name: "Denis Zakaria", position: "LCM", availableSeason: 2012, startAge: 15, nationality: "Switzerland", height: 191, league: "Young Boys", rating: 65, hiddenType: "talent" },
+  { name: "Oliver Torres", position: "LCM", availableSeason: 2012, startAge: 18, nationality: "Spain", height: 175, league: "La Liga", rating: 70, hiddenType: "talent" },
+  { name: "John Swift", position: "LCM", availableSeason: 2012, startAge: 18, nationality: "England", height: 183, league: "Reading", rating: 67, hiddenType: "trap" },
+  { name: "Koke", position: "RCM", availableSeason: 2012, startAge: 20, nationality: "Spain", height: 173, league: "Atletico", rating: 77, hiddenType: "talent" },
+  { name: "Granit Xhaka RCM12", position: "RCM", availableSeason: 2012, startAge: 19, nationality: "Switzerland", height: 185, league: "Bundesliga", rating: 74, hiddenType: "normal" },
+  { name: "Morgan Schneiderlin", position: "RCM", availableSeason: 2012, startAge: 22, nationality: "France", height: 182, league: "Southampton", rating: 77, hiddenType: "normal" },
+  { name: "Geoffrey Kondogbia RCM", position: "RCM", availableSeason: 2012, startAge: 19, nationality: "France", height: 186, league: "Monaco", rating: 73, hiddenType: "normal" },
+  { name: "Jordan Henderson RCM12", position: "RCM", availableSeason: 2012, startAge: 21, nationality: "England", height: 182, league: "Liverpool", rating: 74, hiddenType: "normal" },
+  { name: "Aaron Ramsey RCM12", position: "RCM", availableSeason: 2012, startAge: 21, nationality: "England", height: 178, league: "Arsenal", rating: 77, hiddenType: "normal" },
+  { name: "Jack Wilshere RCM12", position: "RCM", availableSeason: 2012, startAge: 20, nationality: "England", height: 170, league: "Arsenal", rating: 76, hiddenType: "normal" },
+  { name: "Yohan Cabaye RCM12", position: "RCM", availableSeason: 2012, startAge: 26, nationality: "France", height: 175, league: "Newcastle", rating: 79, hiddenType: "normal" },
+  { name: "Steven Pienaar RCM12", position: "RCM", availableSeason: 2012, startAge: 30, nationality: "South Africa", height: 176, league: "Everton", rating: 76, hiddenType: "normal" },
+  { name: "Moussa Sissoko RCM12", position: "RCM", availableSeason: 2012, startAge: 22, nationality: "France", height: 186, league: "Premier League", rating: 73, hiddenType: "normal" },
+  { name: "Ross Barkley RCM12", position: "RCM", availableSeason: 2012, startAge: 18, nationality: "England", height: 189, league: "Everton", rating: 73, hiddenType: "normal" },
+  { name: "Bryan Cristante", position: "RCM", availableSeason: 2012, startAge: 17, nationality: "Italy", height: 188, league: "Fiorentina", rating: 68, hiddenType: "talent" },
+  { name: "David Meyler", position: "RCM", availableSeason: 2012, startAge: 23, nationality: "Ireland", height: 189, league: "Hull City", rating: 69, hiddenType: "trap" },
+  { name: "Stephen Quinn", position: "RCM", availableSeason: 2012, startAge: 26, nationality: "Ireland", height: 174, league: "Premier League", rating: 70, hiddenType: "trap" },
+  { name: "Saul Niguez RCM12", position: "RCM", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 181, league: "Atletico", rating: 72, hiddenType: "talent" },
+  { name: "Ben Chilwell LB12", position: "LB", availableSeason: 2012, startAge: 15, nationality: "England", height: 178, league: "Leicester", rating: 64, hiddenType: "talent" },
+  { name: "Theo Hernandez", position: "LB", availableSeason: 2012, startAge: 14, nationality: "France", height: 180, league: "Real Madrid", rating: 64, hiddenType: "talent" },
+  { name: "Jose Gaya", position: "LB", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 172, league: "La Liga", rating: 70, hiddenType: "talent" },
+  { name: "Abdul Rahman Baba", position: "LB", availableSeason: 2012, startAge: 18, nationality: "Ghana", height: 182, league: "Bundesliga", rating: 70, hiddenType: "talent" },
+  { name: "Jetro Willems", position: "LB", availableSeason: 2012, startAge: 18, nationality: "Netherlands", height: 175, league: "Eredivisie", rating: 71, hiddenType: "talent" },
+  { name: "Luke Shaw LB12", position: "LB", availableSeason: 2012, startAge: 16, nationality: "England", height: 182, league: "Southampton", rating: 70, hiddenType: "talent" },
+  { name: "Andrew Robertson LB12", position: "LB", availableSeason: 2012, startAge: 18, nationality: "Scotland", height: 178, league: "Hull City", rating: 71, hiddenType: "talent" },
+  { name: "Faouzi Ghoulam LB12", position: "LB", availableSeason: 2012, startAge: 21, nationality: "Algeria", height: 182, league: "Napoli", rating: 72, hiddenType: "normal" },
+  { name: "Danny Rose LB12", position: "LB", availableSeason: 2012, startAge: 21, nationality: "England", height: 175, league: "Tottenham", rating: 72, hiddenType: "normal" },
+  { name: "Ryan Bertrand LB12", position: "LB", availableSeason: 2012, startAge: 22, nationality: "England", height: 178, league: "Premier League", rating: 73, hiddenType: "normal" },
+  { name: "Jonny Castro LB12", position: "LB", availableSeason: 2012, startAge: 22, nationality: "Spain", height: 172, league: "Atletico", rating: 71, hiddenType: "normal" },
+  { name: "Charlie Taylor LB12", position: "LB", availableSeason: 2012, startAge: 19, nationality: "England", height: 177, league: "Leeds", rating: 67, hiddenType: "trap" },
+  { name: "Enda Stevens LB12", position: "LB", availableSeason: 2012, startAge: 22, nationality: "Ireland", height: 179, league: "Portsmouth", rating: 68, hiddenType: "trap" },
+  { name: "Adam Chicksen LB12", position: "LB", availableSeason: 2012, startAge: 20, nationality: "England", height: 174, league: "Brighton", rating: 65, hiddenType: "trap" },
+  { name: "Liam Bridcutt", position: "LB", availableSeason: 2012, startAge: 23, nationality: "England", height: 177, league: "Championship", rating: 69, hiddenType: "trap" },
+  { name: "Jose Gimenez", position: "LCB", availableSeason: 2012, startAge: 17, nationality: "Uruguay", height: 183, league: "Atletico", rating: 69, hiddenType: "talent" },
+  { name: "Harry Maguire", position: "LCB", availableSeason: 2012, startAge: 19, nationality: "England", height: 194, league: "Hull City", rating: 70, hiddenType: "talent" },
+  { name: "Alessio Romagnoli", position: "LCB", availableSeason: 2012, startAge: 17, nationality: "Italy", height: 186, league: "AS Roma", rating: 71, hiddenType: "talent" },
+  { name: "Samuel Umtiti", position: "LCB", availableSeason: 2012, startAge: 18, nationality: "France", height: 182, league: "Lyon", rating: 71, hiddenType: "talent" },
+  { name: "Michael Keane", position: "LCB", availableSeason: 2012, startAge: 19, nationality: "England", height: 190, league: "Burnley", rating: 69, hiddenType: "talent" },
+  { name: "Calum Chambers", position: "LCB", availableSeason: 2012, startAge: 17, nationality: "England", height: 184, league: "Arsenal", rating: 69, hiddenType: "talent" },
+  { name: "Eliaquim Mangala", position: "LCB", availableSeason: 2012, startAge: 21, nationality: "France", height: 186, league: "Porto", rating: 72, hiddenType: "normal" },
+  { name: "Kostas Manolas", position: "LCB", availableSeason: 2012, startAge: 21, nationality: "Greece", height: 190, league: "Greek Super League", rating: 71, hiddenType: "normal" },
+  { name: "Niklas Sule", position: "LCB", availableSeason: 2012, startAge: 16, nationality: "Germany", height: 195, league: "Bundesliga", rating: 68, hiddenType: "talent" },
+  { name: "Jesus Vallejo", position: "LCB", availableSeason: 2012, startAge: 15, nationality: "Spain", height: 183, league: "Real Madrid", rating: 66, hiddenType: "talent" },
+  { name: "Kurt Zouma LCB12", position: "LCB", availableSeason: 2012, startAge: 17, nationality: "France", height: 190, league: "Chelsea", rating: 72, hiddenType: "normal" },
+  { name: "Phil Jones LCB12", position: "LCB", availableSeason: 2012, startAge: 20, nationality: "England", height: 185, league: "Manchester Utd", rating: 74, hiddenType: "normal" },
+  { name: "Shkodran Mustafi LCB12", position: "LCB", availableSeason: 2012, startAge: 20, nationality: "Germany", height: 184, league: "Bundesliga", rating: 74, hiddenType: "normal" },
+  { name: "Mamadou Sakho LCB12", position: "LCB", availableSeason: 2012, startAge: 22, nationality: "France", height: 187, league: "Liverpool", rating: 75, hiddenType: "normal" },
+  { name: "Chris Smalling LCB12", position: "LCB", availableSeason: 2012, startAge: 22, nationality: "England", height: 194, league: "Manchester Utd", rating: 76, hiddenType: "normal" },
+  { name: "Joao Cancelo", position: "RCB", availableSeason: 2012, startAge: 18, nationality: "Portugal", height: 182, league: "Benfica", rating: 70, hiddenType: "talent" },
+  { name: "Joshua Kimmich", position: "RCB", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 177, league: "Bundesliga", rating: 71, hiddenType: "talent" },
+  { name: "Kenny Tete", position: "RCB", availableSeason: 2012, startAge: 16, nationality: "Netherlands", height: 177, league: "Eredivisie", rating: 68, hiddenType: "talent" },
+  { name: "Elseid Hysaj", position: "RCB", availableSeason: 2012, startAge: 20, nationality: "Albania", height: 180, league: "Empoli", rating: 70, hiddenType: "talent" },
+  { name: "Mattia De Sciglio RCB12", position: "RCB", availableSeason: 2012, startAge: 20, nationality: "Italy", height: 180, league: "Milan", rating: 73, hiddenType: "normal" },
+  { name: "Nathaniel Clyne RCB12", position: "RCB", availableSeason: 2012, startAge: 21, nationality: "England", height: 174, league: "Southampton", rating: 75, hiddenType: "normal" },
+  { name: "Kyle Walker RCB12", position: "RCB", availableSeason: 2012, startAge: 22, nationality: "England", height: 183, league: "Tottenham", rating: 76, hiddenType: "normal" },
+  { name: "Cesar Azpilicueta RCB", position: "RCB", availableSeason: 2012, startAge: 22, nationality: "Spain", height: 178, league: "Chelsea", rating: 77, hiddenType: "normal" },
+  { name: "Martin Kelly RCB12", position: "RCB", availableSeason: 2012, startAge: 22, nationality: "England", height: 190, league: "Crystal Palace", rating: 70, hiddenType: "trap" },
+  { name: "Daryl Janmaat RCB12", position: "RCB", availableSeason: 2012, startAge: 24, nationality: "Netherlands", height: 184, league: "Newcastle", rating: 72, hiddenType: "normal" },
+  { name: "Patrick van Aanholt RCB12", position: "RCB", availableSeason: 2012, startAge: 22, nationality: "Netherlands", height: 175, league: "Sunderland", rating: 73, hiddenType: "normal" },
+  { name: "Sime Vrsaljko RCB12", position: "RCB", availableSeason: 2012, startAge: 21, nationality: "Croatia", height: 181, league: "Genoa", rating: 71, hiddenType: "normal" },
+  { name: "Tommy Smith RCB12", position: "RCB", availableSeason: 2012, startAge: 22, nationality: "England", height: 183, league: "Ipswich", rating: 67, hiddenType: "trap" },
+  { name: "Adam Smith RCB12", position: "RCB", availableSeason: 2012, startAge: 21, nationality: "England", height: 177, league: "Bournemouth", rating: 69, hiddenType: "normal" },
+  { name: "Hector Bellerin RCB12", position: "RCB", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 178, league: "Arsenal", rating: 69, hiddenType: "talent" },
+  { name: "Joao Cancelo RB12", position: "RB", availableSeason: 2012, startAge: 18, nationality: "Portugal", height: 182, league: "Benfica", rating: 70, hiddenType: "talent" },
+  { name: "Joshua Kimmich RB12", position: "RB", availableSeason: 2012, startAge: 17, nationality: "Germany", height: 177, league: "Bundesliga", rating: 71, hiddenType: "talent" },
+  { name: "Nathaniel Clyne RB12b", position: "RB", availableSeason: 2012, startAge: 21, nationality: "England", height: 174, league: "Southampton", rating: 75, hiddenType: "normal" },
+  { name: "Kyle Walker RB12", position: "RB", availableSeason: 2012, startAge: 22, nationality: "England", height: 183, league: "Tottenham", rating: 76, hiddenType: "normal" },
+  { name: "Bacary Sagna RB12", position: "RB", availableSeason: 2012, startAge: 29, nationality: "France", height: 178, league: "Arsenal", rating: 79, hiddenType: "normal" },
+  { name: "Rafael da Silva RB12", position: "RB", availableSeason: 2012, startAge: 22, nationality: "Brazil", height: 172, league: "Manchester Utd", rating: 73, hiddenType: "normal" },
+  { name: "Danny Simpson RB12", position: "RB", availableSeason: 2012, startAge: 25, nationality: "England", height: 177, league: "Leicester", rating: 73, hiddenType: "normal" },
+  { name: "Adam Smith RB12", position: "RB", availableSeason: 2012, startAge: 21, nationality: "England", height: 177, league: "Bournemouth", rating: 69, hiddenType: "normal" },
+  { name: "Martin Kelly RB12b", position: "RB", availableSeason: 2012, startAge: 22, nationality: "England", height: 190, league: "Crystal Palace", rating: 70, hiddenType: "trap" },
+  { name: "Eric Lichaj", position: "RB", availableSeason: 2012, startAge: 23, nationality: "United States", height: 178, league: "Nottm Forest", rating: 69, hiddenType: "trap" },
+  { name: "Steven Reid", position: "RB", availableSeason: 2012, startAge: 32, nationality: "Ireland", height: 185, league: "Championship", rating: 68, hiddenType: "trap" },
+  { name: "Larnell Cole", position: "RB", availableSeason: 2012, startAge: 16, nationality: "England", height: 171, league: "Academy", rating: 62, hiddenType: "talent" },
+  { name: "Raoul Bellanova", position: "RB", availableSeason: 2012, startAge: 15, nationality: "Italy", height: 186, league: "Academy", rating: 63, hiddenType: "talent" },
+  { name: "Jack Young", position: "RB", availableSeason: 2012, startAge: 16, nationality: "England", height: 176, league: "Academy", rating: 61, hiddenType: "trap" },
+  { name: "Kenny Tete RB12", position: "RB", availableSeason: 2012, startAge: 16, nationality: "Netherlands", height: 177, league: "Ajax", rating: 68, hiddenType: "talent" },
+  { name: "Jan Oblak", position: "GK", availableSeason: 2012, startAge: 19, nationality: "Slovenia", height: 188, league: "Atletico", rating: 72, hiddenType: "talent" },
+  { name: "Jordan Pickford GK12", position: "GK", availableSeason: 2012, startAge: 18, nationality: "England", height: 185, league: "Everton", rating: 70, hiddenType: "talent" },
+  { name: "Kepa Arrizabalaga", position: "GK", availableSeason: 2012, startAge: 17, nationality: "Spain", height: 186, league: "Athletic Bilbao", rating: 70, hiddenType: "talent" },
+  { name: "Alex Meret", position: "GK", availableSeason: 2012, startAge: 14, nationality: "Italy", height: 191, league: "Udinese", rating: 65, hiddenType: "talent" },
+  { name: "Timo Horn", position: "GK", availableSeason: 2012, startAge: 18, nationality: "Germany", height: 190, league: "Bundesliga", rating: 70, hiddenType: "talent" },
+  { name: "Dean Henderson", position: "GK", availableSeason: 2012, startAge: 15, nationality: "England", height: 188, league: "Sheffield Utd", rating: 62, hiddenType: "talent" },
+  { name: "Freddie Woodman GK12", position: "GK", availableSeason: 2012, startAge: 18, nationality: "England", height: 189, league: "Newcastle", rating: 64, hiddenType: "talent" },
+  { name: "Aaron Ramsdale GK12", position: "GK", availableSeason: 2012, startAge: 14, nationality: "England", height: 196, league: "Sheffield Utd", rating: 61, hiddenType: "talent" },
+  { name: "Darren Randolph", position: "GK", availableSeason: 2012, startAge: 25, nationality: "Ireland", height: 188, league: "Birmingham", rating: 72, hiddenType: "normal" },
+  { name: "Viktor Nyland", position: "GK", availableSeason: 2012, startAge: 21, nationality: "Norway", height: 197, league: "Aston Villa", rating: 71, hiddenType: "normal" },
+  { name: "Vito Mannone", position: "GK", availableSeason: 2012, startAge: 24, nationality: "Italy", height: 188, league: "Sunderland", rating: 72, hiddenType: "normal" },
+  { name: "Simon Moore", position: "GK", availableSeason: 2012, startAge: 22, nationality: "England", height: 191, league: "Sheffield Utd", rating: 67, hiddenType: "trap" },
+  { name: "Stuart Moore", position: "GK", availableSeason: 2012, startAge: 18, nationality: "England", height: 193, league: "Reading", rating: 65, hiddenType: "trap" },
+  { name: "Joe Murphy", position: "GK", availableSeason: 2012, startAge: 30, nationality: "Ireland", height: 193, league: "Coventry", rating: 69, hiddenType: "trap" },
+  { name: "Chris Weale", position: "GK", availableSeason: 2012, startAge: 30, nationality: "England", height: 190, league: "Leicester", rating: 68, hiddenType: "trap" },
 ];

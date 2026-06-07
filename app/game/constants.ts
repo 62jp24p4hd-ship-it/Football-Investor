@@ -23,8 +23,8 @@ export const MAX_SALARY_PERCENT = 0.25;   // 25% of market value
 export const MAX_CONTRACT_YEARS = 5;
 export const MIN_CONTRACT_YEARS = 1;
 
-export const PURCHASE_CHANCES_PER_SEASON = 1;
-export const SELL_CHANCES_PER_SEASON = 2;
+export const PURCHASE_CHANCES_PER_SEASON = 4;
+export const SELL_CHANCES_PER_SEASON = 4;
 
 export const SELL_BONUS_THRESHOLD_FREEZE = 20;   // M
 export const SELL_BONUS_THRESHOLD_TRIPLE = 40;   // M
