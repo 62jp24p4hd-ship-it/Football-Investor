@@ -19,341 +19,210 @@ type StartConfig = {
 
 type Props = { onStart: (config: StartConfig) => void };
 
-const TIMER_OPTIONS: { label: string; value: number | null }[] = [
-  { label: "No Timer", value: null },
-  { label: "15s", value: 15 },
-  { label: "30s", value: 30 },
-  { label: "60s", value: 60 },
-];
-
 const BUDGETS = [
-  { key: "lucky" as BudgetMode, emoji: "🍀", en: "Lucky", ar: "المحظوظ", amount: "€10M", desc: "High risk, high reward", descAr: "مخاطرة عالية، مكافأة عالية" },
-  { key: "balanced" as BudgetMode, emoji: "⚖️", en: "Balanced", ar: "المتوازن", amount: "€30M", desc: "Standard experience", descAr: "تجربة متوازنة ومنطقية" },
-  { key: "rich" as BudgetMode, emoji: "💰", en: "Rich", ar: "الغني", amount: "€100M", desc: "More money, stronger events", descAr: "ميزانية كبيرة، أحداث أقوى" },
-  { key: "billionaire" as BudgetMode, emoji: "💎", en: "Billionaire", ar: "المليارder", amount: "€200M", desc: "Maximum budget", descAr: "أقصى ميزانية، أحداث مدمرة" },
+  { key: "lucky" as BudgetMode,      emoji: "🍀", label: "Lucky",      amount: "€10M",  color: "#10b981" },
+  { key: "balanced" as BudgetMode,   emoji: "⚖️", label: "Balanced",   amount: "€30M",  color: "#D4AF37" },
+  { key: "rich" as BudgetMode,       emoji: "💰", label: "Rich",       amount: "€100M", color: "#a855f7" },
+  { key: "billionaire" as BudgetMode,emoji: "💎", label: "Billionaire",amount: "€200M", color: "#3b82f6" },
 ];
 
-const HOW_TO_PLAY = [
-  {
-    emoji: "⚽",
-    en: "Buy players each season by clicking on position slots",
-    ar: "اشتري لاعبين كل موسم بالضغط على المراكز في التشكيلة",
-  },
-  {
-    emoji: "📝",
-    en: "Negotiate contracts — salary and duration affect player satisfaction",
-    ar: "فاوض على العقود — الراتب والمدة يؤثران على رضا اللاعب",
-  },
-  {
-    emoji: "💰",
-    en: "Sell players at peak value to maximize profit",
-    ar: "بع اللاعبين في ذروة قيمتهم لتحقيق أكبر ربح",
-  },
-  {
-    emoji: "📈",
-    en: "Player values change every season based on performance, age & events",
-    ar: "قيم اللاعبين تتغير كل موسم حسب الأداء والعمر والأحداث",
-  },
-  {
-    emoji: "🎴",
-    en: "Earn special cards by selling for big amounts — Freeze, Triple Buy, Steal",
-    ar: "احصل على بطاقات خاصة بالبيع بمبالغ كبيرة — تجميد، شراء ثلاثي، سرقة",
-  },
-  {
-    emoji: "📰",
-    en: "Random events shake the market — injuries, awards, crashes, Saudi offers",
-    ar: "الأحداث العشوائية تزعزع السوق — إصابات، جوائز، انهيار، عروض سعودية",
-  },
-  {
-    emoji: "🤝",
-    en: "Sponsorships give annual income — manage them wisely",
-    ar: "الرعايات تعطيك دخلاً سنوياً — أدرها بذكاء",
-  },
-  {
-    emoji: "👋",
-    en: "Players retire between age 30-40 — sell before it's too late",
-    ar: "اللاعبون يعتزلون بين 30-40 — بع قبل فوات الأوان",
-  },
-  {
-    emoji: "🏆",
-    en: "Highest net worth (budget + squad value) at the end wins",
-    ar: "صاحب أعلى قيمة صافية (ميزانية + قيمة الفريق) في النهاية يفوز",
-  },
+const MODES = [
+  { key: "single"  as GameMode, icon: "👤", en: "SINGLE PLAYER",   ar: "لاعب واحد",        color: "#10b981" },
+  { key: "versus"  as GameMode, icon: "👥", en: "VERSUS FRIEND",   ar: "ضد صديق",           color: "#3b82f6" },
+  { key: "ai"      as GameMode, icon: "👑", en: "VS AI",           ar: "ضد الكمبيوتر",      color: "#a855f7" },
 ];
 
 export default function StartScreen({ onStart }: Props) {
-  const [mode, setMode] = useState<GameMode | null>(null);
-  const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
-  const [team1Name, setTeam1Name] = useState("Team 1");
-  const [team2Name, setTeam2Name] = useState("Team 2");
-  const [eventsEnabled, setEventsEnabled] = useState(true);
-  const [eventType, setEventType] = useState<EventType>("all");
-  const [timerSeconds, setTimerSeconds] = useState<number | null>(15);
-  const [gameLengthMode, setGameLengthMode] = useState<"classic" | "infinite">("classic");
+  const [mode, setMode]               = useState<GameMode | null>(null);
+  const [budgetMode, setBudgetMode]   = useState<BudgetMode>("balanced");
+  const [team1Name, setTeam1Name]     = useState("Team 1");
+  const [team2Name, setTeam2Name]     = useState("Team 2");
+  const [eventsEnabled]               = useState(true);
+  const [eventType]                   = useState<EventType>("all");
+  const [timerSeconds]                = useState<number | null>(null);
+  const [gameLengthMode]              = useState<"classic" | "infinite">("classic");
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>("manager");
   const [easterClicks, setEasterClicks] = useState(0);
   const [easterUnlocked, setEasterUnlocked] = useState(false);
-  const [showHowToPlay, setShowHowToPlay] = useState(false);
-  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>("manager");
 
   function handleStart() {
     if (!mode) return;
-    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, aiDifficulty });
+    onStart({
+      mode, budgetMode,
+      team1Name: team1Name.trim() || "Team 1",
+      team2Name: team2Name.trim() || "Team 2",
+      eventsEnabled, eventType, timerSeconds, gameLengthMode, aiDifficulty,
+    });
   }
 
-  const sectionStyle = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "20px",
-    padding: "20px",
-    marginBottom: "20px",
-  };
-
-  const sectionTitle = "text-sm uppercase tracking-widest text-gray-400 mb-4 font-black";
+  const canStart = !!mode;
 
   return (
-    <main className="min-h-screen bg-[#060912] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <main className="min-h-screen w-full text-white flex overflow-hidden relative" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] left-[15%] w-[700px] h-[700px] rounded-full blur-[180px]" style={{ background: "rgba(16,185,129,0.07)" }} />
-        <div className="absolute bottom-[-15%] right-[15%] w-[600px] h-[600px] rounded-full blur-[160px]" style={{ background: "rgba(59,130,246,0.05)" }} />
-        <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.01) 1px, transparent 1px)", backgroundSize: "45px 45px" }} />
+      {/* ── BACKGROUND IMAGE ── */}
+      <div className="absolute inset-0 z-0">
+        <img src="/start-bg.png" alt="" className="w-full h-full object-cover object-center" />
+        {/* Dark overlay — stronger on left for readability */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(4,8,16,0.97) 0%, rgba(4,8,16,0.92) 38%, rgba(4,8,16,0.3) 65%, rgba(4,8,16,0.0) 100%)" }} />
       </div>
 
-      <div className="relative z-10 w-full max-w-2xl">
+      {/* ── LEFT PANEL ── */}
+      <div className="relative z-10 flex flex-col w-[400px] min-w-[360px] max-w-[420px] h-screen overflow-y-auto px-7 py-6">
 
         {/* Logo */}
-        <div className="text-center mb-10">
-          <p
-            onClick={() => { const n = easterClicks+1; setEasterClicks(n); if(n>=5) setEasterUnlocked(true); }}
-            className="text-xl font-black mb-4 cursor-pointer tracking-wide"
-            style={{ color: "#D4AF37", textShadow: "0 0 30px rgba(212,175,55,0.6)" }}
-          >
-            👀 حجي المطور المستقل
-          </p>
-
-          <div style={{ fontSize: "88px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg, #ffffff, #a8f5d0)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            Football
-          </div>
-          <div style={{ fontSize: "88px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg, #10b981, #34d399, #6ee7b7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            Investor
-          </div>
-
-          <p className="text-gray-500 text-base tracking-widest uppercase mt-5">
-            Build The Most Valuable Squad
-          </p>
-
-          {easterUnlocked && (
-            <p className="mt-3 text-yellow-400 text-base font-black animate-pulse">
-              😏 شطور... الحين دور عن بطاقتي.
-            </p>
-          )}
+        <div className="mb-6 cursor-pointer select-none" onClick={() => { const n = easterClicks+1; setEasterClicks(n); if(n>=5) setEasterUnlocked(true); }}>
+          <img src="/logo.png" alt="Football Investor" className="w-20 h-20 object-contain mb-3" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <div className="text-[11px] tracking-[0.3em] uppercase text-gray-500 mt-1">Build Your Legacy</div>
+          {easterUnlocked && <div className="text-yellow-400 text-xs font-bold mt-1 animate-pulse">😏 شطور...</div>}
         </div>
 
-        {/* How To Play */}
-        <button onClick={() => setShowHowToPlay(!showHowToPlay)}
-          className="w-full mb-5 py-4 rounded-none font-bold text-base transition-all"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#9ca3af" }}>
-          {showHowToPlay ? "▲ إخفاء الدليل — Hide Guide" : "📖 كيف تلعب — How To Play"}
-        </button>
-
-        {showHowToPlay && (
-          <div className="mb-5 rounded-none p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="space-y-4">
-              {HOW_TO_PLAY.map((item, i) => (
-                <div key={i} className="flex items-start gap-3 pb-3" style={{ borderBottom: i < HOW_TO_PLAY.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
-                  <span className="text-2xl flex-shrink-0 mt-0.5">{item.emoji}</span>
-                  <div>
-                    <div className="text-white font-bold text-sm">{item.en}</div>
-                    <div className="text-gray-400 text-xs mt-1 leading-relaxed">{item.ar}</div>
-                  </div>
+        {/* ── GAME MODE ── */}
+        <Section label="► GAME MODE">
+          <div className="space-y-2">
+            {MODES.map(m => (
+              <button key={m.key} onClick={() => setMode(m.key)}
+                className="w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-none"
+                style={{
+                  background: mode === m.key ? `${m.color}18` : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${mode === m.key ? m.color : "rgba(255,255,255,0.08)"}`,
+                  boxShadow: mode === m.key ? `0 0 16px ${m.color}30` : "none",
+                }}>
+                <div className="w-8 h-8 rounded-none flex items-center justify-center text-sm"
+                  style={{ background: mode === m.key ? `${m.color}25` : "rgba(255,255,255,0.06)" }}>
+                  {m.icon}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Game Mode */}
-        <div style={sectionStyle}>
-          <div className={sectionTitle}>Game Mode — وضع اللعبة</div>
-          <div className="grid grid-cols-3 gap-3">
-            {(["single","versus","ai"] as const).map((m) => {
-              const cfg = {
-                single: { emoji: "👤", en: "Single Player", ar: "لاعب واحد", color: "#10b981" },
-                versus: { emoji: "👥", en: "Versus Friend", ar: "ضد صديق", color: "#3b82f6" },
-                ai:     { emoji: "🤖", en: "vs AI", ar: "ضد الكمبيوتر", color: "#a855f7" },
-              }[m];
-              return (
-                <button key={m} onClick={() => setMode(m)}
-                  className="py-5 rounded-none font-black transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                  style={mode === m ? {
-                    borderColor: cfg.color, borderWidth: 2, borderStyle: "solid",
-                    background: `${cfg.color}22`,
-                    boxShadow: `0 0 25px ${cfg.color}44`
-                  } : { border: "2px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
-                  <div className="text-3xl mb-2">{cfg.emoji}</div>
-                  <div className="text-white text-base">{cfg.en}</div>
-                  <div className="text-gray-400 text-sm font-normal mt-1">{cfg.ar}</div>
-                </button>
-              );
-            })}
+                <div className="text-left">
+                  <div className="text-xs font-black tracking-wider text-white">{m.en}</div>
+                  <div className="text-[10px] text-gray-500">{m.ar}</div>
+                </div>
+                {mode === m.key && <div className="ml-auto w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: m.color }} />}
+              </button>
+            ))}
           </div>
 
-          {/* AI Difficulty selector */}
+          {/* AI difficulty */}
           {mode === "ai" && (
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 uppercase tracking-widest mb-3 font-bold">AI Difficulty — صعوبة الخصم</div>
-              <div className="grid grid-cols-3 gap-3">
-                {(["scout","manager","director"] as const).map((d) => {
-                  const cfg = AI_DIFFICULTY_CONFIG[d];
-                  return (
-                    <button key={d} onClick={() => setAiDifficulty(d)}
-                      className="py-4 rounded-none font-black transition-all duration-200 hover:scale-[1.02]"
-                      style={aiDifficulty === d ? {
-                        borderColor: cfg.color, borderWidth: 2, borderStyle: "solid",
-                        background: `${cfg.color}22`, boxShadow: `0 0 20px ${cfg.color}33`
-                      } : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
-                      <div className="text-2xl mb-1">{cfg.emoji}</div>
-                      <div className="text-white text-sm">{cfg.label}</div>
-                      <div className="text-gray-500 text-xs font-normal mt-1 leading-tight">{cfg.description}</div>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="mt-3 space-y-1.5">
+              <div className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Difficulty</div>
+              {(["scout","manager","director"] as AIDifficulty[]).map(d => {
+                const cfg = AI_DIFFICULTY_CONFIG[d];
+                return (
+                  <button key={d} onClick={() => setAiDifficulty(d)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-none transition-all"
+                    style={{
+                      background: aiDifficulty === d ? `${cfg.color}18` : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${aiDifficulty === d ? cfg.color : "rgba(255,255,255,0.06)"}`,
+                    }}>
+                    <span className="text-sm">{cfg.emoji}</span>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-white">{cfg.label}</div>
+                      <div className="text-[9px] text-gray-500">{cfg.description}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
-        </div>
+        </Section>
 
-        {/* Team Names */}
-        {mode && (
-          <div style={sectionStyle}>
-            <div className={sectionTitle}>Team Names — أسماء الفرق</div>
-            <div className={`grid gap-4 ${mode === "versus" || mode === "ai" ? "grid-cols-2" : "grid-cols-1"}`}>
-              <input value={team1Name} onChange={(e) => setTeam1Name(e.target.value)} placeholder="Team 1"
-                className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-none"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }} />
-              {mode === "versus" && (
-                <input value={team2Name} onChange={(e) => setTeam2Name(e.target.value)} placeholder="Team 2"
-                  className="px-4 py-4 text-white placeholder-gray-600 font-bold text-base focus:outline-none transition-colors rounded-none"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }} />
-              )}
-              {mode === "ai" && (
-                <div className="px-4 py-4 font-bold text-base rounded-none flex items-center gap-2"
-                  style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)" }}>
-                  <span>🤖</span>
-                  <span className="text-purple-400">{AI_DIFFICULTY_CONFIG[aiDifficulty].label} AI</span>
+        {/* ── STARTING BUDGET ── */}
+        <Section label="► STARTING BUDGET">
+          <div className="grid grid-cols-2 gap-2">
+            {BUDGETS.map(b => (
+              <button key={b.key} onClick={() => setBudgetMode(b.key)}
+                className="flex flex-col items-start px-3 py-2.5 rounded-none transition-all"
+                style={{
+                  background: budgetMode === b.key ? `${b.color}18` : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${budgetMode === b.key ? b.color : "rgba(255,255,255,0.07)"}`,
+                  boxShadow: budgetMode === b.key ? `0 0 12px ${b.color}25` : "none",
+                }}>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-xs">{b.emoji}</span>
+                  <span className="text-[10px] font-black tracking-wider text-white">{b.label.toUpperCase()}</span>
                 </div>
-              )}
-            </div>
+                <div className="text-sm font-black" style={{ color: budgetMode === b.key ? b.color : "#9ca3af" }}>{b.amount}</div>
+              </button>
+            ))}
           </div>
+        </Section>
+
+        {/* ── SEASON MODE ── */}
+        <Section label="► SEASON MODE">
+          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-none"
+            style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.25)" }}>
+            <span>🏆</span>
+            <div className="text-left">
+              <div className="text-xs font-black text-yellow-400 tracking-wider">وضع الموسم</div>
+              <div className="text-[10px] text-gray-500">ابن امبراطوريتك على مدار المواسم</div>
+            </div>
+          </button>
+        </Section>
+
+        {/* ── TEAM NAMES ── */}
+        {mode && (
+          <Section label="► TEAM NAME">
+            <input value={team1Name} onChange={e => setTeam1Name(e.target.value)}
+              placeholder="Your team name"
+              className="w-full px-3 py-2.5 text-white text-xs font-bold placeholder-gray-600 focus:outline-none rounded-none mb-2"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
+            {mode === "versus" && (
+              <input value={team2Name} onChange={e => setTeam2Name(e.target.value)}
+                placeholder="Opponent team name"
+                className="w-full px-3 py-2.5 text-white text-xs font-bold placeholder-gray-600 focus:outline-none rounded-none"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
+            )}
+            {mode === "ai" && (
+              <div className="px-3 py-2.5 text-xs font-bold rounded-none flex items-center gap-2"
+                style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                <span>🤖</span>
+                <span className="text-purple-400">{AI_DIFFICULTY_CONFIG[aiDifficulty].label} AI</span>
+              </div>
+            )}
+          </Section>
         )}
 
-        {/* Budget */}
-        <div style={sectionStyle}>
-          <div className={sectionTitle}>Starting Budget — الميزانية الابتدائية</div>
-          <div className="grid grid-cols-2 gap-4">
-            {BUDGETS.map((b) => (
-              <button key={b.key} onClick={() => setBudgetMode(b.key)}
-                className="py-5 px-4 rounded-none text-left transition-all duration-200 hover:scale-[1.02]"
-                style={budgetMode === b.key
-                  ? { border: "2px solid rgba(16,185,129,0.7)", background: "rgba(16,185,129,0.12)", boxShadow: "0 0 20px rgba(16,185,129,0.15)" }
-                  : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
-                <div className="text-2xl mb-2">{b.emoji}</div>
-                <div className="text-white font-black text-lg">{b.amount} {b.en}</div>
-                <div className="text-gray-500 text-xs mt-1">{b.desc}</div>
-                <div className="text-gray-600 text-xs mt-0.5">{b.descAr}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Season Mode */}
-        <div style={sectionStyle}>
-          <div className={sectionTitle}>Season Mode — وضع الموسم</div>
-          <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => setGameLengthMode("classic")}
-              className="py-5 rounded-none font-black transition-all hover:scale-[1.02]"
-              style={gameLengthMode === "classic"
-                ? { border: "2px solid #f59e0b", background: "rgba(245,158,11,0.12)", boxShadow: "0 0 20px rgba(245,158,11,0.2)" }
-                : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
-              <div className="text-3xl mb-2">🏆</div>
-              <div className="text-white text-lg">Modern Era</div>
-              <div className="text-gray-400 text-sm font-normal mt-1">2008 — 2028</div>
-            </button>
-            <button onClick={() => setGameLengthMode("infinite")}
-              className="py-5 rounded-none font-black transition-all hover:scale-[1.02]"
-              style={gameLengthMode === "infinite"
-                ? { border: "2px solid #a855f7", background: "rgba(168,85,247,0.12)", boxShadow: "0 0 20px rgba(168,85,247,0.2)" }
-                : { border: "2px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
-              <div className="text-3xl mb-2">♾️</div>
-              <div className="text-white text-lg">Infinite Mode</div>
-              <div className="text-gray-400 text-sm font-normal mt-1">لا نهاية</div>
-            </button>
-          </div>
-        </div>
-
-        {/* Events */}
-        <div style={sectionStyle}>
-          <div className={sectionTitle}>Events — الأحداث</div>
-          <div className="flex items-center gap-4 mb-4">
-            <button onClick={() => setEventsEnabled(!eventsEnabled)}
-              className="relative w-16 h-8 rounded-full transition-colors duration-300 flex-shrink-0"
-              style={{ background: eventsEnabled ? "#10b981" : "rgba(255,255,255,0.1)" }}>
-              <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-300 ${eventsEnabled ? "left-9" : "left-1"}`} />
-            </button>
-            <span className="font-bold text-base" style={{ color: eventsEnabled ? "#10b981" : "#6b7280" }}>
-              {eventsEnabled ? "Events ON — الأحداث مفعّلة" : "Events OFF — الأحداث مغلقة"}
-            </span>
-          </div>
-          {eventsEnabled && (
-            <div className="flex gap-3">
-              {(["all","positive","negative"] as EventType[]).map((e) => (
-                <button key={e} onClick={() => setEventType(e)}
-                  className="flex-1 py-3 rounded-none text-sm font-bold transition-all"
-                  style={eventType === e ? {
-                    border: `2px solid ${e === "positive" ? "#10b981" : e === "negative" ? "#ef4444" : "rgba(255,255,255,0.4)"}`,
-                    background: e === "positive" ? "rgba(16,185,129,0.15)" : e === "negative" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.1)",
-                    color: e === "positive" ? "#34d399" : e === "negative" ? "#f87171" : "#ffffff"
-                  } : { border: "2px solid rgba(255,255,255,0.08)", background: "transparent", color: "#6b7280" }}>
-                  {e === "all" ? "الكل — All" : e === "positive" ? "✅ إيجابية" : "❌ سلبية"}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Timer */}
-        <div style={sectionStyle}>
-          <div className={sectionTitle}>Selection Timer — مؤقت الاختيار</div>
-          <div className="flex gap-3">
-            {TIMER_OPTIONS.map((t) => (
-              <button key={String(t.value)} onClick={() => setTimerSeconds(t.value)}
-                className="flex-1 py-4 rounded-none text-base font-bold transition-all"
-                style={timerSeconds === t.value
-                  ? { border: "2px solid #f59e0b", background: "rgba(245,158,11,0.15)", color: "#fbbf24" }
-                  : { border: "2px solid rgba(255,255,255,0.08)", background: "transparent", color: "#6b7280" }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Start Button */}
-        <button onClick={handleStart} disabled={!mode}
-          className="w-full py-6 rounded-none font-black text-2xl tracking-wide transition-all duration-300"
-          style={mode ? {
+        {/* ── START BUTTON ── */}
+        <button onClick={handleStart} disabled={!canStart}
+          className="w-full py-4 font-black text-sm tracking-[0.2em] uppercase transition-all duration-300 mt-auto rounded-none"
+          style={canStart ? {
             background: "linear-gradient(135deg, #10b981, #059669)",
-            boxShadow: "0 8px 30px rgba(16,185,129,0.4)",
-            color: "black",
+            color: "white",
+            boxShadow: "0 4px 24px rgba(16,185,129,0.4)",
           } : {
-            background: "rgba(255,255,255,0.04)",
-            color: "#4b5563",
-            border: "1px solid rgba(255,255,255,0.08)"
+            background: "rgba(255,255,255,0.05)",
+            color: "#374151",
+            cursor: "not-allowed",
           }}>
-          {mode ? "⚽ ابدأ اللعبة — Start Game" : "اختر وضع اللعبة أولاً"}
+          {canStart ? "▶  START GAME" : "SELECT MODE TO START"}
         </button>
+
+        {/* ── BOTTOM LINKS ── */}
+        <div className="flex items-center gap-4 mt-4 pb-2">
+          <button className="flex items-center gap-1.5 text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
+            <span>⚙️</span> SETTINGS
+          </button>
+          <button className="flex items-center gap-1.5 text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
+            <span>📖</span> MANUAL
+          </button>
+        </div>
 
       </div>
+
+      {/* ── RIGHT SIDE: just the background shows through ── */}
+
     </main>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <div className="text-[9px] font-black tracking-[0.25em] mb-2.5 flex items-center gap-2"
+        style={{ color: "#10b981" }}>
+        {label}
+      </div>
+      {children}
+    </div>
   );
 }
