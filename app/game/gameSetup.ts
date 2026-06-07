@@ -11,7 +11,7 @@ import type {
 } from "./types";
 import { randomId } from "./helpers";
 import { emptyCards } from "./rewardCardEngine";
-import { BUDGET_SETTINGS, GAME_START_SEASON, PURCHASE_CHANCES_PER_SEASON, SELL_CHANCES_PER_SEASON } from "./constants";
+import { BUDGET_SETTINGS, GAME_START_SEASON, PURCHASE_CHANCES_PER_SEASON, PURCHASE_CHANCES_VERSUS, SELL_CHANCES_PER_SEASON } from "./constants";
 import { applyRetirementToSquad } from "./careerEngine";
 import { createRetirementNews, createNewSeasonNews, createGameStartNews } from "./newsEngine";
 
@@ -26,13 +26,14 @@ export function createInitialGamePlayers(
   mode: GameMode = "versus"
 ): GamePlayer[] {
   const budget = BUDGET_SETTINGS[budgetMode].budget;
+  const initChances = mode === "single" ? PURCHASE_CHANCES_PER_SEASON : PURCHASE_CHANCES_VERSUS;
 
   const base: GamePlayer = {
     name: "",
     budget,
     owned: [],
     sold: [],
-    purchaseChances: PURCHASE_CHANCES_PER_SEASON,
+    purchaseChances: initChances,
     sellChances: SELL_CHANCES_PER_SEASON,
     soldBonusUsedThisSeason: false,
     cards: emptyCards(),
@@ -85,15 +86,18 @@ export type SeasonSetupResult = {
 
 export function setupNewSeason(
   newSeason: number,
-  gamePlayers: GamePlayer[]
+  gamePlayers: GamePlayer[],
+  mode: GameMode = "single"
 ): SeasonSetupResult {
   const retirementNews: NewsItem[] = [];
   const salaryNews: NewsItem[] = [];
   const sponsorshipNews: NewsItem[] = [];
 
+  const baseChances = mode === "single" ? PURCHASE_CHANCES_PER_SEASON : PURCHASE_CHANCES_VERSUS;
+
   // Step 1: Reset chances + retirements
   let updatedPlayers = gamePlayers.map((gp): GamePlayer => {
-    const chances = gp.tripleNextSeason ? PURCHASE_CHANCES_PER_SEASON + 2 : PURCHASE_CHANCES_PER_SEASON;
+    const chances = gp.tripleNextSeason ? baseChances + 2 : baseChances;
     const reset: GamePlayer = {
       ...gp,
       purchaseChances: gp.frozenSeason === newSeason ? 0 : chances,

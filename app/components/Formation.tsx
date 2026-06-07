@@ -16,13 +16,14 @@ type Props = {
   onOwnedClick: (playerIndex: number, ownedIndex: number) => void;
 };
 
-// Each row: slots to render
-const ROWS: string[][] = [
-  ["LW", "ST", "RW"],
-  ["CAM"],
-  ["LCM", "RCM"],
-  ["LB", "LCB", "RCB", "RB"],
-  ["GK"],
+// Each row: [leftPad%, slot, rightPad%] — controls centering on pitch
+// Uses CSS grid with named areas per row for exact positioning
+const ROWS: { slots: string[]; cols: string }[] = [
+  { slots: ["LW", "ST", "RW"],     cols: "1fr 1fr 1fr" },
+  { slots: ["CAM"],                cols: "1fr 1fr 1fr" },   // CAM centered
+  { slots: ["LCM", "RCM"],         cols: "1fr 1fr 1fr" },   // LCM left, gap, RCM right
+  { slots: ["LB", "LCB", "RCB", "RB"], cols: "1fr 1fr 1fr 1fr" },
+  { slots: ["GK"],                 cols: "1fr 1fr 1fr" },   // GK centered
 ];
 
 function getCardGlow(owned: OwnedPlayer): string {
@@ -39,6 +40,65 @@ function getRatingBg(rating: number): string {
   return "bg-orange-500 text-white";
 }
 
+function SlotCard({
+  slot, owned, ownedIndex, isActive, isPending, playerIndex, onSlotClick, onOwnedClick, season, marketMultiplier
+}: {
+  slot: string;
+  owned: OwnedPlayer | undefined;
+  ownedIndex: number;
+  isActive: boolean;
+  isPending: boolean;
+  playerIndex: number;
+  onSlotClick: (s: string) => void;
+  onOwnedClick: (pi: number, oi: number) => void;
+  season: number;
+  marketMultiplier: number;
+}) {
+  if (owned) {
+    const stats = getSeasonStats(owned.player, season);
+    const value = getCurrentValue(owned.player, season, marketMultiplier);
+    const profit = value - owned.buyPrice;
+    return (
+      <button
+        onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
+        className={`border-2 rounded-none w-full text-left p-2 transition-all duration-150 active:scale-95 ${getCardGlow(owned)} ${
+          isActive ? "hover:brightness-125 cursor-pointer" : "cursor-default"
+        }`}
+        style={{ minHeight: "80px" }}
+      >
+        <div className={`text-[10px] font-black px-1 rounded-none inline-block mb-0.5 ${positionBg(slot)}`}>{slot}</div>
+        <div className="text-xs font-black text-white truncate">{owned.player.name.split(" ").pop()}</div>
+        <div className={`text-[10px] font-black px-1 rounded-none inline-block mt-0.5 ${getRatingBg(stats.rating)}`}>{stats.rating}</div>
+        <div className="text-[10px] text-yellow-300 font-bold mt-0.5">€{value}M</div>
+        <div className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+          {profit >= 0 ? "↑" : "↓"}{Math.abs(profit)}M
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => { if (!isActive) return; onSlotClick(slot); }}
+      className={`border-2 rounded-none w-full flex flex-col items-center justify-center transition-all duration-200 active:scale-95 ${
+        isPending
+          ? "border-yellow-500/80 bg-yellow-900/40"
+          : isActive
+          ? "border-white/15 bg-white/5 hover:border-emerald-500/60 hover:bg-emerald-900/20 cursor-pointer"
+          : "border-white/5 bg-white/3 cursor-default"
+      }`}
+      style={{ minHeight: "80px" }}
+    >
+      <div className={`text-[10px] font-black px-1 rounded-none inline-block mb-1 ${positionBg(slot)}`}>{slot}</div>
+      {isPending
+        ? <span className="text-yellow-400 text-lg animate-pulse">⋯</span>
+        : isActive
+        ? <span className="text-white/30 text-2xl font-black">+</span>
+        : null}
+    </button>
+  );
+}
+
 export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, onSlotClick, onOwnedClick }: Props) {
   const isFrozen = gamePlayer.frozenSeason === season;
 
@@ -50,57 +110,85 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
     return gamePlayer.owned.findIndex((item) => item.slot === slot);
   }
 
-  function renderSlot(slot: string) {
-    const owned = getOwnedBySlot(slot);
-    const ownedIndex = getOwnedIndexBySlot(slot);
-    const isPending = pendingSlot === slot;
+  function renderRow(row: typeof ROWS[0], rowIndex: number) {
+    const { slots, cols } = row;
+    const isCentered = slots.length === 1; // CAM, GK
+    const isLCMRCM = slots.length === 2;
 
-    if (owned) {
-      const stats = getSeasonStats(owned.player, season);
-      const value = getCurrentValue(owned.player, season, marketMultiplier);
-      const profit = value - owned.buyPrice;
-
+    if (isCentered) {
+      // Single slot — center it in a 3-col grid
       return (
-        <button
-          key={slot}
-          onClick={() => { if (!isActive) return; onOwnedClick(playerIndex, ownedIndex); }}
-          className={`border-2 rounded-none w-full text-left p-2 transition-all duration-150 active:scale-95 ${getCardGlow(owned)} ${
-            isActive ? "hover:brightness-125 cursor-pointer" : "cursor-default"
-          }`}
-        >
-          <div className={`text-[10px] font-black px-1 rounded-none inline-block ${positionBg(slot)}`}>{slot}</div>
-          <div className="text-xs font-black text-white truncate mt-0.5">{owned.player.name.split(" ").pop()}</div>
-          <div className={`text-[10px] font-black px-1 rounded-none inline-block mt-0.5 ${getRatingBg(stats.rating)}`}>{stats.rating}</div>
-          <div className="text-[10px] text-yellow-300 font-bold">€{value}M</div>
-          <div className={`text-[10px] font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            {profit >= 0 ? "↑" : "↓"}{Math.abs(profit)}M
-          </div>
-        </button>
+        <div key={rowIndex} className="grid gap-1.5" style={{ gridTemplateColumns: cols }}>
+          <div />
+          <SlotCard
+            slot={slots[0]}
+            owned={getOwnedBySlot(slots[0])}
+            ownedIndex={getOwnedIndexBySlot(slots[0])}
+            isActive={isActive}
+            isPending={pendingSlot === slots[0]}
+            playerIndex={playerIndex}
+            onSlotClick={onSlotClick}
+            onOwnedClick={onOwnedClick}
+            season={season}
+            marketMultiplier={marketMultiplier}
+          />
+          <div />
+        </div>
       );
     }
 
-    return (
-      <button
-        key={slot}
-        onClick={() => { if (!isActive) return; onSlotClick(slot); }}
-        className={`border-2 rounded-none w-full p-2 transition-all duration-200 active:scale-95 flex flex-col items-center justify-center ${
-          isPending
-            ? "border-yellow-500/80 bg-yellow-900/40"
-            : isActive
-            ? "border-white/15 bg-white/5 hover:border-emerald-500/60 hover:bg-emerald-900/20 cursor-pointer"
-            : "border-white/5 bg-white/3 cursor-default"
-        }`}
-        style={{ minHeight: "72px" }}
-      >
-        <div className={`text-[10px] font-black px-1 rounded-none inline-block ${positionBg(slot)}`}>{slot}</div>
-        <div className="mt-1">
-          {isPending
-            ? <span className="text-yellow-400 text-base animate-pulse">⋯</span>
-            : isActive
-            ? <span className="text-white/30 text-xl font-black">+</span>
-            : null}
+    if (isLCMRCM) {
+      // Two slots — left and right with gap in middle
+      return (
+        <div key={rowIndex} className="grid gap-1.5" style={{ gridTemplateColumns: cols }}>
+          <SlotCard
+            slot={slots[0]}
+            owned={getOwnedBySlot(slots[0])}
+            ownedIndex={getOwnedIndexBySlot(slots[0])}
+            isActive={isActive}
+            isPending={pendingSlot === slots[0]}
+            playerIndex={playerIndex}
+            onSlotClick={onSlotClick}
+            onOwnedClick={onOwnedClick}
+            season={season}
+            marketMultiplier={marketMultiplier}
+          />
+          <div />
+          <SlotCard
+            slot={slots[1]}
+            owned={getOwnedBySlot(slots[1])}
+            ownedIndex={getOwnedIndexBySlot(slots[1])}
+            isActive={isActive}
+            isPending={pendingSlot === slots[1]}
+            playerIndex={playerIndex}
+            onSlotClick={onSlotClick}
+            onOwnedClick={onOwnedClick}
+            season={season}
+            marketMultiplier={marketMultiplier}
+          />
         </div>
-      </button>
+      );
+    }
+
+    // Normal rows (3 or 4 slots)
+    return (
+      <div key={rowIndex} className="grid gap-1.5" style={{ gridTemplateColumns: cols }}>
+        {slots.map((slot) => (
+          <SlotCard
+            key={slot}
+            slot={slot}
+            owned={getOwnedBySlot(slot)}
+            ownedIndex={getOwnedIndexBySlot(slot)}
+            isActive={isActive}
+            isPending={pendingSlot === slot}
+            playerIndex={playerIndex}
+            onSlotClick={onSlotClick}
+            onOwnedClick={onOwnedClick}
+            season={season}
+            marketMultiplier={marketMultiplier}
+          />
+        ))}
+      </div>
     );
   }
 
@@ -108,7 +196,6 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
     <div className={`relative rounded-none overflow-hidden border-2 transition-all duration-300 ${
       isActive ? "border-emerald-500/60 shadow-2xl shadow-emerald-500/10" : "border-white/8 opacity-70"
     }`}>
-
       {/* Pitch background */}
       <div className="absolute inset-0 pitch-bg">
         <div className="absolute inset-2 border border-white/8" />
@@ -119,7 +206,6 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
       </div>
 
       <div className="relative z-10 p-2 flex flex-col gap-1.5">
-
         {/* Team header */}
         <div className={`flex items-center justify-between px-2 py-1.5 rounded-none backdrop-blur-sm ${
           isActive ? "bg-emerald-900/40 border border-emerald-500/30" : "bg-black/40 border border-white/8"
@@ -142,16 +228,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         </div>
 
         {/* Formation rows */}
-        {ROWS.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex gap-1.5">
-            {row.map((slot) => (
-              <div key={slot} className="flex-1">
-                {renderSlot(slot)}
-              </div>
-            ))}
-          </div>
-        ))}
-
+        {ROWS.map((row, rowIndex) => renderRow(row, rowIndex))}
       </div>
     </div>
   );

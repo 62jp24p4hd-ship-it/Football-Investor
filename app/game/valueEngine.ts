@@ -252,42 +252,33 @@ export function guaranteeAffordablePlayer(
     p.values?.[p.availableSeason] ??
     1;
 
-  const result = [...players];
+  // Scale ALL players so that max price = budget
+  // Preserve relative price differences between players
+  const rawVals = players.map(getVal);
+  const maxRaw = Math.max(...rawVals);
+  const minRaw = Math.min(...rawVals);
 
-  // Sort indices by price
-  const indices = result.map((_, i) => i).sort((a, b) => getVal(result[a]) - getVal(result[b]));
+  // Price range: cheapest = 10% of budget, most expensive = 100% of budget
+  const minPrice = Math.max(1, Math.round(budget * 0.1));
+  const maxPrice = Math.max(minPrice + 1, budget);
 
-  // Force player at index 0 (cheapest) to be 50% of budget
-  const i0 = indices[0];
-  const price0 = Math.max(1, Math.round(budget * 0.5));
-  result[i0] = {
-    ...result[i0],
-    statsBySeason: result[i0].statsBySeason ? {
-      ...result[i0].statsBySeason,
-      [season]: result[i0].statsBySeason[season]
-        ? { ...result[i0].statsBySeason[season], value: price0 }
-        : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: 70, value: price0 }
-    } : result[i0].statsBySeason,
-    values: { ...(result[i0].values ?? {}), [season]: price0 },
-  };
-
-  // Force player at index 1 (second cheapest) to be 80% of budget
-  if (indices.length > 1) {
-    const i1 = indices[1];
-    const price1 = Math.max(price0 + 1, Math.round(budget * 0.82));
-    if (price1 <= budget) {
-      result[i1] = {
-        ...result[i1],
-        statsBySeason: result[i1].statsBySeason ? {
-          ...result[i1].statsBySeason,
-          [season]: result[i1].statsBySeason[season]
-            ? { ...result[i1].statsBySeason[season], value: price1 }
-            : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: 70, value: price1 }
-        } : result[i1].statsBySeason,
-        values: { ...(result[i1].values ?? {}), [season]: price1 },
-      };
-    }
+  function scalePrice(raw: number): number {
+    if (maxRaw === minRaw) return Math.round(budget * 0.5);
+    const ratio = (raw - minRaw) / (maxRaw - minRaw);
+    return Math.max(minPrice, Math.min(maxPrice, Math.round(minPrice + ratio * (maxPrice - minPrice))));
   }
 
-  return result;
+  return players.map((p, i) => {
+    const newPrice = scalePrice(rawVals[i]);
+    return {
+      ...p,
+      statsBySeason: p.statsBySeason ? {
+        ...p.statsBySeason,
+        [season]: p.statsBySeason[season]
+          ? { ...p.statsBySeason[season], value: newPrice }
+          : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: 70, value: newPrice }
+      } : p.statsBySeason,
+      values: { ...(p.values ?? {}), [season]: newPrice },
+    };
+  });
 }
