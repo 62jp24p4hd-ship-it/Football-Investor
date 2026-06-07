@@ -444,3 +444,109 @@ export function forcedMarketEvent(
   const { event, newsItem } = createMarketEvent(season, positive);
   return { event, updatedPlayers: gamePlayers, newsItems: [newsItem] };
 }
+
+// ============================================
+// FORCED SPECIFIC EVENT — للـ Developer Panel
+// يطبّق الإيفنت المحدد بالضبط بدل عشوائي
+// ============================================
+
+const EVENT_MAP: Record<string, PlayerEventEffect> = {
+  ballonDor: {
+    title: "🏆 Ballon d'Or Winner", tone: "good",
+    multiplier: 1.5, ratingChange: 5, gamesChange: 4, goalsChange: 10, assistsChange: 6, cleanSheetsChange: 0,
+  },
+  goldenBoot: {
+    title: "👟 Golden Boot", tone: "good",
+    multiplier: 1.4, ratingChange: 4, gamesChange: 3, goalsChange: 18, assistsChange: 2, cleanSheetsChange: 0,
+  },
+  goldenBoy: {
+    title: "🌟 Golden Boy Award", tone: "good",
+    multiplier: 1.6, ratingChange: 6, gamesChange: 5, goalsChange: 8, assistsChange: 6, cleanSheetsChange: 0,
+  },
+  wonderkid: {
+    title: "🚀 Wonderkid Explosion", tone: "good",
+    multiplier: 2.0, ratingChange: 7, gamesChange: 6, goalsChange: 12, assistsChange: 8, cleanSheetsChange: 0,
+  },
+  saudiOffer: {
+    title: "💰 Saudi Mega Offer", tone: "good",
+    multiplier: 1.5, ratingChange: 2, gamesChange: 2, goalsChange: 3, assistsChange: 2, cleanSheetsChange: 0,
+  },
+  recordTransfer: {
+    title: "💸 Record Transfer Fee", tone: "good",
+    multiplier: 1.45, ratingChange: 3, gamesChange: 3, goalsChange: 5, assistsChange: 4, cleanSheetsChange: 0,
+  },
+  aclInjury: {
+    title: "🤕 ACL Injury", tone: "bad",
+    multiplier: 0.5, ratingChange: -6, gamesChange: -10, goalsChange: -5, assistsChange: -4, cleanSheetsChange: -2,
+  },
+  majorInjury: {
+    title: "🚑 Major Injury", tone: "bad",
+    multiplier: 0.2, ratingChange: -10, gamesChange: -20, goalsChange: -8, assistsChange: -6, cleanSheetsChange: -3,
+  },
+  benchWarmer: {
+    title: "🪑 Bench Warmer", tone: "bad",
+    multiplier: 0.7, ratingChange: -4, gamesChange: -8, goalsChange: -4, assistsChange: -3, cleanSheetsChange: -1,
+  },
+  failedTransfer: {
+    title: "📉 Failed Transfer", tone: "bad",
+    multiplier: 0.6, ratingChange: -5, gamesChange: -5, goalsChange: -3, assistsChange: -3, cleanSheetsChange: -1,
+  },
+  freeTransfer: {
+    title: "😤 Contract Dispute", tone: "bad",
+    multiplier: 0.65, ratingChange: -4, gamesChange: -4, goalsChange: -3, assistsChange: -2, cleanSheetsChange: -1,
+  },
+};
+
+export function forcedSpecificEvent(
+  eventId: string,
+  season: number,
+  gamePlayers: GamePlayer[],
+  ownerIndex: number
+): SeasonEventResult {
+  const effect = EVENT_MAP[eventId];
+  if (!effect) {
+    // fallback للعشوائي
+    const positive = ["ballonDor","goldenBoy","goldenBoot","wonderkid","saudiOffer","recordTransfer"].includes(eventId);
+    const result = applyEventToRandomOwnedPlayer(gamePlayers, ownerIndex, season, positive);
+    return { event: null, updatedPlayers: result.updatedPlayers, newsItems: result.newsItem ? [result.newsItem] : [] };
+  }
+
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const candidates = owner.owned.filter(item => !item.player.secret);
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  const currentOwnedValue = picked.currentValue && picked.currentValue > 0 ? picked.currentValue : picked.buyPrice;
+  const playerBefore = picked.player;
+  const playerAfter = applyEventToPlayer(picked.player, season, effect, currentOwnedValue);
+
+  const beforeStats = getSeasonStats(playerBefore, season);
+  const afterStats = getSeasonStats(playerAfter, season);
+  const afterValue = afterStats.value;
+
+  const newsItem: NewsItem = {
+    id: randomId(),
+    season,
+    title: effect.title,
+    description: `${owner.name}: ${playerBefore.name} | Rating ${beforeStats.rating}→${afterStats.rating} | Value €${currentOwnedValue}M→€${afterValue}M`,
+    tone: effect.tone as import("./types").NewsTone,
+    journalist: "David Ornstein",
+    source: "The Athletic",
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, player: playerAfter, currentValue: afterValue }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}

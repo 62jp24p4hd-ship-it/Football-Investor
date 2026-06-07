@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions } from "./game/eventEngine";
+import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -23,7 +23,7 @@ import { setupNewSeason, buildInitialState, getFirstTurn, validateGameStart } fr
 import { generateSponsorshipOffer, shouldReceiveSponsorshipOffer, addSponsorshipToPlayer, createSponsorshipNews } from "./game/sponsorshipEngine";
 import { createTransferNews, createSaleNews, createFreezeCardNews, createTripleBuyNews, createStealCardNews, createGeneratedClassNews } from "./game/newsEngine";
 import { shuffle, randomId, pickRandom } from "./game/helpers";
-import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS } from "./game/constants";
+import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS, ALL_POSITIONS } from "./game/constants";
 import { singleCanNextSeason } from "./game/singleMode";
 import { versusCanNextSeason } from "./game/versusMode";
 import { makeAIDecision, makeAISellDecision, makeAIBidDecision } from "./game/aiEngine";
@@ -207,35 +207,62 @@ export default function Home() {
         return;
       }
 
-      const decision = makeAIDecision(difficulty, affordablePool, aiPlayer, season);
+      // اختار مركز فاضي عشوائي أولاً
+      const emptySlots = ALL_POSITIONS.filter(s =>
+        !aiPlayer.owned.some(o => o.slot === s)
+      );
+
+      if (emptySlots.length === 0) { endVersusTurn(); return; }
+
+      // اختار لاعب يتطابق مع أي مركز فاضي
+      const matchingPlayers = affordablePool.filter(p =>
+        emptySlots.includes(p.position as typeof emptySlots[0])
+      );
+
+      if (matchingPlayers.length === 0) { endVersusTurn(); return; }
+
+      const decision = makeAIDecision(difficulty, matchingPlayers, aiPlayer, season);
       if (!decision) { endVersusTurn(); return; }
 
+      // الـ slot = مركز اللاعب نفسه
+      const targetSlot = decision.player.position;
+
       const rawVal = decision.player.statsBySeason?.[season]?.value ??
-        decision.player.values?.[season] ?? aiPlayer.budget * 0.3;
+        decision.player.values?.[season] ?? Math.round(aiPlayer.budget * 0.3);
       const value = Math.min(rawVal, aiPlayer.budget);
       if (value <= 0) { endVersusTurn(); return; }
 
       const salary = Math.max(1, Math.round(value * 0.08));
       const newOwned = {
         player: decision.player,
-        slot: decision.slot,
+        slot: targetSlot,
         buySeason: season,
         buyPrice: value,
         currentValue: value,
         budgetAtBuy: aiPlayer.budget,
-        contract: { salary, duration: 2, satisfaction: 80, requiredSalary: salary, startSeason: season, endSeason: season + 1 },
+        contract: {
+          salary,
+          duration: 2,
+          satisfaction: 80,
+          requiredSalary: salary,
+          startSeason: season,
+          endSeason: season + 1,
+        },
         sponsorships: [] as [],
       };
 
-      setGamePlayers(prev => prev.map((p, i) => {
-        if (i !== 1) return p;
-        return {
-          ...p,
-          budget: Math.max(0, p.budget - value),
-          purchaseChances: Math.max(0, p.purchaseChances - 1),
-          owned: [...p.owned.filter(o => o.slot !== decision.slot), newOwned],
-        };
-      }));
+      setGamePlayers(prev => {
+        const updated = prev.map((p, i) => {
+          if (i !== 1) return p;
+          return {
+            ...p,
+            budget: Math.max(0, p.budget - value),
+            purchaseChances: Math.max(0, p.purchaseChances - 1),
+            owned: [...p.owned.filter(o => o.slot !== targetSlot), newOwned],
+          };
+        });
+        return updated;
+      });
 
       addNewsItem({
         id: Date.now(), season,
@@ -754,10 +781,8 @@ export default function Home() {
       addNewsItems(result.newsItems);
       return;
     }
-    const positive = ["ballonDor", "goldenBoy", "goldenBoot", "wonderkid", "saudiOffer", "recordTransfer", "freeTransfer"].includes(eventId);
-    const result = positive
-      ? forcedPositiveEvent(season, gamePlayers, activePlayerIndex)
-      : forcedNegativeEvent(season, gamePlayers, activePlayerIndex);
+    const positive = ["ballonDor", "goldenBoy", "goldenBoot", "wonderkid", "saudiOffer", "recordTransfer"].includes(eventId);
+    const result = forcedSpecificEvent(eventId, season, gamePlayers, activePlayerIndex);
     setGamePlayers(result.updatedPlayers);
     addNewsItems(result.newsItems);
   }
