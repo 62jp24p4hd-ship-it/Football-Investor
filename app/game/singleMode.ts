@@ -10,7 +10,8 @@ export const SINGLE_PURCHASE_CHANCES = PURCHASE_CHANCES_PER_SEASON; // 4
 export const SINGLE_SELL_CHANCES = SELL_CHANCES_PER_SEASON;          // 4
 
 // ── Can advance to next season? ────────────
-// Single: player must exhaust all purchase chances
+// Single: يكفي شراء لاعب واحد على الأقل لفتح الانتقال
+// أو انتهاء كل الفرص
 export function singleCanNextSeason(
   gamePlayers: GamePlayer[],
   devUnlocked: boolean,
@@ -19,7 +20,10 @@ export function singleCanNextSeason(
 ): boolean {
   if (devUnlocked) return true;
   if (pendingSlot || hasModal) return false;
-  return (gamePlayers[0]?.purchaseChances ?? 0) <= 0;
+  const gp = gamePlayers[0];
+  if (!gp) return false;
+  // فتح الانتقال: اشترى لاعب واحد على الأقل OR خلص كل الفرص
+  return gp.owned.length > 0 || gp.purchaseChances <= 0;
 }
 
 // ── Initial chances for a new season ───────

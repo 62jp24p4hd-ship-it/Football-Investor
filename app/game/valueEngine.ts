@@ -238,56 +238,53 @@ export function getRatingBg(rating: number): string {
 // ============================================
 // PRICE TIER SYSTEM
 // كل لاعب له tier حسب نسبة سعره من الميزانية
-// الرخيص: احتمال كبير ينزل، صغير يصعد كثير
-// الغالي: احتمال كبير يصعد بشكل معقول
+// الرخيص: احتمال كبير ينزل، نادراً يصعد كثير
+// الغالي: مستقر أكثر مع نمو معقول
 // ============================================
 
 export type PriceTier = "cheap" | "mid" | "premium" | "elite";
 
 export function getPriceTier(price: number, budget: number): PriceTier {
   const ratio = price / budget;
-  if (ratio <= 0.2)  return "cheap";    // 0-20% of budget
-  if (ratio <= 0.5)  return "mid";      // 20-50%
-  if (ratio <= 0.8)  return "premium";  // 50-80%
-  return "elite";                        // 80-100%
+  if (ratio <= 0.2)  return "cheap";
+  if (ratio <= 0.5)  return "mid";
+  if (ratio <= 0.8)  return "premium";
+  return "elite";
 }
 
-// نسب التغيير الموسمية حسب الـ tier
-// { drop: احتمال النزول, dropRange, riseSmall: احتمال ارتفاع بسيط, riseBig: احتمال ارتفاع كبير }
+// نسب التغيير الموسمية — واقعية ومتوازنة
 const TIER_CONFIG: Record<PriceTier, {
-  dropChance: number;    // احتمال ينزل
-  dropMin: number;       // أقل نسبة نزول
-  dropMax: number;       // أعلى نسبة نزول
-  riseSmallChance: number; // احتمال يصعد بشكل عادي
-  riseSmallMin: number;
-  riseSmallMax: number;
-  riseBigChance: number;   // احتمال يصعد كثير
-  riseBigMin: number;
-  riseBigMax: number;
+  dropChance: number;
+  dropMin: number; dropMax: number;
+  riseSmallChance: number;
+  riseSmallMin: number; riseSmallMax: number;
+  riseBigChance: number;
+  riseBigMin: number; riseBigMax: number;
 }> = {
   cheap: {
-    // رخيص جداً — 65% ينزل، 15% يصعد عادي، 20% يصعد كثير
-    dropChance: 0.65, dropMin: 0.05, dropMax: 0.35,
-    riseSmallChance: 0.15, riseSmallMin: 0.05, riseSmallMax: 0.20,
-    riseBigChance: 0.20, riseBigMin: 0.30, riseBigMax: 1.50,
+    // رخيص — 65% ينزل، 15% يصعد بسيط، 20% يصعد كثير
+    // لكن أقصى ارتفاع 40% في موسم واحد
+    dropChance: 0.65, dropMin: 0.05, dropMax: 0.30,
+    riseSmallChance: 0.15, riseSmallMin: 0.03, riseSmallMax: 0.12,
+    riseBigChance: 0.20, riseBigMin: 0.15, riseBigMax: 0.40,
   },
   mid: {
-    // متوسط — 40% ينزل، 35% يصعد عادي، 25% يصعد كثير
-    dropChance: 0.40, dropMin: 0.05, dropMax: 0.25,
-    riseSmallChance: 0.35, riseSmallMin: 0.05, riseSmallMax: 0.25,
-    riseBigChance: 0.25, riseBigMin: 0.25, riseBigMax: 0.80,
+    // متوسط — 40% ينزل، 40% يصعد عادي، 20% يصعد كثير
+    dropChance: 0.40, dropMin: 0.03, dropMax: 0.20,
+    riseSmallChance: 0.40, riseSmallMin: 0.03, riseSmallMax: 0.15,
+    riseBigChance: 0.20, riseBigMin: 0.15, riseBigMax: 0.35,
   },
   premium: {
-    // غالي — 25% ينزل، 50% يصعد عادي، 25% يصعد كثير
-    dropChance: 0.25, dropMin: 0.03, dropMax: 0.15,
-    riseSmallChance: 0.50, riseSmallMin: 0.05, riseSmallMax: 0.20,
-    riseBigChance: 0.25, riseBigMin: 0.20, riseBigMax: 0.60,
+    // غالي — 20% ينزل، 55% يصعد عادي، 25% يصعد كثير
+    dropChance: 0.20, dropMin: 0.02, dropMax: 0.12,
+    riseSmallChance: 0.55, riseSmallMin: 0.03, riseSmallMax: 0.12,
+    riseBigChance: 0.25, riseBigMin: 0.12, riseBigMax: 0.28,
   },
   elite: {
-    // أغلى لاعب — 15% ينزل، 60% يصعد عادي، 25% يصعد كثير
-    dropChance: 0.15, dropMin: 0.02, dropMax: 0.10,
-    riseSmallChance: 0.60, riseSmallMin: 0.05, riseSmallMax: 0.15,
-    riseBigChance: 0.25, riseBigMin: 0.15, riseBigMax: 0.45,
+    // أغلى — 10% ينزل، 65% يصعد عادي، 25% يصعد كثير
+    dropChance: 0.10, dropMin: 0.01, dropMax: 0.08,
+    riseSmallChance: 0.65, riseSmallMin: 0.02, riseSmallMax: 0.10,
+    riseBigChance: 0.25, riseBigMin: 0.10, riseBigMax: 0.22,
   },
 };
 
@@ -295,7 +292,6 @@ function randBetween(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-// احسب القيمة الجديدة بعد موسم واحد
 export function applyPriceTierGrowth(
   currentPrice: number,
   budget: number
@@ -306,20 +302,19 @@ export function applyPriceTierGrowth(
 
   let newPrice: number;
   if (roll < cfg.dropChance) {
-    // ينزل
     const pct = randBetween(cfg.dropMin, cfg.dropMax);
     newPrice = currentPrice * (1 - pct);
   } else if (roll < cfg.dropChance + cfg.riseSmallChance) {
-    // يصعد عادي
     const pct = randBetween(cfg.riseSmallMin, cfg.riseSmallMax);
     newPrice = currentPrice * (1 + pct);
   } else {
-    // يصعد كثير
     const pct = randBetween(cfg.riseBigMin, cfg.riseBigMax);
     newPrice = currentPrice * (1 + pct);
   }
 
-  return Math.max(1, Math.round(newPrice));
+  // أقصى قيمة = ضعف الميزانية (لمنع الارتفاعات الجنونية)
+  const cap = budget * 2;
+  return Math.max(1, Math.min(cap, Math.round(newPrice)));
 }
 
 // ============================================
@@ -339,14 +334,15 @@ export function guaranteeAffordablePlayer(
     p.values?.[p.availableSeason] ??
     1;
 
-  // Scale ALL players so that max price = budget
-  // Preserve relative price differences between players
+  const getRating = (p: import("./types").Player): number =>
+    p.statsBySeason?.[season]?.rating ?? p.rating ?? 70;
+
   const rawVals = players.map(getVal);
   const maxRaw = Math.max(...rawVals);
   const minRaw = Math.min(...rawVals);
 
-  // Price range: cheapest = 10% of budget, most expensive = 100% of budget
-  const minPrice = Math.max(1, Math.round(budget * 0.1));
+  // Price range: cheapest = 5% of budget, most expensive = 100%
+  const minPrice = Math.max(1, Math.round(budget * 0.05));
   const maxPrice = Math.max(minPrice + 1, budget);
 
   function scalePrice(raw: number): number {
@@ -355,15 +351,27 @@ export function guaranteeAffordablePlayer(
     return Math.max(minPrice, Math.min(maxPrice, Math.round(minPrice + ratio * (maxPrice - minPrice))));
   }
 
+  // Rating يتكيف مع السعر — الرخيص ≤ 49، الغالي يحتفظ بتقييمه الأصلي
+  function scaleRating(originalRating: number, newPrice: number): number {
+    const priceRatio = newPrice / budget;
+    if (priceRatio <= 0.10) return Math.min(originalRating, 44);      // أرخص 10% → max 44
+    if (priceRatio <= 0.20) return Math.min(originalRating, 54);      // 10-20% → max 54
+    if (priceRatio <= 0.40) return Math.min(originalRating, 65);      // 20-40% → max 65
+    if (priceRatio <= 0.70) return Math.min(originalRating, 78);      // 40-70% → max 78
+    return originalRating;                                              // +70% → تقييمه الأصلي
+  }
+
   return players.map((p, i) => {
     const newPrice = scalePrice(rawVals[i]);
+    const originalRating = getRating(p);
+    const newRating = scaleRating(originalRating, newPrice);
     return {
       ...p,
       statsBySeason: p.statsBySeason ? {
         ...p.statsBySeason,
         [season]: p.statsBySeason[season]
-          ? { ...p.statsBySeason[season], value: newPrice }
-          : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: 70, value: newPrice }
+          ? { ...p.statsBySeason[season], value: newPrice, rating: newRating }
+          : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: newRating, value: newPrice }
       } : p.statsBySeason,
       values: { ...(p.values ?? {}), [season]: newPrice },
     };
