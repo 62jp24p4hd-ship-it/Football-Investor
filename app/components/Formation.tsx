@@ -42,7 +42,9 @@ function SlotCard({
 }) {
   if (owned) {
     const stats = getSeasonStats(owned.player, season);
-    const value = owned.currentValue ?? getCurrentValue(owned.player, season, marketMultiplier);
+    const value = (owned.currentValue && owned.currentValue > 0)
+      ? owned.currentValue
+      : owned.buyPrice;
     const profit = value - owned.buyPrice;
     return (
       <button

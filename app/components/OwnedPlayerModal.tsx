@@ -21,7 +21,9 @@ type Props = {
 export default function OwnedPlayerModal({ owned, ownerName, season, marketMultiplier, canSell, onSell, onKeep, onRenew }: Props) {
   const { player, buyPrice, buySeason, contract } = owned;
   const stats = getSeasonStats(player, season);
-  const currentVal = owned.currentValue ?? getCurrentValue(player, season, marketMultiplier);
+  const currentVal = (owned.currentValue && owned.currentValue > 0)
+    ? owned.currentValue
+    : owned.buyPrice;
   const profit = currentVal - buyPrice;
   const age = calculateAge(player.startAge, player.availableSeason, season);
   const warning = getRetirementWarning(age);

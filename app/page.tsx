@@ -133,16 +133,42 @@ export default function Home() {
   // ── AI Turn: يشتغل تلقائياً عندما دور الـ AI ──
   useEffect(() => {
     if (mode !== "ai") return;
+    if (!started) return;
+    if (activePlayerIndex !== 1) return;
+
     const aiPlayer = gamePlayers[1];
     if (!aiPlayer?.isAI) return;
-    if (activePlayerIndex !== 1) return;
-    if (aiPlayer.purchaseChances <= 0) return;
+    if (aiPlayer.purchaseChances <= 0) {
+      // دور الـ AI خلص — انتقل للموسم التالي لو اللاعب الأول خلص كمان
+      return;
+    }
     if (pendingSlot || negotiation || auctionState) return;
+    if (basePlayers.length === 0) return; // انتظر تحميل اللاعبين
 
     const timeout = setTimeout(() => {
+      // استخدم basePlayers مباشرة مع filtrة الموسم
+      const seasonPool = basePlayers.filter(p =>
+        p.availableSeason === season &&
+        !aiPlayer.owned.some(o => o.player.name === p.name)
+      );
+
+      if (seasonPool.length === 0) {
+        endVersusTurn();
+        return;
+      }
+
+      // AI يختار من pool حقيقي
+      const affordablePool = seasonPool.filter(p => {
+        const v = p.statsBySeason?.[season]?.value ??
+          p.values?.[season] ?? p.values?.[p.availableSeason] ?? 999;
+        return v <= aiPlayer.budget;
+      });
+
+      const pool = affordablePool.length > 0 ? affordablePool : seasonPool.slice(0, 3);
+
       const decision = makeAIDecision(
         aiPlayer.aiDifficulty ?? "manager",
-        allPlayers,
+        pool,
         aiPlayer,
         season
       );
@@ -152,7 +178,11 @@ export default function Home() {
         return;
       }
 
-      const value = getCurrentValue(decision.player, season, marketMultiplier);
+      const rawVal = decision.player.statsBySeason?.[season]?.value ??
+        decision.player.values?.[season] ?? aiPlayer.budget * 0.3;
+      const value = Math.min(rawVal, aiPlayer.budget);
+      if (value <= 0) { endVersusTurn(); return; }
+
       const salary = Math.max(1, Math.round(value * 0.08));
       const newOwned = {
         player: decision.player,
@@ -169,15 +199,15 @@ export default function Home() {
           startSeason: season,
           endSeason: season + 1,
         },
-        sponsorships: [],
+        sponsorships: [] as [],
       };
 
       setGamePlayers(prev => prev.map((p, i) => {
         if (i !== 1) return p;
         return {
           ...p,
-          budget: p.budget - value,
-          purchaseChances: p.purchaseChances - 1,
+          budget: Math.max(0, p.budget - value),
+          purchaseChances: Math.max(0, p.purchaseChances - 1),
           owned: [...p.owned.filter(o => o.slot !== decision.slot), newOwned],
         };
       }));
@@ -186,16 +216,16 @@ export default function Home() {
         id: Date.now(),
         season,
         title: `🤖 ${aiPlayer.name} signed ${decision.player.name}`,
-        description: `Transfer Fee: €${value}M | Contract: 2 years`,
+        description: `${decision.player.position} | €${value}M | ${aiPlayer.aiDifficulty === "director" ? "Smart pick" : "Good value"}`,
         tone: "neutral",
       });
 
-      setTimeout(() => endVersusTurn(), 400);
-    }, 1000);
+      setTimeout(() => endVersusTurn(), 600);
+    }, 1200);
 
     return () => clearTimeout(timeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePlayerIndex, mode, season, turnIndex]);
+  }, [activePlayerIndex, turnIndex, season, mode, started, basePlayers.length]);
 
   // ── Generate infinite mode players ────────
   useEffect(() => {
@@ -469,7 +499,9 @@ export default function Home() {
     const item = gp.owned[ownedIndex];
     if (!item) return;
 
-    const sellPrice = currentValue(item.player);
+    const sellPrice = (item.currentValue && item.currentValue > 0)
+      ? item.currentValue
+      : item.buyPrice;
     const profit = sellPrice - item.buyPrice;
 
     const updatedPlayers = gamePlayers.map((p, i) => {
