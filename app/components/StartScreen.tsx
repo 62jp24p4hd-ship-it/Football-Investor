@@ -50,6 +50,7 @@ export default function StartScreen({ onStart }: Props) {
   const [easterClicks, setEasterClicks] = useState(0);
   const [easterUnlocked, setEasterUnlocked] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showDevMsg, setShowDevMsg] = useState(false);
 
   function handleStart() {
     if (!mode) return;
@@ -108,13 +109,13 @@ export default function StartScreen({ onStart }: Props) {
 
         {/* How To Play */}
         <button onClick={() => setShowHowToPlay(!showHowToPlay)}
-          className="w-full mb-5 py-4 rounded-none font-bold text-base transition-all"
+          className="w-full mb-3 py-4 rounded-none font-bold text-base transition-all"
           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#9ca3af" }}>
           {showHowToPlay ? "▲ إخفاء الدليل — Hide Guide" : "📖 كيف تلعب — How To Play"}
         </button>
 
         {showHowToPlay && (
-          <div className="mb-5 rounded-none p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="mb-3 rounded-none p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="space-y-4">
               {HOW_TO_PLAY.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 pb-3" style={{ borderBottom: i < HOW_TO_PLAY.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
@@ -126,6 +127,57 @@ export default function StartScreen({ onStart }: Props) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Developer Message */}
+        <button onClick={() => setShowDevMsg(!showDevMsg)}
+          className="w-full mb-5 py-4 rounded-none font-bold text-base transition-all"
+          style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.2)", color: "#D4AF37" }}>
+          {showDevMsg ? "▲ إخفاء رسالة المطور" : "💌 رسالة من المطور"}
+        </button>
+
+        {showDevMsg && (
+          <div className="mb-5 rounded-none p-5 text-sm leading-relaxed" style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.15)" }}>
+
+            <p className="text-gray-300 mb-4">السلام عليكم،</p>
+            <p className="text-gray-300 mb-4">أنا يوسف <span className="text-yellow-400 font-bold">(7GE)</span>، شخص يعشق كرة القدم وبايرن ميونخ وقضى ساعات طويلة في ألعاب الكورة، خصوصًا طور الكرير مود.</p>
+            <p className="text-gray-300 mb-4">في يوم من الأيام جتني فكرة بسيطة:<br/><span className="text-white font-bold italic">"ليش أكون مدرب… إذا أقدر أكون مستثمر؟"</span></p>
+            <p className="text-gray-300 mb-4">ومن هنا بدأت رحلة <span className="text-emerald-400 font-bold">Football Investor</span>.</p>
+            <p className="text-gray-300 mb-4">المشروع بدأ كتجربة لتعلم تطوير الألعاب من الصفر، رغم أني ما كنت أملك أي خبرة سابقة في المجال. ومع الوقت تحول إلى لعبة كاملة تجمع بين الاستثمار، العقود، الرعاة، المزادات، الأحداث المفاجئة، واتخاذ القرارات الذكية لبناء أعظم إمبراطورية استثمارية في عالم كرة القدم.</p>
+            <p className="text-gray-300 mb-4">هدفي كان بسيط:<br/><span className="text-white font-bold">أصنع لعبة كرة قدم مختلفة عن أي شيء جربته من قبل.</span></p>
+            <p className="text-gray-300 mb-6">إذا استمتعت باللعبة، أو ضيعت ساعات من وقتك وأنت تحاول تثبت أن عندك عقلية استثمارية أفضل من أصحابك… فأعتبر مهمتي نجحت. 😄</p>
+
+            <div className="border-t border-white/8 pt-4 mb-4">
+              <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-2">📱 حساباتي الشخصية (7GE)</p>
+              <p className="text-gray-400 text-xs">X / Twitter: <span className="text-white">@7geisthebest</span></p>
+              <p className="text-gray-400 text-xs">Instagram: <span className="text-white">@7geisthebest</span></p>
+            </div>
+
+            <div className="border-t border-white/8 pt-4 mb-4">
+              <p className="text-emerald-400 font-bold text-xs uppercase tracking-widest mb-2">🏟 الحسابات الرسمية للعبة</p>
+              <p className="text-gray-400 text-xs">X / Twitter: <span className="text-white">@Football_inv</span></p>
+              <p className="text-gray-400 text-xs">Instagram: <span className="text-white">@Football_Investor</span></p>
+              <p className="text-gray-400 text-xs">TikTok: <span className="text-white">@Football_investor</span></p>
+            </div>
+
+            <div className="border-t border-white/8 pt-4 mb-4">
+              <p className="text-gray-400 text-xs mb-2">تابع حسابات اللعبة للحصول على:</p>
+              {["آخر التحديثات والإضافات الجديدة","أخبار التطوير","الإعلانات الرسمية","التصويت على الأفكار القادمة","لقطات وصور من مراحل التطوير"].map((item, i) => (
+                <p key={i} className="text-gray-500 text-xs">• {item}</p>
+              ))}
+            </div>
+
+            <div className="border-t border-white/8 pt-4 mb-4">
+              <p className="text-gray-300 text-xs leading-relaxed">💡 عندك فكرة، اقتراح، ملاحظة، أو حتى شيء تشوف أنه ممكن يجعل اللعبة أفضل؟ لا تتردد بالتواصل معي عبر حسابات Football Investor.<br/><br/>أقرأ اقتراحات اللاعبين بشكل مستمر، والكثير من الأفكار الموجودة داخل اللعبة بدأت أساسًا من آراء المجتمع.</p>
+            </div>
+
+            <div className="border-t border-white/8 pt-4 text-center">
+              <p className="text-gray-400 text-xs">شكرًا لكل شخص دعم المشروع أو جرب اللعبة.</p>
+              <p className="text-yellow-400 font-bold text-sm mt-2">— 7GE</p>
+              <p className="text-gray-600 text-xs">Creator of Football Investor</p>
+            </div>
+
           </div>
         )}
 
