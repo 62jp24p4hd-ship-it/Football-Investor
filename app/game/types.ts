@@ -140,6 +140,7 @@ export type ContractNegotiation = {
   timer: number;
   attempts: number;
   isRenewal?: boolean;
+  playerCounterMessage?: string;
 };
 
 // ============================================
@@ -254,6 +255,8 @@ export type SeasonEvent = {
   description: string;
   tone: NewsTone;
   marketMultiplier?: number;
+  flatMarketChangeMin?: number;  // تغيير ثابت بالمليون لكل اللاعبين (min)
+  flatMarketChangeMax?: number;  // تغيير ثابت بالمليون لكل اللاعبين (max)
   playerMultipliers?: Record<string, number>;
   affectedPlayerName?: string;
   affectedOwner?: string;
@@ -353,6 +356,10 @@ export type PlayerEventEffect = {
   title: string;
   tone: NewsTone;
   multiplier: number;
+  valueChangeMin?: number;
+  valueChangeMax?: number;
+  affectsAllPlayers?: boolean;
+  maxAge?: number;
   ratingChange: number;
   gamesChange: number;
   goalsChange: number;
