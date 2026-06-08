@@ -99,11 +99,14 @@ export function applyEventToPlayer(
 
   const base = currentOwnedValue && currentOwnedValue > 0 ? currentOwnedValue : (stats.value || 1);
 
-  // حساب التغيير الثابت بالمليون
-  const min = effect.valueChangeMin;
-  const max = effect.valueChangeMax;
-  const flatChange = min + Math.random() * (max - min);
-  const finalValue = Math.max(1, Math.round(base + flatChange));
+  let finalValue: number;
+  if (effect.valueChangeMin !== undefined && effect.valueChangeMax !== undefined) {
+    const flatChange = effect.valueChangeMin + Math.random() * (effect.valueChangeMax - effect.valueChangeMin);
+    finalValue = Math.max(1, Math.round(base + flatChange));
+  } else {
+    // fallback to multiplier
+    finalValue = Math.max(1, Math.round(base * (effect.multiplier || 1)));
+  }
 
   return applyStatsModifier(player, targetSeason, {
     ...newStats,
