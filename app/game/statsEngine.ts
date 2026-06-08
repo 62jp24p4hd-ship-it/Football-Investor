@@ -160,8 +160,8 @@ export function applyStatsModifier(
     cleanSheets: clamp(modifier.cleanSheets ?? oldStats.cleanSheets, 0, 40),
   };
 
-  // Recalculate value if not overridden
-  if (!modifier.value) {
+  // استخدم القيمة المُمررة دائماً — لا تعيد الحساب من قاعدة البيانات
+  if (modifier.value === undefined || modifier.value === null) {
     newStats.value = calculateBaseValue(player, targetSeason, newStats);
   }
 

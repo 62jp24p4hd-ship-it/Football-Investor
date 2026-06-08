@@ -98,7 +98,7 @@ export default function Home() {
   const activePlayer = gamePlayers[activePlayerIndex];
   const isFrozen = activePlayer?.frozenSeason === season;
 
-  const marketMultiplier = seasonEvent?.marketMultiplier ?? 1;
+  const marketMultiplier = 1; // القيم تتحدث مباشرة في currentValue بدل multiplier
 
   // ── All players pool ─────────────────────
   const allPlayers = useMemo<Player[]>(() => {
