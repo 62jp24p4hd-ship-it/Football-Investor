@@ -23,166 +23,69 @@ import { JOURNALISTS, NEWS_SOURCES } from "./constants";
 export function getPositivePlayerEvents(): PlayerEventEffect[] {
   return [
     {
-      title: "🏆 Ballon d'Or Winner",
-      tone: "good",
-      multiplier: 1.5,
-      ratingChange: 5,
-      gamesChange: 4,
-      goalsChange: 10,
-      assistsChange: 6,
-      cleanSheetsChange: 0,
+      title: "🏆 Ballon d\'Or Winner", tone: "good",
+      multiplier: 1, valueChangeMin: 20, valueChangeMax: 60,
+      ratingChange: 5, gamesChange: 4, goalsChange: 10, assistsChange: 6, cleanSheetsChange: 0,
     },
     {
-      title: "👟 Golden Boot",
-      tone: "good",
-      multiplier: 1.4,
-      ratingChange: 4,
-      gamesChange: 3,
-      goalsChange: 18,
-      assistsChange: 2,
-      cleanSheetsChange: 0,
+      title: "👟 Golden Boot", tone: "good",
+      multiplier: 1, valueChangeMin: 20, valueChangeMax: 50,
+      ratingChange: 4, gamesChange: 3, goalsChange: 18, assistsChange: 2, cleanSheetsChange: 0,
     },
     {
-      title: "🌟 Golden Boy Award",
-      tone: "good",
-      multiplier: 1.6,
-      ratingChange: 6,
-      gamesChange: 5,
-      goalsChange: 8,
-      assistsChange: 6,
-      cleanSheetsChange: 0,
+      title: "🌟 Golden Boy Award", tone: "good",
+      multiplier: 1, valueChangeMin: 15, valueChangeMax: 50,
+      ratingChange: 6, gamesChange: 5, goalsChange: 8, assistsChange: 6, cleanSheetsChange: 0,
     },
     {
-      title: "🚀 Wonderkid Explosion",
-      tone: "good",
-      multiplier: 2.0,
-      ratingChange: 7,
-      gamesChange: 6,
-      goalsChange: 12,
-      assistsChange: 8,
-      cleanSheetsChange: 0,
+      title: "🚀 Wonderkid Explosion", tone: "good",
+      multiplier: 1, valueChangeMin: 30, valueChangeMax: 50,
+      maxAge: 21,
+      ratingChange: 7, gamesChange: 6, goalsChange: 12, assistsChange: 8, cleanSheetsChange: 0,
     },
     {
-      title: "💰 Saudi Mega Offer",
-      tone: "good",
-      multiplier: 1.5,
-      ratingChange: 2,
-      gamesChange: 2,
-      goalsChange: 3,
-      assistsChange: 2,
-      cleanSheetsChange: 0,
+      title: "💰 Saudi Mega Offer", tone: "good",
+      multiplier: 1, valueChangeMin: 40, valueChangeMax: 70,
+      ratingChange: 2, gamesChange: 2, goalsChange: 3, assistsChange: 2, cleanSheetsChange: 0,
     },
     {
-      title: "💸 Record Transfer Fee",
-      tone: "good",
-      multiplier: 1.45,
-      ratingChange: 3,
-      gamesChange: 3,
-      goalsChange: 5,
-      assistsChange: 4,
-      cleanSheetsChange: 0,
-    },
-    {
-      title: "🏅 Champions League MVP",
-      tone: "good",
-      multiplier: 1.35,
-      ratingChange: 4,
-      gamesChange: 4,
-      goalsChange: 7,
-      assistsChange: 5,
-      cleanSheetsChange: 2,
-    },
-    {
-      title: "🤝 Free Transfer Coup",
-      tone: "good",
-      multiplier: 1.3,
-      ratingChange: 2,
-      gamesChange: 5,
-      goalsChange: 4,
-      assistsChange: 3,
-      cleanSheetsChange: 0,
+      title: "💸 Record Transfer Fee", tone: "good",
+      multiplier: 1, valueChangeMin: 40, valueChangeMax: 80,
+      ratingChange: 3, gamesChange: 3, goalsChange: 5, assistsChange: 4, cleanSheetsChange: 0,
     },
   ];
 }
-
-// ============================================
-// NEGATIVE PLAYER EVENTS
-// ============================================
 
 export function getNegativePlayerEvents(): PlayerEventEffect[] {
   return [
     {
-      title: "🤕 ACL Injury",
-      tone: "bad",
-      multiplier: 0.5,
-      ratingChange: -6,
-      gamesChange: -25,
-      goalsChange: -12,
-      assistsChange: -8,
-      cleanSheetsChange: -8,
+      title: "🤕 ACL Injury", tone: "bad",
+      multiplier: 1, valueChangeMin: -20, valueChangeMax: -5,
+      ratingChange: -6, gamesChange: -10, goalsChange: -5, assistsChange: -4, cleanSheetsChange: -2,
     },
     {
-      title: "🚑 Major Injury",
-      tone: "bad",
-      multiplier: 0.2,
-      ratingChange: -10,
-      gamesChange: -35,
-      goalsChange: -20,
-      assistsChange: -14,
-      cleanSheetsChange: -12,
+      title: "🚑 Major Injury", tone: "bad",
+      multiplier: 1, valueChangeMin: -30, valueChangeMax: -10,
+      ratingChange: -10, gamesChange: -20, goalsChange: -8, assistsChange: -6, cleanSheetsChange: -3,
     },
     {
-      title: "🪑 Bench Warmer",
-      tone: "bad",
-      multiplier: 0.7,
-      ratingChange: -4,
-      gamesChange: -20,
-      goalsChange: -8,
-      assistsChange: -6,
-      cleanSheetsChange: -5,
+      title: "🪑 Bench Warmer", tone: "bad",
+      multiplier: 1, valueChangeMin: -15, valueChangeMax: -5,
+      ratingChange: -4, gamesChange: -8, goalsChange: -4, assistsChange: -3, cleanSheetsChange: -1,
     },
     {
-      title: "📉 Failed Transfer",
-      tone: "bad",
-      multiplier: 0.6,
-      ratingChange: -5,
-      gamesChange: -10,
-      goalsChange: -7,
-      assistsChange: -5,
-      cleanSheetsChange: -3,
-    },
-    {
-      title: "😤 Contract Dispute",
-      tone: "bad",
-      multiplier: 0.65,
-      ratingChange: -4,
-      gamesChange: -12,
-      goalsChange: -5,
-      assistsChange: -4,
-      cleanSheetsChange: -3,
-    },
-    {
-      title: "📰 Scandal",
-      tone: "bad",
-      multiplier: 0.55,
-      ratingChange: -6,
-      gamesChange: -8,
-      goalsChange: -6,
-      assistsChange: -4,
-      cleanSheetsChange: -2,
+      title: "📉 Failed Transfer", tone: "bad",
+      multiplier: 1, valueChangeMin: -10, valueChangeMax: -5,
+      ratingChange: -5, gamesChange: -5, goalsChange: -3, assistsChange: -3, cleanSheetsChange: -1,
     },
   ];
 }
-
-// ============================================
-// APPLY EVENT TO PLAYER
-// ============================================
 
 export function applyEventToPlayer(
   player: Player,
   targetSeason: number,
   effect: PlayerEventEffect,
-  currentOwnedValue?: number  // القيمة الحالية للاعب المملوك
+  currentOwnedValue?: number
 ): Player {
   const stats = getSeasonStats(player, targetSeason);
 
@@ -194,17 +97,13 @@ export function applyEventToPlayer(
     rating: Math.max(40, Math.min(99, stats.rating + effect.ratingChange)),
   };
 
-  // استخدم currentValue كأساس إذا متوفرة، وإلا استخدم قيمة قاعدة البيانات
-  const baseValue = currentOwnedValue && currentOwnedValue > 0
-    ? currentOwnedValue
-    : stats.value;
+  const base = currentOwnedValue && currentOwnedValue > 0 ? currentOwnedValue : (stats.value || 1);
 
-  // حدّ التغيير: أقصاه 40% للـ positive، أدناه 50% للـ negative
-  const clampedMultiplier = effect.multiplier >= 1
-    ? Math.min(effect.multiplier, 1.40)   // max +40%
-    : Math.max(effect.multiplier, 0.50);  // max -50%
-
-  const finalValue = Math.max(1, Math.round(baseValue * clampedMultiplier));
+  // حساب التغيير الثابت بالمليون
+  const min = effect.valueChangeMin;
+  const max = effect.valueChangeMax;
+  const flatChange = min + Math.random() * (max - min);
+  const finalValue = Math.max(1, Math.round(base + flatChange));
 
   return applyStatsModifier(player, targetSeason, {
     ...newStats,
@@ -279,25 +178,28 @@ export function applyEventToRandomOwnedPlayer(
 }
 
 // ============================================
-// MARKET EVENTS
+// MARKET EVENTS — تغيير ثابت بالمليون لكل اللاعبين
 // ============================================
 
 export function createMarketEvent(
   season: number,
   positive: boolean
 ): { event: SeasonEvent; newsItem: NewsItem } {
-  const multiplier = positive ? 1.2 : 0.8;
   const title = positive ? "🔥 Hot Transfer Market" : "📉 Market Crash";
+  const changeMin = positive ? 10 : -25;
+  const changeMax = positive ? 25 : -10;
   const description = positive
-    ? "A buying frenzy has hit the market. All player values up 20%."
-    : "Economic downturn hits football. All player values down 20%.";
+    ? `A buying frenzy hits the market. Each player value +€${changeMin}M–€${changeMax}M.`
+    : `Economic downturn hits football. Each player value -€${Math.abs(changeMin)}M–€${Math.abs(changeMax)}M.`;
 
   const event: SeasonEvent = {
     id: `market_${season}`,
     title,
     description,
     tone: positive ? "good" : "bad",
-    marketMultiplier: multiplier,
+    marketMultiplier: 1, // لا نستخدم multiplier — نستخدم flat change
+    flatMarketChangeMin: changeMin,
+    flatMarketChangeMax: changeMax,
   };
 
   const newsItem: NewsItem = {
@@ -450,50 +352,63 @@ export function forcedMarketEvent(
 // يطبّق الإيفنت المحدد بالضبط بدل عشوائي
 // ============================================
 
-const EVENT_MAP: Record<string, PlayerEventEffect> = {
+const EVENT_MAP: Record<string, PlayerEventEffect & { isFreeTransfer?: boolean }> = {
   ballonDor: {
     title: "🏆 Ballon d'Or Winner", tone: "good",
-    multiplier: 1.5, ratingChange: 5, gamesChange: 4, goalsChange: 10, assistsChange: 6, cleanSheetsChange: 0,
+    multiplier: 1, valueChangeMin: 20, valueChangeMax: 60,
+    ratingChange: 5, gamesChange: 4, goalsChange: 10, assistsChange: 6, cleanSheetsChange: 0,
   },
   goldenBoot: {
     title: "👟 Golden Boot", tone: "good",
-    multiplier: 1.4, ratingChange: 4, gamesChange: 3, goalsChange: 18, assistsChange: 2, cleanSheetsChange: 0,
+    multiplier: 1, valueChangeMin: 20, valueChangeMax: 50,
+    ratingChange: 4, gamesChange: 3, goalsChange: 18, assistsChange: 2, cleanSheetsChange: 0,
   },
   goldenBoy: {
     title: "🌟 Golden Boy Award", tone: "good",
-    multiplier: 1.6, ratingChange: 6, gamesChange: 5, goalsChange: 8, assistsChange: 6, cleanSheetsChange: 0,
+    multiplier: 1, valueChangeMin: 15, valueChangeMax: 50,
+    ratingChange: 6, gamesChange: 5, goalsChange: 8, assistsChange: 6, cleanSheetsChange: 0,
   },
   wonderkid: {
     title: "🚀 Wonderkid Explosion", tone: "good",
-    multiplier: 2.0, ratingChange: 7, gamesChange: 6, goalsChange: 12, assistsChange: 8, cleanSheetsChange: 0,
+    multiplier: 1, valueChangeMin: 30, valueChangeMax: 50,
+    maxAge: 21,
+    ratingChange: 7, gamesChange: 6, goalsChange: 12, assistsChange: 8, cleanSheetsChange: 0,
   },
   saudiOffer: {
     title: "💰 Saudi Mega Offer", tone: "good",
-    multiplier: 1.5, ratingChange: 2, gamesChange: 2, goalsChange: 3, assistsChange: 2, cleanSheetsChange: 0,
+    multiplier: 1, valueChangeMin: 40, valueChangeMax: 70,
+    ratingChange: 2, gamesChange: 2, goalsChange: 3, assistsChange: 2, cleanSheetsChange: 0,
   },
   recordTransfer: {
     title: "💸 Record Transfer Fee", tone: "good",
-    multiplier: 1.45, ratingChange: 3, gamesChange: 3, goalsChange: 5, assistsChange: 4, cleanSheetsChange: 0,
+    multiplier: 1, valueChangeMin: 40, valueChangeMax: 80,
+    ratingChange: 3, gamesChange: 3, goalsChange: 5, assistsChange: 4, cleanSheetsChange: 0,
   },
   aclInjury: {
     title: "🤕 ACL Injury", tone: "bad",
-    multiplier: 0.5, ratingChange: -6, gamesChange: -10, goalsChange: -5, assistsChange: -4, cleanSheetsChange: -2,
+    multiplier: 1, valueChangeMin: -20, valueChangeMax: -5,
+    ratingChange: -6, gamesChange: -10, goalsChange: -5, assistsChange: -4, cleanSheetsChange: -2,
   },
   majorInjury: {
     title: "🚑 Major Injury", tone: "bad",
-    multiplier: 0.2, ratingChange: -10, gamesChange: -20, goalsChange: -8, assistsChange: -6, cleanSheetsChange: -3,
+    multiplier: 1, valueChangeMin: -30, valueChangeMax: -10,
+    ratingChange: -10, gamesChange: -20, goalsChange: -8, assistsChange: -6, cleanSheetsChange: -3,
   },
   benchWarmer: {
     title: "🪑 Bench Warmer", tone: "bad",
-    multiplier: 0.7, ratingChange: -4, gamesChange: -8, goalsChange: -4, assistsChange: -3, cleanSheetsChange: -1,
+    multiplier: 1, valueChangeMin: -15, valueChangeMax: -5,
+    ratingChange: -4, gamesChange: -8, goalsChange: -4, assistsChange: -3, cleanSheetsChange: -1,
   },
   failedTransfer: {
     title: "📉 Failed Transfer", tone: "bad",
-    multiplier: 0.6, ratingChange: -5, gamesChange: -5, goalsChange: -3, assistsChange: -3, cleanSheetsChange: -1,
+    multiplier: 1, valueChangeMin: -10, valueChangeMax: -5,
+    ratingChange: -5, gamesChange: -5, goalsChange: -3, assistsChange: -3, cleanSheetsChange: -1,
   },
   freeTransfer: {
-    title: "😤 Contract Dispute", tone: "bad",
-    multiplier: 0.65, ratingChange: -4, gamesChange: -4, goalsChange: -3, assistsChange: -2, cleanSheetsChange: -1,
+    title: "🚪 Free Transfer — Player Leaves!", tone: "bad",
+    multiplier: 1, valueChangeMin: 0, valueChangeMax: 0,
+    isFreeTransfer: true,
+    ratingChange: 0, gamesChange: 0, goalsChange: 0, assistsChange: 0, cleanSheetsChange: 0,
   },
 };
 
@@ -505,7 +420,6 @@ export function forcedSpecificEvent(
 ): SeasonEventResult {
   const effect = EVENT_MAP[eventId];
   if (!effect) {
-    // fallback للعشوائي
     const positive = ["ballonDor","goldenBoy","goldenBoot","wonderkid","saudiOffer","recordTransfer"].includes(eventId);
     const result = applyEventToRandomOwnedPlayer(gamePlayers, ownerIndex, season, positive);
     return { event: null, updatedPlayers: result.updatedPlayers, newsItems: result.newsItem ? [result.newsItem] : [] };
@@ -514,21 +428,54 @@ export function forcedSpecificEvent(
   const owner = gamePlayers[ownerIndex];
   if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
 
-  const candidates = owner.owned.filter(item => !item.player.secret);
+  // فلتر حسب العمر للـ Wonderkid
+  let candidates = owner.owned.filter(item => !item.player.secret);
+  if (effect.maxAge) {
+    const young = candidates.filter(item => {
+      const age = item.player.startAge + (season - item.player.availableSeason);
+      return age <= effect.maxAge!;
+    });
+    if (young.length > 0) candidates = young;
+  }
   if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
 
   const picked = candidates[Math.floor(Math.random() * candidates.length)];
+
+  // Free Transfer — يطرد اللاعب فوراً
+  if ((effect as any).isFreeTransfer) {
+    const newsItem: NewsItem = {
+      id: randomId(), season,
+      title: "🚪 Free Transfer — Player Leaves!",
+      description: `${picked.player.name} has left ${owner.name} on a free transfer!`,
+      tone: "bad",
+      journalist: "Fabrizio Romano",
+      source: "Sky Sports",
+    };
+    const updatedPlayers = gamePlayers.map((gp, i) => {
+      if (i !== ownerIndex) return gp;
+      return {
+        ...gp,
+        owned: gp.owned.filter(item => item.player.name !== picked.player.name),
+        sold: [...gp.sold, {
+          owner: gp.name, name: picked.player.name,
+          buySeason: picked.buySeason, sellSeason: season,
+          buyPrice: picked.buyPrice, sellPrice: 0, profit: -picked.buyPrice,
+          position: picked.player.position,
+        }],
+      };
+    });
+    return { event: null, updatedPlayers, newsItems: [newsItem] };
+  }
+
   const currentOwnedValue = picked.currentValue && picked.currentValue > 0 ? picked.currentValue : picked.buyPrice;
   const playerBefore = picked.player;
   const playerAfter = applyEventToPlayer(picked.player, season, effect, currentOwnedValue);
-
   const beforeStats = getSeasonStats(playerBefore, season);
   const afterStats = getSeasonStats(playerAfter, season);
   const afterValue = afterStats.value;
 
   const newsItem: NewsItem = {
-    id: randomId(),
-    season,
+    id: randomId(), season,
     title: effect.title,
     description: `${owner.name}: ${playerBefore.name} | Rating ${beforeStats.rating}→${afterStats.rating} | Value €${currentOwnedValue}M→€${afterValue}M`,
     tone: effect.tone as import("./types").NewsTone,

@@ -588,7 +588,20 @@ export default function Home() {
     }
     if (["hotMarket", "marketCrash"].includes(eventId)) {
       const result = forcedMarketEvent(season, gamePlayers, eventId === "hotMarket");
-      if (result.event) setSeasonEvent(result.event);
+      if (result.event) {
+        setSeasonEvent(result.event);
+        // طبّق التغيير الثابت على currentValue لكل اللاعبين
+        const min = result.event.flatMarketChangeMin ?? (eventId === "hotMarket" ? 10 : -25);
+        const max = result.event.flatMarketChangeMax ?? (eventId === "hotMarket" ? 25 : -10);
+        setGamePlayers(prev => prev.map(gp => ({
+          ...gp,
+          owned: gp.owned.map(item => {
+            const change = min + Math.random() * (max - min);
+            const newVal = Math.max(1, Math.round((item.currentValue || item.buyPrice) + change));
+            return { ...item, currentValue: newVal };
+          }),
+        })));
+      }
       addNewsItems(result.newsItems);
       return;
     }
