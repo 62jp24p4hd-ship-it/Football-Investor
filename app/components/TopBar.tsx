@@ -20,117 +20,213 @@ type Props = {
   canNextSeason: boolean;
 };
 
-export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex, gamePlayers, timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick, onFinishGame, onSecretClick, onSave, canNextSeason }: Props) {
+export default function TopBar({
+  season, mode, gameLengthMode, activePlayerIndex, gamePlayers,
+  timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick,
+  onFinishGame, onSecretClick, onSave, canNextSeason
+}: Props) {
   const isTimerActive = pendingSlot !== null && timerSeconds !== null;
   const timerDanger = timer <= 5;
   const seasonsLeft = 2028 - season;
+  const activePlayer = gamePlayers[activePlayerIndex];
+  const budget = activePlayer?.budget ?? 0;
+  const budgetPositive = budget >= 0;
 
   return (
-    <header className="bg-[#0a0e1a]/95 backdrop-blur-md border-b border-white/8 sticky top-0 z-30 shadow-xl shadow-black/20">
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+    <header style={{
+      background: "linear-gradient(180deg, #070b14 0%, #0a0f1e 100%)",
+      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+    }} className="sticky top-0 z-30 backdrop-blur-md">
 
-          {/* Left: Logo + Season */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-400 font-black text-lg">⚽</span>
-              <span className="font-black text-white text-sm hidden md:block">Football Investor</span>
+      <div className="max-w-7xl mx-auto px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3">
+
+          {/* ── LEFT: Logo + Season ── */}
+          <div className="flex items-center gap-3">
+
+            {/* Logo */}
+            <div className="hidden md:flex items-center gap-2 pr-3" style={{ borderRight: "1px solid rgba(255,255,255,0.08)" }}>
+              <span className="text-xl">⚽</span>
+              <span className="font-black text-white text-xs tracking-wider uppercase hidden lg:block"
+                style={{ background: "linear-gradient(135deg,#fff,#a8f5d0)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                Football<br/>Investor
+              </span>
             </div>
 
-            <div className="h-6 w-px bg-white/10" />
-
-            <button onClick={onSeasonClick} className="flex items-center gap-2">
-              <div className="text-[10px] text-gray-500 uppercase tracking-widest">Season</div>
-              <div className="text-3xl font-black text-white leading-none">
-                {season}
+            {/* Season Card */}
+            <button onClick={onSeasonClick}
+              className="flex items-center gap-2.5 px-3 py-2 transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 0 20px rgba(16,185,129,0.08)",
+              }}>
+              <span className="text-base">🗓️</span>
+              <div>
+                <div className="text-[9px] text-gray-500 uppercase tracking-widest leading-none mb-0.5">Season</div>
+                <div className="font-black text-white leading-none" style={{
+                  fontSize: "22px",
+                  textShadow: "0 0 20px rgba(255,255,255,0.3)",
+                }}>{season}</div>
               </div>
               {gameLengthMode === "classic" && seasonsLeft > 0 && (
-                <div className="text-[10px] text-gray-600 hidden md:block">
-                  {seasonsLeft} left
+                <div className="hidden lg:flex flex-col items-center justify-center px-2 py-1 rounded-none"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <span className="text-[9px] text-gray-600 leading-none">left</span>
+                  <span className="text-xs font-black text-gray-400 leading-none">{seasonsLeft}</span>
                 </div>
+              )}
+              {gameLengthMode === "infinite" && (
+                <span className="text-xs font-black text-purple-400 px-1.5 py-0.5 rounded-none"
+                  style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)" }}>♾️</span>
               )}
             </button>
 
-            {gameLengthMode === "infinite" && (
-              <span className="text-xs text-purple-400 font-bold bg-purple-900/30 border border-purple-500/30 px-2 py-0.5 rounded-none">♾️ Infinite</span>
+            {/* Budget Card — single mode shows active player */}
+            {gamePlayers.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 transition-all"
+                style={{
+                  background: budgetPositive ? "rgba(16,185,129,0.06)" : "rgba(239,68,68,0.06)",
+                  border: `1px solid ${budgetPositive ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`,
+                  boxShadow: budgetPositive ? "0 0 20px rgba(16,185,129,0.1)" : "0 0 20px rgba(239,68,68,0.1)",
+                }}>
+                <span className="text-base">💰</span>
+                <div>
+                  <div className="text-[9px] uppercase tracking-widest leading-none mb-0.5"
+                    style={{ color: budgetPositive ? "#6ee7b7" : "#fca5a5" }}>
+                    {mode === "versus" ? activePlayer?.name?.split(" ")[0] : "Budget"}
+                  </div>
+                  <div className="font-black leading-none tabular-nums" style={{
+                    fontSize: "20px",
+                    color: budgetPositive ? "#34d399" : "#f87171",
+                    textShadow: budgetPositive ? "0 0 16px rgba(52,211,153,0.5)" : "0 0 16px rgba(248,113,113,0.5)",
+                  }}>
+                    €{budget}M
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Center: Turn indicator */}
+          {/* ── CENTER: Turn indicator (versus) ── */}
           {mode === "versus" && (
             <div className="flex items-center gap-2">
               {gamePlayers.map((gp, i) => (
-                <div key={gp.name} className={`px-3 py-1.5 rounded-none text-sm font-black transition-all border ${
-                  i === activePlayerIndex
-                    ? "border-yellow-500/60 bg-yellow-900/30 text-yellow-300 shadow-lg shadow-yellow-500/10"
-                    : "border-white/8 bg-white/5 text-gray-500"
-                }`}>
-                  {i === activePlayerIndex && <span className="mr-1">▶</span>}{gp.name}
+                <div key={gp.name}
+                  className="px-3 py-2 transition-all duration-300"
+                  style={i === activePlayerIndex ? {
+                    background: "rgba(234,179,8,0.1)",
+                    border: "1px solid rgba(234,179,8,0.4)",
+                    boxShadow: "0 0 16px rgba(234,179,8,0.15)",
+                  } : {
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}>
+                  <div className="text-[9px] uppercase tracking-widest leading-none mb-0.5"
+                    style={{ color: i === activePlayerIndex ? "#fbbf24" : "#4b5563" }}>
+                    {i === activePlayerIndex ? "▶ Your Turn" : "Waiting"}
+                  </div>
+                  <div className={`text-sm font-black leading-none ${i === activePlayerIndex ? "text-yellow-300" : "text-gray-600"}`}>
+                    {gp.name}
+                  </div>
+                  <div className="text-[9px] leading-none mt-0.5"
+                    style={{ color: i === activePlayerIndex ? "#6ee7b7" : "#374151" }}>
+                    €{gp.budget}M
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Timer */}
-          {isTimerActive && (
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-none border ${
-              timerDanger
-                ? "border-red-500/60 bg-red-900/30 animate-pulse"
-                : "border-yellow-500/30 bg-yellow-900/20"
-            }`}>
-              <span className="text-xs text-gray-400">⏱</span>
-              <span className={`font-black text-2xl tabular-nums ${timerDanger ? "text-red-400" : "text-yellow-300"}`}>
-                {timer}s
-              </span>
-            </div>
-          )}
+          {/* ── RIGHT: Timer + Actions ── */}
+          <div className="flex items-center gap-2.5">
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-3">
-            {mode === "single" && gamePlayers[0] && (
-              <div className="text-right hidden md:block">
-                <div className="text-[10px] text-gray-500 uppercase">Budget</div>
-                <div className={`font-black text-sm ${gamePlayers[0].budget >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  €{gamePlayers[0].budget}M
-                </div>
+            {/* Timer */}
+            {isTimerActive && (
+              <div className={`flex items-center gap-2 px-3 py-2 transition-all ${timerDanger ? "animate-pulse" : ""}`}
+                style={timerDanger ? {
+                  background: "rgba(239,68,68,0.12)",
+                  border: "1px solid rgba(239,68,68,0.5)",
+                  boxShadow: "0 0 20px rgba(239,68,68,0.2)",
+                } : {
+                  background: "rgba(234,179,8,0.08)",
+                  border: "1px solid rgba(234,179,8,0.3)",
+                }}>
+                <span className="text-sm">⏱</span>
+                <span className={`font-black text-2xl tabular-nums leading-none ${timerDanger ? "text-red-400" : "text-yellow-300"}`}>
+                  {timer}s
+                </span>
               </div>
             )}
 
-            <button
-              onClick={() => { if (canNextSeason) onNextSeason(); else onSecretClick?.(); }}
-              className={`px-5 py-2.5 rounded-none font-black text-sm transition-all duration-200 ${
-                canNextSeason
-                  ? "btn-primary text-black hover:scale-105 active:scale-95"
-                  : "bg-white/5 text-gray-600 cursor-not-allowed border border-white/5"
-              }`}
-              title={canNextSeason ? "" : "Next Season (locked)"}>
-              Next Season →
-            </button>
-
+            {/* Save button */}
             {onSave && (
               <button onClick={onSave}
-                className="px-3 py-2.5 rounded-none font-bold text-sm transition-all"
-                style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981" }}
+                className="px-3 py-2.5 font-bold text-sm transition-all hover:scale-105 active:scale-95"
+                style={{
+                  background: "rgba(16,185,129,0.08)",
+                  border: "1px solid rgba(16,185,129,0.25)",
+                  color: "#10b981",
+                }}
                 title="Save Game">
                 💾
               </button>
             )}
 
+            {/* End button (infinite mode) */}
             {gameLengthMode === "infinite" && onFinishGame && (
               <button onClick={onFinishGame}
-                className="px-4 py-2.5 rounded-none font-bold text-sm bg-red-900/40 border border-red-500/30 text-red-400 hover:bg-red-800/40 transition-all">
+                className="px-3 py-2.5 font-bold text-sm transition-all hover:scale-105"
+                style={{
+                  background: "rgba(239,68,68,0.1)",
+                  border: "1px solid rgba(239,68,68,0.25)",
+                  color: "#ef4444",
+                }}>
                 End
               </button>
             )}
-          </div>
 
+            {/* NEXT SEASON — Main CTA */}
+            <button
+              onClick={() => { if (canNextSeason) onNextSeason(); else onSecretClick?.(); }}
+              className="relative overflow-hidden transition-all duration-200 font-black text-sm"
+              style={canNextSeason ? {
+                background: "linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)",
+                color: "white",
+                padding: "10px 20px",
+                boxShadow: "0 0 24px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
+                border: "1px solid rgba(16,185,129,0.5)",
+                transform: "translateY(0)",
+              } : {
+                background: "rgba(255,255,255,0.04)",
+                color: "#374151",
+                padding: "10px 20px",
+                border: "1px solid rgba(255,255,255,0.06)",
+                cursor: "not-allowed",
+              }}
+              onMouseEnter={e => { if (canNextSeason) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px) scale(1.03)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0) scale(1)"; }}
+              title={canNextSeason ? "" : "Next Season (locked)"}>
+              {canNextSeason && (
+                <span className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity"
+                  style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1), transparent)" }} />
+              )}
+              <span className="relative flex items-center gap-2 tracking-wide uppercase text-xs">
+                <span>Next Season</span>
+                <span className="text-base">→</span>
+              </span>
+            </button>
+
+          </div>
         </div>
 
-        {/* Pending slot bar */}
+        {/* ── Pending slot bar ── */}
         {pendingSlot && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-yellow-400/80 animate-fade-in">
+          <div className="mt-2 flex items-center gap-2 text-xs animate-fade-in"
+            style={{ color: "rgba(251,191,36,0.8)" }}>
             <span className="animate-pulse">⏳</span>
-            <span>Selecting player for <strong className="text-yellow-300">{pendingSlot}</strong></span>
+            <span>Selecting player for <strong style={{ color: "#fcd34d" }}>{pendingSlot}</strong></span>
             {timerSeconds !== null && (
               <span className={timerDanger ? "text-red-400 font-black animate-pulse" : "text-gray-500"}>
                 — {timer}s remaining
