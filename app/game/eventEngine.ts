@@ -277,8 +277,21 @@ export function createMarketEvent(
 }
 
 // ============================================
-// MAIN SEASON EVENT GENERATOR
+// MAIN SEASON EVENT GENERATOR — Balanced
 // ============================================
+
+// ذاكرة الإيفنتات الأخيرة — anti-repetition
+const recentEvents: string[] = [];
+const MAX_RECENT = 3;
+
+function recordEvent(id: string) {
+  recentEvents.push(id);
+  if (recentEvents.length > MAX_RECENT) recentEvents.shift();
+}
+
+function wasRecent(id: string): boolean {
+  return recentEvents.includes(id);
+}
 
 export function createRandomSeasonEvent(
   season: number,
@@ -286,111 +299,208 @@ export function createRandomSeasonEvent(
 ): SeasonEventResult {
   const newsItems: NewsItem[] = [];
   let updatedPlayers = [...gamePlayers];
-  const roll = Math.random();
 
-  // 0.05% — Bob Paisley Plane Disaster (ultra-rare)
-  if (roll < 0.0005) {
+  // 0.05% — Bob Paisley (ultra-rare، دائماً ممكن)
+  if (Math.random() < 0.0005) {
     const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
     return triggerBobPaisleyDisaster(updatedPlayers, ownerIndex, season);
   }
 
-  // 15% — quiet season
-  if (roll < 0.15) {
-    return {
-      event: null,
-      updatedPlayers,
-      newsItems: [
-        {
-          id: randomId(),
-          season,
+  // قائمة الإيفنتات المتاحة مع أوزانها
+  type EventEntry = { id: string; weight: number; fn: () => SeasonEventResult };
+
+  const pool: EventEntry[] = [
+    // Quiet — 12%
+    {
+      id: "quiet", weight: wasRecent("quiet") ? 4 : 12,
+      fn: () => ({
+        event: null, updatedPlayers,
+        newsItems: [{
+          id: randomId(), season,
           title: "📰 Quiet Season",
           description: "No major events this season. Markets remain stable.",
-          tone: "neutral",
+          tone: "neutral" as const,
           journalist: pickRandom(JOURNALISTS),
           source: pickRandom(NEWS_SOURCES),
-        },
-      ],
-    };
-  }
-
-  // 20% — hot market
-  if (roll < 0.35) {
-    const { event, newsItem } = createMarketEvent(season, true);
-    const min = 10, max = 25;
-    const changes: string[] = [];
-    updatedPlayers = updatedPlayers.map(gp => ({
-      ...gp,
-      owned: gp.owned.map(item => {
-        const base = (item.currentValue && item.currentValue > 0) ? item.currentValue : item.buyPrice;
-        const change = Math.round(min + Math.random() * (max - min));
-        const newVal = Math.max(1, base + change);
-        changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
-        return { ...item, currentValue: newVal };
+        }],
       }),
-    }));
-    const detailNews: NewsItem = {
-      id: randomId(), season,
-      title: "🔥 Hot Market — Values Updated",
-      description: changes.length > 0 ? changes.join(" | ") : "No players affected.",
-      tone: "good",
-      journalist: pickRandom(JOURNALISTS),
-      source: pickRandom(NEWS_SOURCES),
-    };
-    return { event, updatedPlayers, newsItems: [newsItem, detailNews] };
+    },
+
+    // Hot Market — 10% (مخفّض من 20%)
+    {
+      id: "hotMarket", weight: wasRecent("hotMarket") ? 2 : 10,
+      fn: () => {
+        const { event, newsItem } = createMarketEvent(season, true);
+        const min = 10, max = 25;
+        const changes: string[] = [];
+        const up = updatedPlayers.map(gp => ({
+          ...gp,
+          owned: gp.owned.map(item => {
+            const base = item.currentValue || item.buyPrice;
+            const change = Math.round(min + Math.random() * (max - min));
+            const newVal = Math.max(1, base + change);
+            changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
+            return { ...item, currentValue: newVal };
+          }),
+        }));
+        return { event, updatedPlayers: up, newsItems: [newsItem, {
+          id: randomId(), season,
+          title: "🔥 Hot Market — Values Updated",
+          description: changes.join(" | ") || "No players affected.",
+          tone: "good" as const,
+          journalist: pickRandom(JOURNALISTS), source: pickRandom(NEWS_SOURCES),
+        }] };
+      },
+    },
+
+    // Market Crash — 10% (مخفّض من 20%)
+    {
+      id: "marketCrash", weight: wasRecent("marketCrash") ? 2 : 10,
+      fn: () => {
+        const { event, newsItem } = createMarketEvent(season, false);
+        const min = -25, max = -10;
+        const changes: string[] = [];
+        const up = updatedPlayers.map(gp => ({
+          ...gp,
+          owned: gp.owned.map(item => {
+            const base = item.currentValue || item.buyPrice;
+            const change = Math.round(min + Math.random() * (max - min));
+            const newVal = Math.max(1, base + change);
+            changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
+            return { ...item, currentValue: newVal };
+          }),
+        }));
+        return { event, updatedPlayers: up, newsItems: [newsItem, {
+          id: randomId(), season,
+          title: "📉 Market Crash — Values Updated",
+          description: changes.join(" | ") || "No players affected.",
+          tone: "bad" as const,
+          journalist: pickRandom(JOURNALISTS), source: pickRandom(NEWS_SOURCES),
+        }] };
+      },
+    },
+
+    // Player positive event — 18%
+    {
+      id: "playerPositive", weight: 18,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        const result = applyEventToRandomOwnedPlayer(updatedPlayers, ownerIndex, season, true);
+        return { event: null, updatedPlayers: result.updatedPlayers, newsItems: result.newsItem ? [result.newsItem] : [] };
+      },
+    },
+
+    // Player negative event — 16%
+    {
+      id: "playerNegative", weight: 16,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        const result = applyEventToRandomOwnedPlayer(updatedPlayers, ownerIndex, season, false);
+        return { event: null, updatedPlayers: result.updatedPlayers, newsItems: result.newsItem ? [result.newsItem] : [] };
+      },
+    },
+
+    // Both players get events — 14%
+    {
+      id: "bothEvents", weight: wasRecent("bothEvents") ? 5 : 14,
+      fn: () => {
+        let up = [...updatedPlayers];
+        const ni: NewsItem[] = [];
+        for (let i = 0; i < gamePlayers.length; i++) {
+          const result = applyEventToRandomOwnedPlayer(up, i, season, Math.random() > 0.4);
+          up = result.updatedPlayers;
+          if (result.newsItem) ni.push(result.newsItem);
+        }
+        return { event: null, updatedPlayers: up, newsItems: ni };
+      },
+    },
+
+    // Dream Season — 5%
+    {
+      id: "dreamSeason", weight: wasRecent("dreamSeason") ? 1 : 5,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerDreamSeason(updatedPlayers, ownerIndex, season);
+      },
+    },
+
+    // Locker Room Drama — 5%
+    {
+      id: "lockerRoom", weight: wasRecent("lockerRoom") ? 1 : 5,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerLockerRoomDrama(updatedPlayers, ownerIndex, season);
+      },
+    },
+
+    // Free Transfer — 4%
+    {
+      id: "freeTransfer", weight: wasRecent("freeTransfer") ? 1 : 4,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return forcedSpecificEvent("freeTransfer", season, updatedPlayers, ownerIndex);
+      },
+    },
+
+    // Florentino Perez — 3%
+    {
+      id: "florentinoPerez", weight: wasRecent("florentinoPerez") ? 1 : 3,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerFlorentinoPerezEvent(updatedPlayers, ownerIndex, season);
+      },
+    },
+
+    // Temporary effects — 6% مجتمعة
+    {
+      id: "fastFood", weight: wasRecent("fastFood") ? 1 : 2,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerFastFoodAddiction(updatedPlayers, ownerIndex, season);
+      },
+    },
+    {
+      id: "breakup", weight: wasRecent("breakup") ? 1 : 2,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerBreakupSeason(updatedPlayers, ownerIndex, season);
+      },
+    },
+    {
+      id: "casinoNight", weight: wasRecent("casinoNight") ? 1 : 2,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerCasinoNight(updatedPlayers, ownerIndex, season);
+      },
+    },
+    {
+      id: "oneSeason", weight: wasRecent("oneSeason") ? 1 : 2,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerOneSeasonWonder(updatedPlayers, ownerIndex, season);
+      },
+    },
+    {
+      id: "youtube", weight: wasRecent("youtube") ? 1 : 2,
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerYouTubeViral(updatedPlayers, ownerIndex, season);
+      },
+    },
+  ];
+
+  // Weighted random selection
+  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0);
+  let rand = Math.random() * totalWeight;
+  for (const entry of pool) {
+    rand -= entry.weight;
+    if (rand <= 0) {
+      recordEvent(entry.id);
+      return entry.fn();
+    }
   }
 
-  // 20% — market crash
-  if (roll < 0.55) {
-    const { event, newsItem } = createMarketEvent(season, false);
-    const min = -25, max = -10;
-    const changes: string[] = [];
-    updatedPlayers = updatedPlayers.map(gp => ({
-      ...gp,
-      owned: gp.owned.map(item => {
-        const base = (item.currentValue && item.currentValue > 0) ? item.currentValue : item.buyPrice;
-        const change = Math.round(min + Math.random() * (max - min));
-        const newVal = Math.max(1, base + change);
-        changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
-        return { ...item, currentValue: newVal };
-      }),
-    }));
-    const detailNews: NewsItem = {
-      id: randomId(), season,
-      title: "📉 Market Crash — Values Updated",
-      description: changes.length > 0 ? changes.join(" | ") : "No players affected.",
-      tone: "bad",
-      journalist: pickRandom(JOURNALISTS),
-      source: pickRandom(NEWS_SOURCES),
-    };
-    return { event, updatedPlayers, newsItems: [newsItem, detailNews] };
-  }
-
-  // 20% — one player event
-  if (roll < 0.75) {
-    const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
-    const result = applyEventToRandomOwnedPlayer(
-      updatedPlayers,
-      ownerIndex,
-      season,
-      Math.random() > 0.45
-    );
-    updatedPlayers = result.updatedPlayers;
-    if (result.newsItem) newsItems.push(result.newsItem);
-    return { event: null, updatedPlayers, newsItems };
-  }
-
-  // 25% — both players get events
-  for (let i = 0; i < gamePlayers.length; i++) {
-    const result = applyEventToRandomOwnedPlayer(
-      updatedPlayers,
-      i,
-      season,
-      Math.random() > 0.45
-    );
-    updatedPlayers = result.updatedPlayers;
-    if (result.newsItem) newsItems.push(result.newsItem);
-  }
-
+  // fallback
   return { event: null, updatedPlayers, newsItems };
 }
 
@@ -1118,4 +1228,128 @@ export function triggerLockerRoomDrama(
   });
 
   return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
+
+// ============================================
+// SEPARATE EVENT PER INVESTOR — Versus Mode
+// ============================================
+
+export function createVersusSeasonEvents(
+  season: number,
+  gamePlayers: GamePlayer[]
+): { updatedPlayers: GamePlayer[]; newsItems: NewsItem[] } {
+  let players = [...gamePlayers];
+  const allNews: NewsItem[] = [];
+
+  // Track used event IDs لتجنب التكرار
+  const usedIds: string[] = [];
+
+  for (let i = 0; i < players.length; i++) {
+    const gp = players[i];
+    if (!gp) continue;
+
+    // أنشئ pool مستقل لكل لاعب مع تجنب الـ IDs المستخدمة
+    const result = createRandomSeasonEventForPlayer(season, players, i, usedIds);
+    players = result.updatedPlayers;
+
+    if (result.eventId) usedIds.push(result.eventId);
+
+    // أضف header للخبر يوضح أن الإيفنت خاص بهذا اللاعب
+    result.newsItems.forEach(item => {
+      allNews.push({
+        ...item,
+        title: `📢 ${gp.name}: ${item.title}`,
+      });
+    });
+  }
+
+  return { updatedPlayers: players, newsItems: allNews };
+}
+
+function createRandomSeasonEventForPlayer(
+  season: number,
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  excludeIds: string[]
+): { updatedPlayers: GamePlayer[]; newsItems: NewsItem[]; eventId: string | null } {
+  const updatedPlayers = [...gamePlayers];
+
+  function wrapPlayerEvent(positive: boolean): SeasonEventResult {
+    const r = applyEventToRandomOwnedPlayer(updatedPlayers, ownerIndex, season, positive);
+    return { event: null, updatedPlayers: r.updatedPlayers, newsItems: r.newsItem ? [r.newsItem] : [] };
+  }
+
+  type EventEntry = { id: string; weight: number; fn: () => SeasonEventResult };
+
+  const pool: EventEntry[] = [
+    { id: "playerPositive", weight: 22, fn: () => wrapPlayerEvent(true) },
+    { id: "playerNegative", weight: 20, fn: () => wrapPlayerEvent(false) },
+    { id: "hotMarket",      weight: wasRecent("hotMarket_"+ownerIndex) ? 2 : 10, fn: () => applyMarketEventForPlayer(updatedPlayers, ownerIndex, season, true) },
+    { id: "marketCrash",    weight: wasRecent("marketCrash_"+ownerIndex) ? 2 : 10, fn: () => applyMarketEventForPlayer(updatedPlayers, ownerIndex, season, false) },
+    { id: "quiet",          weight: 12, fn: () => ({ event: null, updatedPlayers, newsItems: [{ id: randomId(), season, title: "📰 Quiet Season", description: "No major market events.", tone: "neutral" as const, journalist: pickRandom(JOURNALISTS), source: pickRandom(NEWS_SOURCES) }] }) },
+    { id: "fastFood",       weight: wasRecent("fastFood") ? 1 : 5, fn: () => triggerFastFoodAddiction(updatedPlayers, ownerIndex, season) },
+    { id: "breakup",        weight: wasRecent("breakup") ? 1 : 5, fn: () => triggerBreakupSeason(updatedPlayers, ownerIndex, season) },
+    { id: "oneSeason",      weight: wasRecent("oneSeason") ? 1 : 5, fn: () => triggerOneSeasonWonder(updatedPlayers, ownerIndex, season) },
+    { id: "youtube",        weight: wasRecent("youtube") ? 1 : 5, fn: () => triggerYouTubeViral(updatedPlayers, ownerIndex, season) },
+    { id: "casinoNight",    weight: wasRecent("casinoNight") ? 1 : 4, fn: () => triggerCasinoNight(updatedPlayers, ownerIndex, season) },
+    { id: "freeTransfer",   weight: 3, fn: () => forcedSpecificEvent("freeTransfer", season, updatedPlayers, ownerIndex) },
+    { id: "florentinoPerez",weight: 2, fn: () => triggerFlorentinoPerezEvent(updatedPlayers, ownerIndex, season) },
+    { id: "dreamSeason",    weight: wasRecent("dreamSeason") ? 1 : 4, fn: () => triggerDreamSeason(updatedPlayers, ownerIndex, season) },
+    { id: "lockerRoom",     weight: wasRecent("lockerRoom") ? 1 : 4, fn: () => triggerLockerRoomDrama(updatedPlayers, ownerIndex, season) },
+  ].filter(e => !excludeIds.includes(e.id));
+
+  if (pool.length === 0) return { updatedPlayers, newsItems: [], eventId: null };
+
+  const total = pool.reduce((s, e) => s + e.weight, 0);
+  let rand = Math.random() * total;
+  for (const entry of pool) {
+    rand -= entry.weight;
+    if (rand <= 0) {
+      recordEvent(entry.id);
+      const result = entry.fn();
+      // إرجاع النوع الصحيح مع eventId منفصل
+      return { updatedPlayers: result.updatedPlayers, newsItems: result.newsItems, eventId: entry.id };
+    }
+  }
+
+  return { updatedPlayers, newsItems: [], eventId: null };
+}
+
+function applyMarketEventForPlayer(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number,
+  positive: boolean
+): SeasonEventResult {
+  const { event, newsItem } = createMarketEvent(season, positive);
+  const min = positive ? 10 : -25;
+  const max = positive ? 25 : -10;
+  const changes: string[] = [];
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item => {
+        const base = item.currentValue || item.buyPrice;
+        const change = Math.round(min + Math.random() * (max - min));
+        const newVal = Math.max(1, base + change);
+        changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
+        return { ...item, currentValue: newVal };
+      }),
+    };
+  });
+
+  return {
+    event,
+    updatedPlayers,
+    newsItems: [newsItem, {
+      id: randomId(), season,
+      title: positive ? "🔥 Hot Market — Values Updated" : "📉 Market Crash — Values Updated",
+      description: changes.join(" | ") || "No players affected.",
+      tone: positive ? "good" as const : "bad" as const,
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
 }

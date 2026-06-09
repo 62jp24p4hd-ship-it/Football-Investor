@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama } from "./game/eventEngine";
+import { createRandomSeasonEvent, createVersusSeasonEvents, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -806,17 +806,30 @@ export default function Home() {
 
     const newSeason = season + 1;
     const setupResult = setupNewSeason(newSeason, currentList, mode);
-    const eventResult = eventsEnabled
-      ? createRandomSeasonEvent(newSeason, setupResult.updatedPlayers)
-      : { event: null, updatedPlayers: setupResult.updatedPlayers, newsItems: [] };
+
+    // Versus: إيفنت منفصل لكل لاعب | Single: إيفنت مشترك
+    let eventPlayers = setupResult.updatedPlayers;
+    let eventNewsItems: NewsItem[] = [];
+
+    if (eventsEnabled) {
+      if (mode === "versus") {
+        const versusResult = createVersusSeasonEvents(newSeason, setupResult.updatedPlayers);
+        eventPlayers = versusResult.updatedPlayers;
+        eventNewsItems = versusResult.newsItems;
+      } else {
+        const singleResult = createRandomSeasonEvent(newSeason, setupResult.updatedPlayers);
+        eventPlayers = singleResult.updatedPlayers;
+        eventNewsItems = singleResult.newsItems;
+        setSeasonEvent(singleResult.event);
+      }
+    }
 
     setSeason(newSeason);
     setTurnIndex(0);
     setPendingSlot(null);
     setSelectedSlot("");
     setTimerActive(false);
-    setSeasonEvent(eventResult.event);
-    setGamePlayers(eventResult.updatedPlayers);
+    setGamePlayers(eventPlayers);
     if (timerSeconds !== null) setTimer(timerSeconds);
 
     addNewsItems([
@@ -824,7 +837,7 @@ export default function Home() {
       ...setupResult.salaryNews,
       ...setupResult.sponsorshipNews,
       setupResult.seasonNews,
-      ...eventResult.newsItems,
+      ...eventNewsItems,
     ]);
 
     // Random investor offer in single mode
