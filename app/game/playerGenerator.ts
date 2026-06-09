@@ -117,13 +117,15 @@ export function createSecretPlayers(): Player[] {
   };
 
   const goats = [
-    buildDynamicCareer({ id: "goat_yousef",    name: "Yousef Alnuwasser",   position: "ST",  availableSeason: 2016, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
-    buildDynamicCareer({ id: "goat_abdulaziz", name: "Abdulaziz Alghariri", position: "RCB", availableSeason: 2020, startAge: 21, nationality: "Saudi Arabia", ...goatBase }),
-    buildDynamicCareer({ id: "goat_hussain",   name: "Hussain Alrezk",      position: "LCM", availableSeason: 2015, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_ali_s",     name: "Ali Alsaif",          position: "LW",  availableSeason: 2010, startAge: 23, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_ali_g",     name: "Ali AlGhanim",        position: "RW",  availableSeason: 2011, startAge: 24, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_reda",      name: "Reda Alrezk",         position: "LB",  availableSeason: 2013, startAge: 21, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_qousi",     name: "Qousi",               position: "LCB", availableSeason: 2014, startAge: 23, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_hussain",   name: "Hussain Alrezk",      position: "LCM", availableSeason: 2015, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_yousef",    name: "Yousef Alnuwasser",   position: "ST",  availableSeason: 2016, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_abdullah",  name: "ABDULLAH ALMUSAWI",   position: "RCM", availableSeason: 2017, startAge: 25, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_ali_b",     name: "Ali Albrahim",        position: "CAM", availableSeason: 2018, startAge: 25, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_abdulaziz", name: "Abdulaziz Alghariri", position: "RCB", availableSeason: 2020, startAge: 21, nationality: "Saudi Arabia", ...goatBase }),
   ];
 
   // Force value = 101M for all seasons
