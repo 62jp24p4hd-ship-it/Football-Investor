@@ -13,6 +13,7 @@ import { randomId } from "./helpers";
 import { emptyCards } from "./rewardCardEngine";
 import { BUDGET_SETTINGS, GAME_START_SEASON } from "./constants";
 import { applyPriceTierGrowth } from "./valueEngine";
+import { expireActiveEffects } from "./eventEngine";
 import { getSingleSeasonChances } from "./singleMode";
 import { getVersusSeasonChances } from "./versusMode";
 import { applyRetirementToSquad } from "./careerEngine";
@@ -217,6 +218,9 @@ export function setupNewSeason(
       owned: cleanOwned,
     };
   });
+
+  // Expire temporary effects (Fast Food etc.)
+  updatedPlayers = expireActiveEffects(updatedPlayers, newSeason);
 
   return {
     updatedPlayers,

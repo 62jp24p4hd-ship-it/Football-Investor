@@ -721,3 +721,91 @@ export function triggerBobPaisleyDisaster(
 
   return { event: null, updatedPlayers, newsItems: [newsItem] };
 }
+
+// ============================================
+// FAST FOOD ADDICTION — Temporary Negative
+// ============================================
+
+export function triggerFastFoodAddiction(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) {
+    return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+  }
+
+  const candidates = owner.owned.filter(item => {
+    const effects = item.activeEffects ?? [];
+    return !effects.some(e => e.id === "fastFood");
+  });
+  if (candidates.length === 0) {
+    return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+  }
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  const valuePenalty = Math.round(picked.currentValue * 0.20);
+  const newValue = Math.max(1, picked.currentValue - valuePenalty);
+
+  const effect: import("./types").ActiveEffect = {
+    id: "fastFood",
+    name: "Fast Food Addiction",
+    emoji: "🍔",
+    expiresAfterSeason: season + 1,
+    valueChangePct: -0.20,
+    ratingChange: -5,
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `🍔 Fast Food Addiction — ${picked.player.name}`,
+    description: `${picked.player.name} has reportedly gained weight during the summer after developing an unhealthy fast-food habit. Coaches are concerned about his physical condition. Value dropped by €${valuePenalty}M.`,
+    tone: "bad",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? {
+              ...item,
+              currentValue: newValue,
+              activeEffects: [...(item.activeEffects ?? []), effect],
+            }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
+
+// expire active effects each new season
+export function expireActiveEffects(
+  gamePlayers: GamePlayer[],
+  newSeason: number
+): GamePlayer[] {
+  return gamePlayers.map(gp => ({
+    ...gp,
+    owned: gp.owned.map(item => {
+      if (!item.activeEffects || item.activeEffects.length === 0) return item;
+      const remaining = item.activeEffects.filter(e => e.expiresAfterSeason >= newSeason);
+      const expired = item.activeEffects.filter(e => e.expiresAfterSeason < newSeason);
+
+      // restore value for expired effects
+      let restoredValue = item.currentValue;
+      expired.forEach(e => {
+        if (e.valueChangePct) {
+          restoredValue = Math.round(restoredValue / (1 + e.valueChangePct));
+        }
+      });
+
+      return { ...item, currentValue: Math.max(1, restoredValue), activeEffects: remaining };
+    }),
+  }));
+}

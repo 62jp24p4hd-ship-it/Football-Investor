@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster } from "./game/eventEngine";
+import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -581,6 +581,12 @@ export default function Home() {
     }
     if (eventId === "bobPaisleyDisaster") {
       const result = triggerBobPaisleyDisaster(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(result.updatedPlayers);
+      addNewsItems(result.newsItems);
+      return;
+    }
+    if (eventId === "fastFoodAddiction") {
+      const result = triggerFastFoodAddiction(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
       return;

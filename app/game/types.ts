@@ -159,6 +159,15 @@ export type Sponsorship = {
 // OWNED PLAYER
 // ============================================
 
+export type ActiveEffect = {
+  id: string;
+  name: string;
+  emoji: string;
+  expiresAfterSeason: number;
+  valueChangePct?: number;
+  ratingChange?: number;
+};
+
 export type OwnedPlayer = {
   player: Player;
   slot: string;
@@ -168,7 +177,8 @@ export type OwnedPlayer = {
   budgetAtBuy: number;     // ميزانية المستثمر وقت الشراء
   contract: Contract;
   sponsorships: Sponsorship[];
-  refusesRenewal?: boolean; // Florentino Perez event — يرفض التجديد
+  refusesRenewal?: boolean;
+  activeEffects?: ActiveEffect[];
 };
 
 // ============================================
@@ -349,7 +359,8 @@ export type DevEventId =
   | "legendaryAuction"
   | "sponsorshipOffer"
   | "florentinoPerez"
-  | "bobPaisleyDisaster";
+  | "bobPaisleyDisaster"
+  | "fastFoodAddiction";
 
 // ============================================
 // PLAYER EVENT EFFECT

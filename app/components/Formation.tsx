@@ -54,7 +54,12 @@ function SlotCard({
         }`}
       >
         <div className={`text-xs font-black px-1.5 py-0.5 rounded-none inline-block mb-2 ${positionBg(slot)}`}>{slot}</div>
-        <div className="text-sm font-black text-white leading-tight truncate mb-1">{owned.player.name.split(" ").pop()}</div>
+        <div className="text-sm font-black text-white leading-tight truncate mb-1">
+          {owned.player.name.split(" ").pop()}
+          {owned.activeEffects && owned.activeEffects.length > 0 && (
+            <span className="ml-1">{owned.activeEffects.map(e => e.emoji).join("")}</span>
+          )}
+        </div>
         <div className={`text-xs font-black px-1.5 py-0.5 rounded-none inline-block mb-2 ${getRatingBg(stats.rating)}`}>{stats.rating}</div>
         <div className="mt-auto">
           <div className="text-xs text-yellow-300 font-bold">€{value}M</div>
