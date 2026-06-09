@@ -730,7 +730,9 @@ export default function Home() {
   }
 
   function handleSkipTurn() {
-    if (mode === "versus") endVersusTurn();
+    if (mode !== "versus") return;
+    // فقط ينتقل للتشكيلة الثانية بدون الانتقال للموسم
+    setTurnIndex(prev => prev === 0 ? 1 : 0);
     notify("Turn skipped ⏭");
   }
 

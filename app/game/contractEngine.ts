@@ -129,11 +129,10 @@ export function isRejected(negotiation: ContractNegotiation): boolean {
 // ============================================
 
 export function getAcceptanceProbability(satisfaction: number): number {
-  if (satisfaction < 20) return 0;       // رفض تلقائي
-  if (satisfaction >= 100) return 1;     // قبول تلقائي
-  if (satisfaction >= 75) return 0.65;   // 65% قبول، 25% رفض
-  if (satisfaction >= 50) return 0.50;   // 50% قبول، 50% رفض
-  return 0.25;                           // أقل من 50% → 25% قبول
+  if (satisfaction < 20) return 0;    // رفض تلقائي
+  if (satisfaction >= 100) return 1;  // قبول تلقائي
+  // النسبة مباشرة = نسبة الرضا / 100
+  return Math.min(1, Math.max(0, satisfaction / 100));
 }
 
 export function willPlayerAccept(satisfaction: number): boolean {
