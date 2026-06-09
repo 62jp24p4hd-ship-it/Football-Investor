@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { BudgetMode, GameMode, EventType } from "../game/types";
+import { getSaveInfo, deleteSave } from "../game/saveSystem";
 
 type StartConfig = {
   mode: GameMode;
@@ -15,7 +16,7 @@ type StartConfig = {
   negativeBudgetEndsGame: boolean;
 };
 
-type Props = { onStart: (config: StartConfig) => void };
+type Props = { onStart: (config: StartConfig) => void; onContinue?: () => void };
 
 const TIMER_OPTIONS: { label: string; value: number | null }[] = [
   { label: "No Timer", value: null },
@@ -39,7 +40,7 @@ const HOW_TO_PLAY = [
   { emoji: "📋", en: "Manage contracts — don't let players leave for free", ar: "أدر العقود — لا تترك اللاعبين يرحلون مجاناً" },
 ];
 
-export default function StartScreen({ onStart }: Props) {
+export default function StartScreen({ onStart, onContinue }: Props) {
   const [mode, setMode] = useState<GameMode | null>(null);
   const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
   const [team1Name, setTeam1Name] = useState("Team 1");
@@ -53,6 +54,17 @@ export default function StartScreen({ onStart }: Props) {
   const [easterUnlocked, setEasterUnlocked] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showDevMsg, setShowDevMsg] = useState(false);
+
+  // Save system
+  const [saveInfo, setSaveInfo] = useState<{ season: number; mode: string; savedAt: string } | null>(null);
+  const [showSavePopup, setShowSavePopup] = useState(false);
+  const [showNewGameConfirm, setShowNewGameConfirm] = useState(false);
+
+  useEffect(() => {
+    const info = getSaveInfo();
+    setSaveInfo(info);
+    if (info) setShowSavePopup(true);
+  }, []);
 
   function handleStart() {
     if (!mode) return;
@@ -71,6 +83,57 @@ export default function StartScreen({ onStart }: Props) {
 
   return (
     <main className="min-h-screen bg-[#060912] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+
+      {/* Save Game Popup */}
+      {showSavePopup && saveInfo && !showNewGameConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.85)" }}>
+          <div className="w-full max-w-sm rounded-none p-6 shadow-2xl" style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div className="text-center mb-5">
+              <div className="text-3xl mb-2">💾</div>
+              <div className="text-white font-black text-lg">Save Found</div>
+              <div className="text-gray-500 text-xs mt-1">يوجد حفظ سابق للعبة</div>
+            </div>
+            <div className="p-3 rounded-none mb-5 text-xs" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="text-gray-400 flex justify-between"><span>Season</span><span className="text-white font-bold">{saveInfo.season}</span></div>
+              <div className="text-gray-400 flex justify-between mt-1"><span>Mode</span><span className="text-white font-bold capitalize">{saveInfo.mode}</span></div>
+              <div className="text-gray-400 flex justify-between mt-1"><span>Saved</span><span className="text-white font-bold">{new Date(saveInfo.savedAt).toLocaleDateString()}</span></div>
+            </div>
+            <button onClick={() => { setShowSavePopup(false); onContinue?.(); }}
+              className="w-full py-3 rounded-none font-black text-sm uppercase mb-2 transition-all"
+              style={{ background: "linear-gradient(135deg, #10b981, #059669)", color: "white", boxShadow: "0 4px 15px rgba(16,185,129,0.3)" }}>
+              ▶ Continue Game — متابعة
+            </button>
+            <button onClick={() => { setShowSavePopup(false); setShowNewGameConfirm(true); }}
+              className="w-full py-3 rounded-none font-bold text-sm uppercase transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#6b7280" }}>
+              New Game — لعبة جديدة
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* New Game Confirmation */}
+      {showNewGameConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.85)" }}>
+          <div className="w-full max-w-sm rounded-none p-6 shadow-2xl" style={{ background: "#0d1117", border: "1px solid rgba(239,68,68,0.3)" }}>
+            <div className="text-center mb-5">
+              <div className="text-3xl mb-2">⚠️</div>
+              <div className="text-white font-black text-base">Starting a new game will delete your current save.</div>
+              <div className="text-gray-500 text-sm mt-1">Are you sure?</div>
+            </div>
+            <button onClick={() => { deleteSave(); setSaveInfo(null); setShowNewGameConfirm(false); }}
+              className="w-full py-3 rounded-none font-black text-sm uppercase mb-2 transition-all"
+              style={{ background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", color: "#ef4444" }}>
+              Yes, Start New Game
+            </button>
+            <button onClick={() => { setShowNewGameConfirm(false); setShowSavePopup(true); }}
+              className="w-full py-3 rounded-none font-bold text-sm uppercase transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#6b7280" }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">

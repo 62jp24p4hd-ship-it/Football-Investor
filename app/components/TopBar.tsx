@@ -16,10 +16,11 @@ type Props = {
   onSeasonClick: () => void;
   onFinishGame?: () => void;
   onSecretClick?: () => void;
+  onSave?: () => void;
   canNextSeason: boolean;
 };
 
-export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex, gamePlayers, timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick, onFinishGame, onSecretClick, canNextSeason }: Props) {
+export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex, gamePlayers, timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick, onFinishGame, onSecretClick, onSave, canNextSeason }: Props) {
   const isTimerActive = pendingSlot !== null && timerSeconds !== null;
   const timerDanger = timer <= 5;
   const seasonsLeft = 2028 - season;
@@ -105,6 +106,15 @@ export default function TopBar({ season, mode, gameLengthMode, activePlayerIndex
               title={canNextSeason ? "" : "Next Season (locked)"}>
               Next Season →
             </button>
+
+            {onSave && (
+              <button onClick={onSave}
+                className="px-3 py-2.5 rounded-none font-bold text-sm transition-all"
+                style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981" }}
+                title="Save Game">
+                💾
+              </button>
+            )}
 
             {gameLengthMode === "infinite" && onFinishGame && (
               <button onClick={onFinishGame}

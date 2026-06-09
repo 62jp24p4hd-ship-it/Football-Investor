@@ -23,9 +23,11 @@ import { setupNewSeason, buildInitialState, getFirstTurn, validateGameStart } fr
 import { generateSponsorshipOffer, shouldReceiveSponsorshipOffer, addSponsorshipToPlayer, createSponsorshipNews } from "./game/sponsorshipEngine";
 import { createTransferNews, createSaleNews, createFreezeCardNews, createTripleBuyNews, createStealCardNews, createGeneratedClassNews } from "./game/newsEngine";
 import { shuffle, randomId, pickRandom } from "./game/helpers";
-import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, EVENT_CHOICE_SELL_THRESHOLD, BUDGET_SETTINGS, ALL_POSITIONS } from "./game/constants";
+import { saveGame, loadGame, deleteSave, hasSave } from "./game/saveSystem";
+import type { SaveData } from "./game/saveSystem";
 import { singleCanNextSeason } from "./game/singleMode";
 import { versusCanNextSeason } from "./game/versusMode";
+import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, BUDGET_SETTINGS, ALL_POSITIONS } from "./game/constants";
 
 // Components
 import StartScreen from "./components/StartScreen";
@@ -192,6 +194,39 @@ export default function Home() {
   function notify(text: string) {
     setMessage(text);
     setTimeout(() => setMessage(""), 3000);
+  }
+
+  // ── Save / Load ───────────────────────────
+  function handleSave() {
+    const data: SaveData = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      season, turnIndex, mode, gameLengthMode,
+      budgetMode, eventsEnabled, eventType: "all",
+      timerSeconds, negativeBudgetEndsGame,
+      gamePlayers, news: news.slice(-30), // آخر 30 خبر فقط
+      seasonEvent,
+    };
+    saveGame(data);
+    notify("💾 Game saved!");
+  }
+
+  function handleLoadSave() {
+    const data = loadGame();
+    if (!data) return notify("No save found");
+    setSeason(data.season);
+    setTurnIndex(data.turnIndex);
+    setMode(data.mode);
+    setGameLengthMode(data.gameLengthMode);
+    setBudgetMode(data.budgetMode as any);
+    setEventsEnabled(data.eventsEnabled);
+    setTimerSeconds(data.timerSeconds);
+    setNegativeBudgetEndsGame(data.negativeBudgetEndsGame);
+    setGamePlayers(data.gamePlayers);
+    setNews(data.news ?? []);
+    setSeasonEvent(data.seasonEvent);
+    setStarted(true);
+    notify("✅ Game loaded!");
   }
 
   function addNewsItems(items: NewsItem[]) {
@@ -821,7 +856,7 @@ export default function Home() {
   // ============================================
 
   if (!started) {
-    return <StartScreen onStart={startGame} />;
+    return <StartScreen onStart={startGame} onContinue={handleLoadSave} />;
   }
 
   const hasModal = !!(auctionState || investorOffer || negotiation);
@@ -857,6 +892,7 @@ export default function Home() {
         onNextSeason={() => nextSeason()}
         onSeasonClick={handleSeasonClick}
         onFinishGame={() => finishGame()}
+        onSave={handleSave}
         onSecretClick={() => {
           const next = devSeasonClicks + 1;
           setDevSeasonClicks(next);
