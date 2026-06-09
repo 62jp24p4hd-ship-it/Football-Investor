@@ -25,11 +25,12 @@ const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative"
   { id: "investorOffer", label: "💼 Investor Offer", type: "special" },
   { id: "legendaryAuction", label: "🏆 Legendary Auction", type: "special" },
   { id: "sponsorshipOffer", label: "🤝 Sponsorship Offer", type: "special" },
+  { id: "florentinoPerez", label: "👑 Florentino Perez", type: "special" },
 ];
 
 export default function DeveloperPanel({ onTrigger, onClose }: Props) {
   return (
-    <div className="fixed top-20 right-4 w-72 bg-[#0a0f14] border border-purple-500/40 rounded-2xl z-50 overflow-hidden shadow-2xl shadow-purple-500/10">
+    <div className="fixed top-20 right-4 w-72 bg-[#0a0f14] border border-purple-500/40 rounded-none z-50 overflow-hidden shadow-2xl shadow-purple-500/10">
 
       <div className="px-4 py-3 border-b border-purple-500/20 flex items-center justify-between bg-purple-950/30">
         <div>
@@ -38,7 +39,7 @@ export default function DeveloperPanel({ onTrigger, onClose }: Props) {
         </div>
         <button
           onClick={onClose}
-          className="w-6 h-6 rounded-lg bg-red-700 hover:bg-red-600 text-white text-xs font-bold transition-all flex items-center justify-center"
+          className="w-6 h-6 rounded-none bg-red-700 hover:bg-red-600 text-white text-xs font-bold transition-all flex items-center justify-center"
         >
           ×
         </button>
@@ -54,7 +55,7 @@ export default function DeveloperPanel({ onTrigger, onClose }: Props) {
               <button
                 key={event.id}
                 onClick={() => onTrigger(event.id)}
-                className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-all hover:scale-[1.01] active:scale-95 mb-1 ${
+                className={`w-full text-left px-3 py-2 rounded-none text-sm transition-all hover:scale-[1.01] active:scale-95 mb-1 ${
                   type === "positive"
                     ? "bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-300 border border-emerald-500/20"
                     : type === "negative"

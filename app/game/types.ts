@@ -168,6 +168,7 @@ export type OwnedPlayer = {
   budgetAtBuy: number;     // ميزانية المستثمر وقت الشراء
   contract: Contract;
   sponsorships: Sponsorship[];
+  refusesRenewal?: boolean; // Florentino Perez event — يرفض التجديد
 };
 
 // ============================================
@@ -346,7 +347,8 @@ export type DevEventId =
   | "retirement"
   | "investorOffer"
   | "legendaryAuction"
-  | "sponsorshipOffer";
+  | "sponsorshipOffer"
+  | "florentinoPerez";
 
 // ============================================
 // PLAYER EVENT EFFECT

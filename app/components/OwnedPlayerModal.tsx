@@ -160,8 +160,15 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
             </div>
           )}
 
+          {/* Florentino Perez warning */}
+          {owned.refusesRenewal && (
+            <div className="text-sm text-purple-400 bg-purple-950/40 border border-purple-500/30 rounded-none px-4 py-3 mb-4 text-center font-bold">
+              👑 Florentino Perez is watching — this player refuses to renew.
+            </div>
+          )}
+
           {/* Contract warning */}
-          {isLastSeason && (
+          {isLastSeason && !owned.refusesRenewal && (
             <div className="text-sm text-yellow-400 bg-yellow-950/40 border border-yellow-500/30 rounded-none px-4 py-3 mb-4 text-center font-bold">
               ⚠️ Last season on contract — renew or lose this player for free!
             </div>
@@ -173,10 +180,14 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
               className="flex-1 py-4 rounded-none border border-white/15 text-gray-400 hover:text-white hover:border-white/30 font-black text-base transition-all">
               Keep
             </button>
-            <button onClick={onRenew}
+            <button
+              onClick={owned.refusesRenewal ? undefined : onRenew}
+              disabled={!!owned.refusesRenewal}
               className="flex-1 py-4 rounded-none font-black text-base transition-all"
-              style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "white", boxShadow: "0 4px 15px rgba(37,99,235,0.3)" }}>
-              🔄 Renew
+              style={owned.refusesRenewal
+                ? { background: "rgba(255,255,255,0.05)", color: "#4b5563", cursor: "not-allowed", border: "1px solid rgba(255,255,255,0.08)" }
+                : { background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "white", boxShadow: "0 4px 15px rgba(37,99,235,0.3)" }}>
+              {owned.refusesRenewal ? "👑 Won't Renew" : "🔄 Renew"}
             </button>
             <button onClick={onSell} disabled={!canSell}
               className="flex-1 py-4 rounded-none font-black text-base transition-all"

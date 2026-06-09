@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent } from "./game/eventEngine";
+import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -573,6 +573,12 @@ export default function Home() {
 
   function handleDevEvent(eventId: DevEventId) {
     if (eventId === "legendaryAuction") { triggerLegendaryAuction(); return; }
+    if (eventId === "florentinoPerez") {
+      const result = triggerFlorentinoPerezEvent(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(result.updatedPlayers);
+      addNewsItems(result.newsItems);
+      return;
+    }
     if (eventId === "investorOffer") { triggerInvestorOffer(); return; }
     if (eventId === "sponsorshipOffer") {
       const gp = gamePlayers[activePlayerIndex];

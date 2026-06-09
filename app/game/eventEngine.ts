@@ -453,7 +453,7 @@ export function forcedMarketEvent(
 // يطبّق الإيفنت المحدد بالضبط بدل عشوائي
 // ============================================
 
-const EVENT_MAP: Record<string, PlayerEventEffect & { isFreeTransfer?: boolean }> = {
+const EVENT_MAP: Record<string, PlayerEventEffect & { isFreeTransfer?: boolean; isFlorentinoPerez?: boolean }> = {
   ballonDor: {
     title: "🏆 Ballon d'Or Winner", tone: "good",
     multiplier: 1, valueChangeMin: 20, valueChangeMax: 60,
@@ -511,7 +511,59 @@ const EVENT_MAP: Record<string, PlayerEventEffect & { isFreeTransfer?: boolean }
     isFreeTransfer: true,
     ratingChange: 0, gamesChange: 0, goalsChange: 0, assistsChange: 0, cleanSheetsChange: 0,
   },
+  florentinoPerez: {
+    title: "👑 Florentino Perez Interest", tone: "bad",
+    multiplier: 1, valueChangeMin: 0, valueChangeMax: 0,
+    isFlorentinoPerez: true,
+    ratingChange: 0, gamesChange: 0, goalsChange: 0, assistsChange: 0, cleanSheetsChange: 0,
+  },
 };
+
+// ============================================
+// FLORENTINO PEREZ EVENT
+// ============================================
+
+export function triggerFlorentinoPerezEvent(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) {
+    return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+  }
+
+  // اختار لاعب عشوائي
+  const candidates = owner.owned.filter(item => !item.refusesRenewal && !item.player.secret);
+  if (candidates.length === 0) {
+    return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+  }
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `👑 Florentino Perez — ${picked.player.name}`,
+    description: `Florentino Perez has entered the race for ${picked.player.name}. The player is now refusing to renew his contract with ${owner.name}.`,
+    tone: "bad",
+    journalist: "Fabrizio Romano",
+    source: "Sky Sports",
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, refusesRenewal: true }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
 
 export function forcedSpecificEvent(
   eventId: string,
@@ -566,6 +618,11 @@ export function forcedSpecificEvent(
       };
     });
     return { event: null, updatedPlayers, newsItems: [newsItem] };
+  }
+
+  // Florentino Perez — يرفض التجديد
+  if ((effect as any).isFlorentinoPerez) {
+    return triggerFlorentinoPerezEvent(gamePlayers, ownerIndex, season);
   }
 
   const currentOwnedValue = picked.currentValue && picked.currentValue > 0 ? picked.currentValue : picked.buyPrice;
