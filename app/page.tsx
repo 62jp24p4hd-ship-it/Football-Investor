@@ -117,20 +117,27 @@ export default function Home() {
     if (!selectedSlot) return [];
     const ownedNames = new Set(gamePlayers.flatMap((gp) => gp.owned.map((o) => o.player.name)));
 
-    // تحقق من GOAT لهذا الموسم
+    // GOAT لهذا الموسم فقط لو easter unlocked وموقعه يطابق الـ slot المختار
     const goatForSeason = easterUnlocked
-      ? getSecretPlayers().find(p => p.availableSeason === season && !ownedNames.has(p.name))
+      ? getSecretPlayers().find(p =>
+          p.availableSeason === season &&
+          p.position === selectedSlot &&          // ← position filter
+          !ownedNames.has(p.name)
+        )
       : null;
 
-    // اللاعبون العاديون بدون GOAT
+    // اللاعبون العاديون فقط (بدون secret)
     const normalPool = allPlayers.filter(
-      (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name) && !p.secret
+      (p) => p.position === selectedSlot &&
+             p.availableSeason === season &&
+             !ownedNames.has(p.name) &&
+             !p.secret                            // ← exclude GOATs from normal pool
     );
     const picked = shuffle(normalPool).slice(0, goatForSeason ? 4 : 5);
     const budget = gamePlayers[activePlayerIndex]?.budget ?? 0;
     const withGuarantee = guaranteeAffordablePlayer(picked, budget, season);
 
-    // أضف GOAT في المنتصف (slot #3 = index 2)
+    // أضف GOAT في المنتصف (index 2) فقط لو موجود
     if (goatForSeason) {
       const result = [...withGuarantee];
       result.splice(2, 0, goatForSeason);

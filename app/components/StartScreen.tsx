@@ -175,9 +175,14 @@ export default function StartScreen({ onStart, onContinue }: Props) {
           <p onClick={() => {
               const n = easterClicks + 1;
               setEasterClicks(n);
-              if (n >= 5 && !easterUnlocked) {
-                setEasterUnlocked(true);
-                try { localStorage.setItem("fi_easter_unlocked", "1"); } catch {}
+              if (n >= 5) {
+                // حفظ الـ flag
+                if (!easterUnlocked) {
+                  setEasterUnlocked(true);
+                  try { localStorage.setItem("fi_easter_unlocked", "1"); } catch {}
+                }
+                // الأنيميشن والـ popup دايماً يظهرون بعد 5 نقرات
+                setEasterClicks(0);
                 setShowShatoor(true);
                 setTimeout(() => {
                   setShowShatoor(false);
@@ -185,9 +190,20 @@ export default function StartScreen({ onStart, onContinue }: Props) {
                 }, 1400);
               }
             }}
-            className="text-sm font-black mb-3 cursor-pointer tracking-wide select-none"
-            style={{ color: "#D4AF37", textShadow: "0 0 20px rgba(212,175,55,0.5)" }}>
+            className="text-sm font-black mb-3 cursor-pointer select-none transition-all duration-150"
+            style={{
+              color: "#D4AF37",
+              textShadow: `0 0 ${20 + easterClicks * 8}px rgba(212,175,55,${0.5 + easterClicks * 0.1})`,
+              transform: "scale(1)",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1.06)"; (e.currentTarget as HTMLParagraphElement).style.textShadow = "0 0 30px rgba(212,175,55,0.8)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1)"; (e.currentTarget as HTMLParagraphElement).style.textShadow = `0 0 ${20 + easterClicks * 8}px rgba(212,175,55,0.5)`; }}
+            onMouseDown={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(0.95)"; }}
+            onMouseUp={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1.06)"; }}>
             👀 حجي المطور المستقل
+            {easterClicks > 0 && easterClicks < 5 && (
+              <span className="ml-2 text-xs opacity-70">{"👀".repeat(easterClicks)}</span>
+            )}
           </p>
 
           {/* شطور animation */}
