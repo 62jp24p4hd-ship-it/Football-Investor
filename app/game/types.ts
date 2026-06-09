@@ -86,6 +86,7 @@ export type SeasonStats = {
   redCards: number;
   rating: number;
   value: number;
+  form?: "excellent" | "good" | "average" | "bad" | "disaster";
 };
 
 // ============================================

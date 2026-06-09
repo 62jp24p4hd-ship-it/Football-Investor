@@ -72,6 +72,15 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
     : owned.buyPrice;
   const profit = currentVal - buyPrice;
   const age = calculateAge(player.startAge, player.availableSeason, season);
+
+  const formConfig: Record<string, { label: string; color: string; emoji: string }> = {
+    excellent: { label: "Excellent Season", color: "#D4AF37", emoji: "🔥" },
+    good:      { label: "Good Season",      color: "#10b981", emoji: "📈" },
+    average:   { label: "Average Season",   color: "#6b7280", emoji: "➡️" },
+    bad:       { label: "Bad Season",       color: "#f97316", emoji: "📉" },
+    disaster:  { label: "Disaster Season",  color: "#ef4444", emoji: "💥" },
+  };
+  const formInfo = stats.form ? formConfig[stats.form] : null;
   const warning = getRetirementWarning(age);
   const contractStatus = getContractStatusLabel(contract, season);
 
@@ -127,6 +136,12 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
             <div className="text-right">
               <div className="text-5xl font-black text-yellow-300">€{currentVal}M</div>
               <div className="text-gray-500 text-sm mt-1">Current Value</div>
+              {formInfo && (
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-none text-xs font-black"
+                  style={{ background: `${formInfo.color}18`, border: `1px solid ${formInfo.color}55`, color: formInfo.color }}>
+                  {formInfo.emoji} {formInfo.label}
+                </div>
+              )}
             </div>
           </div>
 

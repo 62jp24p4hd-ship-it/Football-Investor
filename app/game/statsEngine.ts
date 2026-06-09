@@ -26,6 +26,25 @@ export function generateSeasonStats(
 ): SeasonStats {
   const age = calculateAge(player.startAge, player.availableSeason, targetSeason);
 
+  // ── Form Season — كل موسم له شكل عشوائي ──
+  const formRoll = Math.random();
+  type FormType = "excellent" | "good" | "average" | "bad" | "disaster";
+  let form: FormType;
+  if      (formRoll < 0.10) form = "excellent";
+  else if (formRoll < 0.35) form = "good";
+  else if (formRoll < 0.70) form = "average";
+  else if (formRoll < 0.90) form = "bad";
+  else                      form = "disaster";
+
+  const formMultipliers: Record<FormType, { stats: number; rating: number }> = {
+    excellent: { stats: 1.6,  rating:  5  },
+    good:      { stats: 1.2,  rating:  2  },
+    average:   { stats: 1.0,  rating:  0  },
+    bad:       { stats: 0.65, rating: -4  },
+    disaster:  { stats: 0.30, rating: -9  },
+  };
+  const fm = formMultipliers[form];
+
   // Rating evolution
   let rating = previousStats?.rating ?? (getBaseRating(player) + randomBetween(-3, 3));
 
@@ -33,15 +52,15 @@ export function generateSeasonStats(
     case "talent":
       rating += randomBetween(1, 5);
       break;
-    case "trap":
-      // Looks good first 2 seasons, then drops
+    case "trap": {
       const seasonsIn = targetSeason - player.availableSeason;
       if (seasonsIn <= 1) {
-        rating += randomBetween(2, 5); // deceivingly good
+        rating += randomBetween(2, 5);
       } else {
-        rating += randomBetween(-7, -1); // then crashes
+        rating += randomBetween(-7, -1);
       }
       break;
+    }
     case "secret":
       rating += randomBetween(2, 6);
       break;
@@ -55,39 +74,43 @@ export function generateSeasonStats(
   if (age >= 33) rating -= randomBetween(2, 4);
   else if (age >= 30) rating -= randomBetween(0, 2);
 
+  // Apply form to rating
+  rating += fm.rating;
   rating = clamp(Math.round(rating), 40, 99);
 
-  // Games played
-  const games = randomBetween(15, 42);
+  // Games played — disaster means less games (injury/bench)
+  const gamesBase = form === "disaster" ? randomBetween(5, 20)
+    : form === "bad" ? randomBetween(12, 30)
+    : randomBetween(20, 42);
+  const games = gamesBase;
 
-  // Position-based stats
+  // Position-based stats — multiplied by form
   let goals = 0;
   let assists = 0;
   let cleanSheets = 0;
 
   if (isAttacker(player.position)) {
-    goals = Math.round((rating / 99) * randomBetween(8, 38));
-    assists = Math.round((rating / 99) * randomBetween(3, 18));
+    goals       = Math.round((rating / 99) * randomBetween(8, 38)  * fm.stats);
+    assists     = Math.round((rating / 99) * randomBetween(3, 18)  * fm.stats);
   } else if (isMidfielder(player.position)) {
     if (player.position === "CAM") {
-      goals = Math.round((rating / 99) * randomBetween(5, 20));
-      assists = Math.round((rating / 99) * randomBetween(8, 24));
+      goals   = Math.round((rating / 99) * randomBetween(5, 20)  * fm.stats);
+      assists = Math.round((rating / 99) * randomBetween(8, 24)  * fm.stats);
     } else {
-      goals = Math.round((rating / 99) * randomBetween(2, 12));
-      assists = Math.round((rating / 99) * randomBetween(5, 18));
+      goals   = Math.round((rating / 99) * randomBetween(2, 12)  * fm.stats);
+      assists = Math.round((rating / 99) * randomBetween(5, 18)  * fm.stats);
     }
   } else if (isDefender(player.position)) {
-    goals = Math.round((rating / 99) * randomBetween(0, 5));
-    assists = Math.round((rating / 99) * randomBetween(0, 8));
+    goals       = Math.round((rating / 99) * randomBetween(0, 5)  * fm.stats);
+    assists     = Math.round((rating / 99) * randomBetween(0, 8)  * fm.stats);
+    cleanSheets = Math.round((rating / 99) * randomBetween(3, 18) * fm.stats);
   } else if (isGoalkeeper(player.position)) {
-    cleanSheets = Math.round((rating / 99) * randomBetween(5, 24));
+    cleanSheets = Math.round((rating / 99) * randomBetween(5, 24) * fm.stats);
   }
 
-  // Discipline
   const yellowCards = randomBetween(0, 10);
-  const redCards = randomBetween(0, 2);
+  const redCards    = randomBetween(0, 2);
 
-  // Calculate value from stats
   const draftStats: SeasonStats = {
     season: targetSeason,
     games,
