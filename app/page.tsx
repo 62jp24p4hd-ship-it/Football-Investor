@@ -57,6 +57,7 @@ export default function Home() {
   const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
   const [eventsEnabled, setEventsEnabled] = useState(true);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(15);
+  const [negativeBudgetEndsGame, setNegativeBudgetEndsGame] = useState(true);
 
   // ── Game state ────────────────────────────
   const [season, setSeason] = useState(GAME_START_SEASON);
@@ -224,13 +225,14 @@ export default function Home() {
   function startGame(config: {
     mode: GameMode; budgetMode: BudgetMode; team1Name: string; team2Name: string;
     eventsEnabled: boolean; eventType: EventType; timerSeconds: number | null;
-    gameLengthMode: "classic" | "infinite";
+    gameLengthMode: "classic" | "infinite"; negativeBudgetEndsGame: boolean;
   }) {
     setMode(config.mode);
     setBudgetMode(config.budgetMode);
     setGameLengthMode(config.gameLengthMode);
     setEventsEnabled(config.eventsEnabled);
     setTimerSeconds(config.timerSeconds);
+    setNegativeBudgetEndsGame(config.negativeBudgetEndsGame);
     if (config.timerSeconds !== null) setTimer(config.timerSeconds);
 
     // AI mode uses "versus" internally but with AI as player 2
@@ -647,9 +649,9 @@ export default function Home() {
 
     const currentList = listOverride ?? gamePlayers;
 
-    // فحص الميزانية السالبة — تنتهي اللعبة
+    // فحص الميزانية السالبة — تنتهي اللعبة فقط لو الإعداد مفعّل
     const brokePlayers = currentList.filter(gp => gp.budget < 0);
-    if (brokePlayers.length > 0) {
+    if (negativeBudgetEndsGame && brokePlayers.length > 0) {
       if (mode === "single") {
         // الطور الفردي — تنتهي اللعبة مباشرة
         notify("💸 Bankrupt! Game Over.");

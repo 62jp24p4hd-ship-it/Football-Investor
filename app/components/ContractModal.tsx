@@ -49,6 +49,12 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
   const acceptProb = getAcceptanceProbability(liveSat);
   const minSalary = 0;
   const maxSalary = marketValue < 5 ? 5 : Math.max(5, Math.round(marketValue * 0.30));
+  const salaryStep = marketValue < 5 ? 0.1 : 1;
+
+  function formatSalary(val: number): string {
+    if (val < 1) return `€${Math.round(val * 10) / 10}M (${Math.round(val * 1000)}K)`;
+    return `€${Math.round(val)}M`;
+  }
 
   function handleMakeOffer() {
     const updated = updateOffer(negotiation, mySalary, myDuration);
@@ -146,15 +152,15 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
             <div className="mb-4">
               <div className="flex justify-between mb-1">
                 <span className="text-xs text-gray-500">Salary / Year</span>
-                <span className="text-sm font-black text-emerald-400">€{mySalary}M</span>
+                <span className="text-sm font-black text-emerald-400">{formatSalary(mySalary)}</span>
               </div>
-              <input type="range" min={minSalary} max={maxSalary} step={1}
+              <input type="range" min={minSalary} max={maxSalary} step={salaryStep}
                 value={mySalary} onChange={e => setMySalary(Number(e.target.value))}
                 className="w-full accent-emerald-400" />
               <div className="flex justify-between text-[10px] text-gray-600 mt-1">
-                <span>Min €{minSalary}M</span>
-                <span className="text-gray-500">Required ~€{requiredSalary}M</span>
-                <span>Max €{maxSalary}M</span>
+                <span>Min €0</span>
+                <span className="text-gray-500">Required ~{formatSalary(requiredSalary)}</span>
+                <span>Max {formatSalary(maxSalary)}</span>
               </div>
             </div>
 
@@ -177,7 +183,7 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
             {/* Offer summary */}
             <div className="p-3 rounded-none mb-4 text-sm" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <span className="text-gray-400">Your offer: </span>
-              <span className="text-white font-bold">€{mySalary}M/yr × {myDuration}yr = €{mySalary * myDuration}M total</span>
+              <span className="text-white font-bold">{formatSalary(mySalary)}/yr × {myDuration}yr = {formatSalary(mySalary * myDuration)} total</span>
             </div>
 
             <button onClick={handleMakeOffer}

@@ -12,6 +12,7 @@ type StartConfig = {
   eventType: EventType;
   timerSeconds: number | null;
   gameLengthMode: "classic" | "infinite";
+  negativeBudgetEndsGame: boolean;
 };
 
 type Props = { onStart: (config: StartConfig) => void };
@@ -47,6 +48,7 @@ export default function StartScreen({ onStart }: Props) {
   const [eventType, setEventType] = useState<EventType>("all");
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const [gameLengthMode, setGameLengthMode] = useState<"classic" | "infinite">("classic");
+  const [negativeBudgetEndsGame, setNegativeBudgetEndsGame] = useState(true);
   const [easterClicks, setEasterClicks] = useState(0);
   const [easterUnlocked, setEasterUnlocked] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -54,7 +56,7 @@ export default function StartScreen({ onStart }: Props) {
 
   function handleStart() {
     if (!mode) return;
-    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode });
+    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, negativeBudgetEndsGame });
   }
 
   const sectionStyle = {
@@ -288,6 +290,25 @@ export default function StartScreen({ onStart }: Props) {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Negative Budget */}
+        <div style={sectionStyle}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={sectionTitle} style={{ marginBottom: 0 }}>NEGATIVE BUDGET — الميزانية بالسالب</div>
+              <div className="text-gray-500 text-xs mt-1">
+                {negativeBudgetEndsGame ? "تنتهي اللعبة عند الميزانية السالبة" : "تكمل اللعبة عند الميزانية السالبة"}
+              </div>
+            </div>
+            <button onClick={() => setNegativeBudgetEndsGame(!negativeBudgetEndsGame)}
+              className="px-4 py-2 rounded-none font-bold text-sm transition-all"
+              style={negativeBudgetEndsGame ? {
+                background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", color: "#ef4444"
+              } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#6b7280" }}>
+              {negativeBudgetEndsGame ? "ON" : "OFF"}
+            </button>
+          </div>
         </div>
 
         {/* Timer */}
