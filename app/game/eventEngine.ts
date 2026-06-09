@@ -288,6 +288,12 @@ export function createRandomSeasonEvent(
   let updatedPlayers = [...gamePlayers];
   const roll = Math.random();
 
+  // 0.05% — Bob Paisley Plane Disaster (ultra-rare)
+  if (roll < 0.0005) {
+    const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+    return triggerBobPaisleyDisaster(updatedPlayers, ownerIndex, season);
+  }
+
   // 15% — quiet season
   if (roll < 0.15) {
     return {
@@ -650,6 +656,66 @@ export function forcedSpecificEvent(
           ? { ...item, player: playerAfter, currentValue: afterValue }
           : item
       ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
+
+// ============================================
+// BOB PAISLEY PLANE DISASTER — Ultra Rare
+// ============================================
+
+export function triggerBobPaisleyDisaster(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) {
+    return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+  }
+
+  // اختار عدد عشوائي من 1 إلى min(11, عدد اللاعبين)
+  const maxAffected = Math.min(11, owner.owned.length);
+  const count = 1 + Math.floor(Math.random() * maxAffected);
+
+  // خلط اللاعبين واختيار عشوائي
+  const shuffled = [...owner.owned].sort(() => Math.random() - 0.5);
+  const affected = shuffled.slice(0, count);
+  const affectedNames = affected.map(item => item.player.name);
+
+  const newsItem: NewsItem = {
+    id: randomId(),
+    season,
+    title: "✈️ Bob Paisley Plane Disaster",
+    description: `A tragic aviation accident occurred while several players from ${owner.name} were travelling for a commercial shoot. ` +
+      `${count} career${count > 1 ? "s have" : " has"} come to an unexpected end. ` +
+      `Affected players: ${affectedNames.join(", ")}.`,
+    tone: "bad",
+    journalist: "Fabrizio Romano",
+    source: "Sky Sports",
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    const affectedSet = new Set(affectedNames);
+    return {
+      ...gp,
+      owned: gp.owned.filter(item => !affectedSet.has(item.player.name)),
+      sold: [
+        ...gp.sold,
+        ...affected.map(item => ({
+          owner: gp.name,
+          name: item.player.name,
+          buySeason: item.buySeason,
+          sellSeason: season,
+          buyPrice: item.buyPrice,
+          sellPrice: 0,
+          profit: -item.buyPrice,
+          position: item.player.position,
+        })),
+      ],
     };
   });
 

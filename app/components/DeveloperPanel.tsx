@@ -26,6 +26,7 @@ const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative"
   { id: "legendaryAuction", label: "🏆 Legendary Auction", type: "special" },
   { id: "sponsorshipOffer", label: "🤝 Sponsorship Offer", type: "special" },
   { id: "florentinoPerez", label: "👑 Florentino Perez", type: "special" },
+  { id: "bobPaisleyDisaster", label: "✈️ Bob Paisley Disaster", type: "special" },
 ];
 
 export default function DeveloperPanel({ onTrigger, onClose }: Props) {

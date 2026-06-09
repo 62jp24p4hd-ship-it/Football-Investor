@@ -348,7 +348,8 @@ export type DevEventId =
   | "investorOffer"
   | "legendaryAuction"
   | "sponsorshipOffer"
-  | "florentinoPerez";
+  | "florentinoPerez"
+  | "bobPaisleyDisaster";
 
 // ============================================
 // PLAYER EVENT EFFECT
