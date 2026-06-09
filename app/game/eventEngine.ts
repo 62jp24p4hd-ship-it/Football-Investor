@@ -1021,3 +1021,101 @@ export function triggerYouTubeViral(
 
   return { event: null, updatedPlayers, newsItems: [newsItem] };
 }
+
+// ============================================
+// DREAM SEASON — Legendary Positive (Team-Wide)
+// ============================================
+
+export function triggerDreamSeason(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const effect: import("./types").ActiveEffect = {
+    id: "dreamSeason",
+    name: "Dream Season",
+    emoji: "🔥",
+    expiresAfterSeason: season + 1,
+    valueChangePct: 0.25,
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `🔥 Dream Season — ${owner.name}`,
+    description: `${owner.name} is enjoying a dream season. Every player seems to be performing at an elite level and the entire squad is benefiting from an incredible run of form.`,
+    tone: "good",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item => {
+        const alreadyHas = (item.activeEffects ?? []).some(e => e.id === "dreamSeason");
+        if (alreadyHas) return item;
+        const valueBonus = Math.round(item.currentValue * 0.25);
+        return {
+          ...item,
+          currentValue: item.currentValue + valueBonus,
+          activeEffects: [...(item.activeEffects ?? []), effect],
+        };
+      }),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
+
+// ============================================
+// LOCKER ROOM DRAMA — Legendary Negative (Team-Wide)
+// ============================================
+
+export function triggerLockerRoomDrama(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const effect: import("./types").ActiveEffect = {
+    id: "lockerRoom",
+    name: "Locker Room Drama",
+    emoji: "🗣️",
+    expiresAfterSeason: season + 1,
+    valueChangePct: 0,
+    ratingChange: -3,
+    salaryDemandMultiplier: 1.50,
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `🗣️ Locker Room Drama — ${owner.name}`,
+    description: `Reports suggest major tensions have emerged inside the dressing room at ${owner.name}. Several players are unhappy and the atmosphere around the club has deteriorated significantly.`,
+    tone: "bad",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item => {
+        const alreadyHas = (item.activeEffects ?? []).some(e => e.id === "lockerRoom");
+        if (alreadyHas) return item;
+        return {
+          ...item,
+          activeEffects: [...(item.activeEffects ?? []), effect],
+        };
+      }),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}

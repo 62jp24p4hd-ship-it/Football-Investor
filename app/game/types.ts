@@ -365,7 +365,9 @@ export type DevEventId =
   | "breakupSeason"
   | "casinoNight"
   | "oneSeasonWonder"
-  | "youTubeViral";
+  | "youTubeViral"
+  | "dreamSeason"
+  | "lockerRoomDrama";
 
 // ============================================
 // PLAYER EVENT EFFECT

@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral } from "./game/eventEngine";
+import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -660,6 +660,18 @@ export default function Home() {
     }
     if (eventId === "youTubeViral") {
       const result = triggerYouTubeViral(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(result.updatedPlayers);
+      addNewsItems(result.newsItems);
+      return;
+    }
+    if (eventId === "dreamSeason") {
+      const result = triggerDreamSeason(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(result.updatedPlayers);
+      addNewsItems(result.newsItems);
+      return;
+    }
+    if (eventId === "lockerRoomDrama") {
+      const result = triggerLockerRoomDrama(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
       return;
