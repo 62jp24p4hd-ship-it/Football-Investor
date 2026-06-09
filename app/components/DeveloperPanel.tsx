@@ -21,6 +21,8 @@ const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative"
   { id: "failedTransfer", label: "📉 Failed Transfer", type: "negative" },
   { id: "freeTransfer", label: "💔 Free Transfer", type: "negative" },
   { id: "fastFoodAddiction", label: "🍔 Fast Food Addiction", type: "negative" },
+  { id: "breakupSeason", label: "💔 Breakup Season", type: "negative" },
+  { id: "casinoNight", label: "🎰 Casino Night", type: "negative" },
   { id: "marketCrash", label: "📉 Market Crash", type: "negative" },
   { id: "retirement", label: "👋 Retirement Check", type: "special" },
   { id: "investorOffer", label: "💼 Investor Offer", type: "special" },

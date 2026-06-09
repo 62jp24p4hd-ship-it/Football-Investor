@@ -166,6 +166,7 @@ export type ActiveEffect = {
   expiresAfterSeason: number;
   valueChangePct?: number;
   ratingChange?: number;
+  salaryDemandMultiplier?: number; // Casino Night — يرفع متطلبات الراتب
 };
 
 export type OwnedPlayer = {
@@ -360,7 +361,9 @@ export type DevEventId =
   | "sponsorshipOffer"
   | "florentinoPerez"
   | "bobPaisleyDisaster"
-  | "fastFoodAddiction";
+  | "fastFoodAddiction"
+  | "breakupSeason"
+  | "casinoNight";
 
 // ============================================
 // PLAYER EVENT EFFECT

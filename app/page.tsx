@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction } from "./game/eventEngine";
+import { createRandomSeasonEvent, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -310,10 +310,15 @@ export default function Home() {
         if (i !== activePlayerIndex) return p;
         return {
           ...p,
-          budget: p.budget - contract.salary, // pay first season salary
+          budget: p.budget - contract.salary,
           owned: p.owned.map((o) =>
             o.slot === negotiation.slot
-              ? { ...o, contract }
+              ? {
+                  ...o,
+                  contract,
+                  // حذف Casino effect بعد التجديد الناجح
+                  activeEffects: (o.activeEffects ?? []).filter(e => e.id !== "casino"),
+                }
               : o
           ),
         };
@@ -440,6 +445,15 @@ export default function Home() {
     if (!item) return;
     const value = item.currentValue ?? currentValue(item.player);
     const renewal = createRenewalNegotiation(item, value);
+
+    // Casino Night — يرفع متطلبات الراتب
+    const casinoEffect = (item.activeEffects ?? []).find(e => e.id === "casino");
+    if (casinoEffect?.salaryDemandMultiplier) {
+      const boostedSalary = Math.round(renewal.requiredSalary * casinoEffect.salaryDemandMultiplier);
+      renewal.requiredSalary = boostedSalary;
+      renewal.playerCounterMessage = `🎰 I was at the casino last night... I need €${boostedSalary}M/yr now.`;
+    }
+
     setNegotiation(renewal);
     setSelectedOwned(null);
   }
@@ -587,6 +601,18 @@ export default function Home() {
     }
     if (eventId === "fastFoodAddiction") {
       const result = triggerFastFoodAddiction(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(result.updatedPlayers);
+      addNewsItems(result.newsItems);
+      return;
+    }
+    if (eventId === "breakupSeason") {
+      const result = triggerBreakupSeason(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(result.updatedPlayers);
+      addNewsItems(result.newsItems);
+      return;
+    }
+    if (eventId === "casinoNight") {
+      const result = triggerCasinoNight(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
       return;

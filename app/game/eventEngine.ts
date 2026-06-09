@@ -809,3 +809,109 @@ export function expireActiveEffects(
     }),
   }));
 }
+
+// ============================================
+// BREAKUP SEASON — Temporary Negative
+// ============================================
+
+export function triggerBreakupSeason(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const candidates = owner.owned.filter(item =>
+    !(item.activeEffects ?? []).some(e => e.id === "breakup")
+  );
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  const valuePenalty = Math.round(picked.currentValue * 0.10);
+  const newValue = Math.max(1, picked.currentValue - valuePenalty);
+
+  const effect: import("./types").ActiveEffect = {
+    id: "breakup",
+    name: "Breakup Season",
+    emoji: "💔",
+    expiresAfterSeason: season + 1,
+    valueChangePct: -0.10,
+    ratingChange: -4,
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `💔 Breakup Season — ${picked.player.name}`,
+    description: `Sources close to ${picked.player.name} report a difficult personal period. The player's recent performances have been affected by off-field distractions.`,
+    tone: "bad",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, currentValue: newValue, activeEffects: [...(item.activeEffects ?? []), effect] }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
+
+// ============================================
+// CASINO NIGHT — Contract Penalty
+// ============================================
+
+export function triggerCasinoNight(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const candidates = owner.owned.filter(item =>
+    !(item.activeEffects ?? []).some(e => e.id === "casino")
+  );
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+
+  // Casino: يرفع متطلبات الراتب بدون تغيير القيمة
+  const effect: import("./types").ActiveEffect = {
+    id: "casino",
+    name: "Casino Night",
+    emoji: "🎰",
+    expiresAfterSeason: season + 2, // موسمان أو حتى تجديد العقد
+    salaryDemandMultiplier: 1.50,   // +50% على راتب الاعب
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `🎰 Casino Night — ${picked.player.name}`,
+    description: `${picked.player.name} reportedly suffered heavy losses during a late-night casino visit. Sources claim the player is now seeking a significantly larger contract.`,
+    tone: "bad",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, activeEffects: [...(item.activeEffects ?? []), effect] }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
