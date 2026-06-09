@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { ContractNegotiation } from "../game/types";
 import {
-  updateOffer, getNegotiationHint, willPlayerAccept,
-  generatePlayerCounterOffer, getAcceptanceProbability
+  updateOffer, willPlayerAccept,
+  generatePlayerCounterOffer, getAcceptanceProbability,
+  calculateSatisfaction
 } from "../game/contractEngine";
-import { getSatisfactionColor, nationalityFlag, positionBg } from "../game/helpers";
+import { nationalityFlag, positionBg } from "../game/helpers";
 import { getSeasonStats } from "../game/statsEngine";
 
 type Props = {
@@ -19,22 +20,33 @@ type Props = {
 
 const DURATION_OPTIONS = [1, 2, 3, 4, 5];
 
+function getSatColor(sat: number): string {
+  if (sat < 20) return "#ef4444";   // red
+  if (sat < 50) return "#f97316";   // orange
+  if (sat < 75) return "#eab308";   // yellow
+  if (sat < 100) return "#22c55e";  // green
+  return "#D4AF37";                  // gold
+}
+
 export default function ContractModal({ negotiation, season, onUpdate, onSign, onCancel }: Props) {
-  const { player, offeredSalary, offeredDuration, satisfaction, requiredSalary, marketValue, playerCounterMessage } = negotiation;
+  const { player, offeredSalary, offeredDuration, requiredSalary, marketValue, playerCounterMessage } = negotiation;
   const stats = getSeasonStats(player, season);
   const age = player.startAge + (season - player.availableSeason);
 
-  // المستثمر يحدد عرضه
   const [mySalary, setMySalary] = useState<number>(offeredSalary);
   const [myDuration, setMyDuration] = useState<number>(offeredDuration);
   const [counterMsg, setCounterMsg] = useState<string>(playerCounterMessage ?? `👋 My asking price is €${offeredSalary}M/yr for ${offeredDuration} years.`);
   const [negotiationDone, setNegotiationDone] = useState(false);
   const [result, setResult] = useState<"accepted" | "rejected" | null>(null);
 
-  const acceptProb = getAcceptanceProbability(satisfaction);
-  const satColor = getSatisfactionColor(satisfaction);
+  // حساب الـ satisfaction بشكل live حسب العرض الحالي
+  const liveSat = useMemo(() =>
+    calculateSatisfaction(mySalary, requiredSalary, myDuration, marketValue),
+    [mySalary, myDuration, requiredSalary, marketValue]
+  );
 
-  // الراتب الموصى به بناءً على سعر الشراء
+  const satColor = getSatColor(liveSat);
+  const acceptProb = getAcceptanceProbability(liveSat);
   const minSalary = Math.max(1, Math.round(marketValue * 0.05));
   const maxSalary = Math.round(marketValue * 0.30);
 
@@ -42,9 +54,8 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
     const updated = updateOffer(negotiation, mySalary, myDuration);
     onUpdate(updated);
 
-    const sat = updated.satisfaction;
+    const sat = liveSat;
 
-    // رفض تلقائي
     if (sat < 20) {
       setCounterMsg("❌ This is completely unacceptable. Negotiation over.");
       setResult("rejected");
@@ -52,7 +63,6 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
       return;
     }
 
-    // قبول تلقائي
     if (sat >= 100) {
       setCounterMsg("✅ Perfect! I accept this offer!");
       setResult("accepted");
@@ -60,14 +70,12 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
       return;
     }
 
-    // احتمال حسب نسبة الرضا
     const accepted = Math.random() < (sat / 100);
     if (accepted) {
       setCounterMsg(`✅ Deal! I accept. (${sat}% satisfaction)`);
       setResult("accepted");
       setNegotiationDone(true);
     } else {
-      // رد اللاعب المضاد
       const counter = generatePlayerCounterOffer(updated);
       setCounterMsg(counter.message);
       setMySalary(counter.salary);
@@ -115,13 +123,17 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
         <div className="px-6 pt-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-gray-500 uppercase tracking-widest">Player Satisfaction</span>
-            <span className="text-sm font-black" style={{ color: satColor }}>{satisfaction}%</span>
+            <span className="text-sm font-black" style={{ color: satColor }}>{liveSat}%</span>
           </div>
           <div className="h-2 rounded-none overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
-            <div className="h-full transition-all duration-500" style={{ width: `${satisfaction}%`, background: satColor }} />
+            <div className="h-full transition-all duration-300" style={{ width: `${liveSat}%`, background: satColor }} />
           </div>
-          <div className="text-xs text-gray-600 mt-1">
-            {satisfaction < 20 ? "❌ Auto-reject" : satisfaction >= 100 ? "✅ Auto-accept" : `~${Math.round(acceptProb * 100)}% chance of acceptance`}
+          <div className="text-xs mt-1 font-bold transition-colors" style={{ color: satColor }}>
+            {liveSat < 20
+              ? "❌ Auto-reject"
+              : liveSat >= 100
+              ? "✅ Auto-accept"
+              : `~${Math.round(acceptProb * 100)}% chance of acceptance`}
           </div>
         </div>
 
