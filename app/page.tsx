@@ -70,7 +70,9 @@ export default function Home() {
 
   // ── Player pools ──────────────────────────
   const [basePlayers, setBasePlayers] = useState<Player[]>([]);
-  const [easterUnlocked, setEasterUnlocked] = useState(false);
+  const [easterUnlocked, setEasterUnlocked] = useState<boolean>(() => {
+    try { return localStorage.getItem("fi_easter_unlocked") === "1"; } catch { return false; }
+  });
   const [generatedBySeason, setGeneratedBySeason] = useState<Record<number, Player[]>>({});
 
   // ── UI state ──────────────────────────────
@@ -114,15 +116,29 @@ export default function Home() {
   const slotOptions = useMemo<Player[]>(() => {
     if (!selectedSlot) return [];
     const ownedNames = new Set(gamePlayers.flatMap((gp) => gp.owned.map((o) => o.player.name)));
-    // Get all available players for this position/season
-    const allAvailable = allPlayers.filter(
-      (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name)
+
+    // تحقق من GOAT لهذا الموسم
+    const goatForSeason = easterUnlocked
+      ? getSecretPlayers().find(p => p.availableSeason === season && !ownedNames.has(p.name))
+      : null;
+
+    // اللاعبون العاديون بدون GOAT
+    const normalPool = allPlayers.filter(
+      (p) => p.position === selectedSlot && p.availableSeason === season && !ownedNames.has(p.name) && !p.secret
     );
-    // Shuffle and pick 5 random from all available
-    const picked = shuffle(allAvailable).slice(0, 5);
+    const picked = shuffle(normalPool).slice(0, goatForSeason ? 4 : 5);
     const budget = gamePlayers[activePlayerIndex]?.budget ?? 0;
-    return guaranteeAffordablePlayer(picked, budget, season);
-  }, [selectedSlot, season, gamePlayers, allPlayers, activePlayerIndex]);
+    const withGuarantee = guaranteeAffordablePlayer(picked, budget, season);
+
+    // أضف GOAT في المنتصف (slot #3 = index 2)
+    if (goatForSeason) {
+      const result = [...withGuarantee];
+      result.splice(2, 0, goatForSeason);
+      return result.slice(0, 5);
+    }
+
+    return withGuarantee;
+  }, [selectedSlot, season, gamePlayers, allPlayers, activePlayerIndex, easterUnlocked]);
 
   // ── Init base players ─────────────────────
   useEffect(() => {
@@ -260,7 +276,7 @@ export default function Home() {
   function startGame(config: {
     mode: GameMode; budgetMode: BudgetMode; team1Name: string; team2Name: string;
     eventsEnabled: boolean; eventType: EventType; timerSeconds: number | null;
-    gameLengthMode: "classic" | "infinite"; negativeBudgetEndsGame: boolean;
+    gameLengthMode: "classic" | "infinite"; negativeBudgetEndsGame: boolean; easterUnlocked: boolean;
   }) {
     setMode(config.mode);
     setBudgetMode(config.budgetMode);
@@ -268,6 +284,7 @@ export default function Home() {
     setEventsEnabled(config.eventsEnabled);
     setTimerSeconds(config.timerSeconds);
     setNegativeBudgetEndsGame(config.negativeBudgetEndsGame);
+    if (config.easterUnlocked) setEasterUnlocked(true);
     if (config.timerSeconds !== null) setTimer(config.timerSeconds);
 
     // AI mode uses "versus" internally but with AI as player 2

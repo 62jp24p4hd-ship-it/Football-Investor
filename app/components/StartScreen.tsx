@@ -14,6 +14,7 @@ type StartConfig = {
   timerSeconds: number | null;
   gameLengthMode: "classic" | "infinite";
   negativeBudgetEndsGame: boolean;
+  easterUnlocked: boolean;
 };
 
 type Props = { onStart: (config: StartConfig) => void; onContinue?: () => void };
@@ -82,7 +83,11 @@ export default function StartScreen({ onStart, onContinue }: Props) {
   const [gameLengthMode, setGameLengthMode] = useState<"classic" | "infinite">("classic");
   const [negativeBudgetEndsGame, setNegativeBudgetEndsGame] = useState(true);
   const [easterClicks, setEasterClicks] = useState(0);
-  const [easterUnlocked, setEasterUnlocked] = useState(false);
+  const [easterUnlocked, setEasterUnlocked] = useState<boolean>(() => {
+    try { return localStorage.getItem("fi_easter_unlocked") === "1"; } catch { return false; }
+  });
+  const [showShatoor, setShowShatoor] = useState(false);
+  const [showEasterPopup, setShowEasterPopup] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showDevMsg, setShowDevMsg] = useState(false);
   const [saveInfo, setSaveInfo] = useState<{ season: number; mode: string; savedAt: string } | null>(null);
@@ -97,7 +102,7 @@ export default function StartScreen({ onStart, onContinue }: Props) {
 
   function handleStart() {
     if (!mode) return;
-    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, negativeBudgetEndsGame });
+    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, negativeBudgetEndsGame, easterUnlocked });
   }
 
   return (
@@ -167,14 +172,83 @@ export default function StartScreen({ onStart, onContinue }: Props) {
 
         {/* ── Title ── */}
         <div className="text-center mb-6">
-          <p onClick={() => { const n = easterClicks+1; setEasterClicks(n); if(n>=5) setEasterUnlocked(true); }}
-            className="text-sm font-black mb-3 cursor-pointer tracking-wide" style={{ color: "#D4AF37", textShadow: "0 0 20px rgba(212,175,55,0.5)" }}>
+          <p onClick={() => {
+              const n = easterClicks + 1;
+              setEasterClicks(n);
+              if (n >= 5 && !easterUnlocked) {
+                setEasterUnlocked(true);
+                try { localStorage.setItem("fi_easter_unlocked", "1"); } catch {}
+                setShowShatoor(true);
+                setTimeout(() => {
+                  setShowShatoor(false);
+                  setTimeout(() => setShowEasterPopup(true), 200);
+                }, 1400);
+              }
+            }}
+            className="text-sm font-black mb-3 cursor-pointer tracking-wide select-none"
+            style={{ color: "#D4AF37", textShadow: "0 0 20px rgba(212,175,55,0.5)" }}>
             👀 حجي المطور المستقل
           </p>
+
+          {/* شطور animation */}
+          {showShatoor && (
+            <div className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none">
+              <p className="font-black text-center"
+                style={{
+                  fontSize: "96px",
+                  color: "#D4AF37",
+                  textShadow: "0 0 60px rgba(212,175,55,0.9), 0 0 120px rgba(212,175,55,0.5)",
+                  animation: "shatoorAnim 1.4s ease forwards",
+                }}>
+                شطور
+              </p>
+              <style>{`
+                @keyframes shatoorAnim {
+                  0%   { opacity: 0; transform: scale(0.5) translateY(20px); }
+                  30%  { opacity: 1; transform: scale(1.1) translateY(-8px); }
+                  60%  { opacity: 1; transform: scale(1.0) translateY(-4px); }
+                  100% { opacity: 0; transform: scale(1.15) translateY(-20px); }
+                }
+              `}</style>
+            </div>
+          )}
+
+          {/* Easter popup */}
+          {showEasterPopup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.88)" }}>
+              <div className="w-full max-w-sm p-7 text-center shadow-2xl"
+                style={{
+                  background: "linear-gradient(135deg, #0d1117, #1a1200)",
+                  border: "1px solid rgba(212,175,55,0.5)",
+                  boxShadow: "0 0 60px rgba(212,175,55,0.2)",
+                  animation: "fadeInScale 0.4s ease forwards",
+                }}>
+                <style>{`
+                  @keyframes fadeInScale {
+                    from { opacity: 0; transform: scale(0.85); }
+                    to   { opacity: 1; transform: scale(1); }
+                  }
+                `}</style>
+                <div className="text-5xl mb-4">😏</div>
+                <p className="text-white font-black text-lg leading-relaxed mb-6"
+                  style={{ textShadow: "0 0 20px rgba(212,175,55,0.3)" }}>
+                  شطور... الحين دور عن بطاقتي و بطايق الشباب في اللعبة 😏
+                </p>
+                <button onClick={() => setShowEasterPopup(false)}
+                  className="w-full py-3 font-black text-sm uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg, #D4AF37, #b8960a)",
+                    color: "#000",
+                    boxShadow: "0 4px 20px rgba(212,175,55,0.4)",
+                  }}>
+                  ✅ فهمت
+                </button>
+              </div>
+            </div>
+          )}
           <div style={{ fontSize: "72px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg,#fff 0%,#a8f5d0 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Football</div>
           <div style={{ fontSize: "72px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg,#10b981,#34d399,#6ee7b7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Investor</div>
           <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mt-3">Build The Most Valuable Squad</p>
-          {easterUnlocked && <p className="mt-2 text-yellow-400 text-sm font-black animate-pulse">😏 شطور... الحين دور عن بطاقتي.</p>}
         </div>
 
         {/* ── How To Play ── */}

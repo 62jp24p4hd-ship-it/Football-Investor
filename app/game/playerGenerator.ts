@@ -103,23 +103,38 @@ export function generateAuctionCandidates(season: number): Player[] {
 // ============================================
 
 export function createSecretPlayers(): Player[] {
-  return [
-    buildDynamicCareer({
-      id: "secret_yousef",
-      name: "Yousef Alnuwasser",
-      position: "ST",
-      availableSeason: 2016,
-      startAge: 18,
-      nationality: "Saudi Arabia",
-      height: 185,
-      league: "Saudi Pro League",
-      club: "Al Kharj FC",
-      games: 38,
-      goals: 70,
-      assists: 30,
-      rating: 99,
-      secret: true,
-      hiddenType: "secret",
-    }),
+  const goatBase = {
+    secret: true,
+    hiddenType: "secret" as const,
+    league: "GOATs",
+    club: "GOATs FC",
+    height: 183,
+    games: 38,
+    goals: 25,
+    assists: 15,
+    rating: 99,
+    cardColor: "gold",
+  };
+
+  const goats = [
+    buildDynamicCareer({ id: "goat_yousef",    name: "Yousef Alnuwasser",   position: "ST",  availableSeason: 2016, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_abdulaziz", name: "Abdulaziz Alghariri", position: "RCB", availableSeason: 2020, startAge: 21, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_hussain",   name: "Hussain Alrezk",      position: "LCM", availableSeason: 2015, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_ali_s",     name: "Ali Alsaif",          position: "LW",  availableSeason: 2010, startAge: 23, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_reda",      name: "Reda Alrezk",         position: "LB",  availableSeason: 2013, startAge: 21, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_qousi",     name: "Qousi",               position: "LCB", availableSeason: 2014, startAge: 23, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_ali_b",     name: "Ali Albrahim",        position: "CAM", availableSeason: 2018, startAge: 25, nationality: "Saudi Arabia", ...goatBase }),
   ];
+
+  // Force value = 101M for all seasons
+  return goats.map(p => {
+    const overriddenValues: Record<number, number> = {};
+    const overriddenStats: Record<number, import("./types").SeasonStats> = {};
+    Object.keys(p.statsBySeason ?? {}).forEach(s => {
+      const season = Number(s);
+      overriddenStats[season] = { ...p.statsBySeason![season], value: 101 };
+      overriddenValues[season] = 101;
+    });
+    return { ...p, values: overriddenValues, statsBySeason: overriddenStats };
+  });
 }
