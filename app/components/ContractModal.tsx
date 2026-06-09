@@ -47,8 +47,8 @@ export default function ContractModal({ negotiation, season, onUpdate, onSign, o
 
   const satColor = getSatColor(liveSat);
   const acceptProb = getAcceptanceProbability(liveSat);
-  const minSalary = Math.max(1, Math.round(marketValue * 0.05));
-  const maxSalary = Math.round(marketValue * 0.30);
+  const minSalary = 0;
+  const maxSalary = marketValue < 5 ? 5 : Math.max(5, Math.round(marketValue * 0.30));
 
   function handleMakeOffer() {
     const updated = updateOffer(negotiation, mySalary, myDuration);
