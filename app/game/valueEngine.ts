@@ -267,11 +267,7 @@ export function applyPriceTierGrowth(
   const ratio = Math.min(1, currentPrice / budget);
   const roll = Math.random();
 
-  // Rating يؤثر على احتمالية النمو
-  // rating 40 → ratingBonus = -0.15 (أقل نمو)
-  // rating 70 → ratingBonus = 0
-  // rating 99 → ratingBonus = +0.20 (نمو أعلى)
-  const ratingBonus = (rating - 70) / 200; // -0.15 → +0.145
+  const ratingBonus = (rating - 70) / 200;
 
   const dropChance    = Math.max(0.05, 0.65 - ratio * 0.55 - ratingBonus * 1.5);
   const growBigChance = Math.min(0.60, 0.05 + ratio * 0.25 + ratingBonus * 2.0);
@@ -282,7 +278,6 @@ export function applyPriceTierGrowth(
     const maxDrop = 0.20 - ratio * 0.15;
     changePct = -randBetween(0.02, Math.max(0.03, maxDrop));
   } else if (roll < dropChance + growBigChance) {
-    // rating عالي → نمو أعلى
     const maxGrow = 0.08 + ratio * 0.22 + Math.max(0, ratingBonus) * 1.5;
     changePct = randBetween(0.06, Math.min(0.50, maxGrow));
   } else {
@@ -292,10 +287,79 @@ export function applyPriceTierGrowth(
   changePct = Math.max(-0.30, Math.min(0.50, changePct));
 
   const newPrice = Math.round(currentPrice * (1 + changePct));
-
-  // أقصى قيمة = 8x الميزانية (للاعبين الاستثنائيين)
   const cap = Math.round(budget * 8);
   return Math.max(1, Math.min(cap, newPrice));
+}
+
+// ============================================
+// PERFORMANCE-BASED VALUE GROWTH — No Cap
+// ============================================
+
+export type PerformanceGrowthResult = {
+  newValue: number;
+  changePct: number;
+  changeAbs: number;
+  direction: "up" | "down" | "flat";
+};
+
+function getPerformanceBonusPct(
+  position: string,
+  goals: number,
+  assists: number,
+  cleanSheets: number
+): number {
+  const attackers = ["ST", "LW", "RW"];
+  const midfielders = ["CAM", "LCM", "RCM"];
+  const defenders = ["LB", "LCB", "RCB", "RB"];
+
+  let bonus = 0;
+
+  if (attackers.includes(position)) {
+    bonus += Math.floor(goals / 5) * 5;
+    bonus += Math.floor(assists / 5) * 2.5;
+  } else if (midfielders.includes(position)) {
+    bonus += Math.floor(assists / 5) * 5;
+    bonus += Math.floor(goals / 5) * 2.5;
+  } else if (defenders.includes(position)) {
+    bonus += Math.floor(cleanSheets / 5) * 5;
+    bonus += Math.floor(goals / 5) * 10;
+    bonus += Math.floor(assists / 5) * 12.5;
+  } else if (position === "GK") {
+    bonus += Math.floor(cleanSheets / 5) * 10;
+  }
+
+  return bonus; // النسبة المئوية (مثلاً 25 = +25%)
+}
+
+export function calculatePerformanceGrowth(
+  currentValue: number,
+  position: string,
+  currentGoals: number,
+  currentAssists: number,
+  currentCleanSheets: number,
+  prevGoals: number,
+  prevAssists: number,
+  prevCleanSheets: number
+): PerformanceGrowthResult {
+  const currentBonus = getPerformanceBonusPct(position, currentGoals, currentAssists, currentCleanSheets);
+  const prevBonus = getPerformanceBonusPct(position, prevGoals, prevAssists, prevCleanSheets);
+
+  // الفرق بين الموسمين — إذا تحسّن يزيد، إذا انخفض ينقص
+  const netPct = currentBonus - prevBonus;
+
+  // أضف baseline random صغير (±5%) لإضفاء تشويق
+  const baseline = (Math.random() * 10) - 5; // -5% to +5%
+  const totalPct = netPct + baseline;
+
+  const changeAbs = Math.round(currentValue * (totalPct / 100));
+  const newValue = Math.max(1, currentValue + changeAbs);
+
+  return {
+    newValue,
+    changePct: totalPct,
+    changeAbs,
+    direction: totalPct > 1 ? "up" : totalPct < -1 ? "down" : "flat",
+  };
 }
 
 // ============================================

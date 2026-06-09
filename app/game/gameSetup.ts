@@ -12,7 +12,8 @@ import type {
 import { randomId } from "./helpers";
 import { emptyCards } from "./rewardCardEngine";
 import { BUDGET_SETTINGS, GAME_START_SEASON } from "./constants";
-import { applyPriceTierGrowth } from "./valueEngine";
+import { applyPriceTierGrowth, calculatePerformanceGrowth } from "./valueEngine";
+import type { PerformanceGrowthResult } from "./valueEngine";
 import { expireActiveEffects } from "./eventEngine";
 import { getSingleSeasonChances } from "./singleMode";
 import { getVersusSeasonChances } from "./versusMode";
@@ -138,21 +139,52 @@ export function setupNewSeason(
       }
     });
 
-    // Apply price tier growth to each surviving owned player
+    // Apply performance-based value growth
     const updatedOwned = afterContracts.map((item) => {
-      const effectiveBudget = item.budgetAtBuy && item.budgetAtBuy > 0
-        ? item.budgetAtBuy
-        : Math.max(item.buyPrice * 3, 30);
       const safeCurrentValue = item.currentValue && item.currentValue > 0
         ? item.currentValue
         : item.buyPrice;
-      // استخدم التقييم الحالي للاعب للموسم الجديد
-      const currentRating = item.player.statsBySeason?.[newSeason]?.rating
-        ?? item.player.statsBySeason?.[newSeason - 1]?.rating
-        ?? item.player.rating
-        ?? 70;
+
+      const prevSeason = newSeason - 1;
+      const currentStats = item.player.statsBySeason?.[newSeason] ?? item.player.statsBySeason?.[prevSeason] ?? null;
+      const prevStats = item.player.statsBySeason?.[prevSeason] ?? null;
+
+      if (currentStats) {
+        const result = calculatePerformanceGrowth(
+          safeCurrentValue,
+          item.player.position,
+          currentStats.goals ?? 0,
+          currentStats.assists ?? 0,
+          currentStats.cleanSheets ?? 0,
+          prevStats?.goals ?? 0,
+          prevStats?.assists ?? 0,
+          prevStats?.cleanSheets ?? 0,
+        );
+
+        // خبر التغيير في القيمة
+        if (Math.abs(result.changePct) > 3) {
+          const icon = result.direction === "up" ? "⬆️" : "⬇️";
+          const sign = result.changeAbs >= 0 ? "+" : "";
+          retirementNews.push({
+            id: randomId(),
+            season: newSeason,
+            title: `${icon} ${item.player.name} — Value ${result.direction === "up" ? "Increased" : "Decreased"}`,
+            description: `${item.player.name} (${gp.name}): ${sign}€${result.changeAbs}M (${sign}${Math.round(result.changePct)}%) | New Value: €${result.newValue}M`,
+            tone: result.direction === "up" ? "good" : "bad",
+            journalist: "David Ornstein",
+            source: "The Athletic",
+          });
+        }
+
+        return { ...item, currentValue: result.newValue };
+      }
+
+      // fallback: tier growth للاعبين بدون stats
+      const effectiveBudget = item.budgetAtBuy && item.budgetAtBuy > 0
+        ? item.budgetAtBuy : Math.max(item.buyPrice * 3, 30);
+      const currentRating = item.player.statsBySeason?.[newSeason - 1]?.rating ?? item.player.rating ?? 70;
       const newVal = applyPriceTierGrowth(safeCurrentValue, effectiveBudget, currentRating);
-      return { ...item, currentValue: newVal, budgetAtBuy: effectiveBudget };
+      return { ...item, currentValue: newVal };
     });
 
     return { ...reset, owned: updatedOwned };
