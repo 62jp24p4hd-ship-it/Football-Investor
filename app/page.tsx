@@ -419,16 +419,12 @@ export default function Home() {
     addNewsItem(createSaleNews(season, item.player.name, gp.name, sellPrice, profit));
     notify(`💰 ${item.player.name} sold for €${sellPrice}M`);
 
-    // Reward cards
-    const eligibleCards = getEligibleCards(gp, sellPrice);
-    if (eligibleCards.length > 0) {
-      setRewardChoice({ playerIndex, cards: eligibleCards });
-    }
-
-    // Event choice for 100M+ sales
-    if (sellPrice >= EVENT_CHOICE_SELL_THRESHOLD) {
-      const [opt1, opt2] = createEventChoiceOptions(season);
-      setEventChoice({ option1: opt1, option2: opt2, playerIndex });
+    // Reward cards — فقط في طور versus
+    if (mode === "versus") {
+      const eligibleCards = getEligibleCards(gp, sellPrice);
+      if (eligibleCards.length > 0) {
+        setRewardChoice({ playerIndex, cards: eligibleCards });
+      }
     }
   }
 
@@ -962,14 +958,6 @@ export default function Home() {
           playerName={gamePlayers[rewardChoice.playerIndex]?.sold[0]?.name ?? ""}
           sellPrice={gamePlayers[rewardChoice.playerIndex]?.sold[0]?.sellPrice ?? 0}
           onChoose={handleChooseReward}
-        />
-      )}
-
-      {eventChoice && (
-        <EventChoiceModal
-          option1={eventChoice.option1}
-          option2={eventChoice.option2}
-          onChoose={handleEventChoice}
         />
       )}
 
