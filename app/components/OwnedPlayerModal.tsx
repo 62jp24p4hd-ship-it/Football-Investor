@@ -32,9 +32,11 @@ function getValueGrowthBreakdown(
     rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: Math.floor(currentAssists / 5) * 5 - Math.floor(prevAssists / 5) * 5 });
     rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: (Math.floor(currentGoals / 5) * 2.5) - (Math.floor(prevGoals / 5) * 2.5) });
   } else if (defenders.includes(position)) {
+    // Clean Sheets: يمكن يرتفع أو ينخفض
     rows.push({ icon: "🧤", label: `Clean Sheets (${currentCleanSheets})`, pct: Math.floor(currentCleanSheets / 5) * 5 - Math.floor(prevCleanSheets / 5) * 5 });
-    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: (Math.floor(currentGoals / 5) * 10) - (Math.floor(prevGoals / 5) * 10) });
-    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: (Math.floor(currentAssists / 5) * 12.5) - (Math.floor(prevAssists / 5) * 12.5) });
+    // Goals وAssists: bonus فقط — لا عقوبة
+    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: Math.max(0, (Math.floor(currentGoals / 5) * 10) - (Math.floor(prevGoals / 5) * 10)) });
+    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: Math.max(0, (Math.floor(currentAssists / 5) * 12.5) - (Math.floor(prevAssists / 5) * 12.5)) });
   } else if (position === "GK") {
     rows.push({ icon: "🧤", label: `Clean Sheets (${currentCleanSheets})`, pct: Math.floor(currentCleanSheets / 5) * 10 - Math.floor(prevCleanSheets / 5) * 10 });
   }
@@ -145,11 +147,8 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
             </div>
           </div>
 
-          {/* Stats */}
           {/* Stats — حسب المركز */}
           {(() => {
-            const attackers = ["ST","LW","RW"];
-            const midfielders = ["CAM","LCM","RCM"];
             const defenders = ["LB","LCB","RCB","RB"];
             const pos = player.position;
 
@@ -171,7 +170,6 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
               </div>
             );
 
-            // Attackers + Midfielders
             return (
               <div className="grid grid-cols-4 gap-4 mb-6 bg-black/30 rounded-none p-5 text-center">
                 <Stat value={stats.rating} label="Rating" />

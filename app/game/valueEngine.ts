@@ -322,8 +322,9 @@ function getPerformanceBonusPct(
     bonus += Math.floor(goals / 5) * 2.5;
   } else if (defenders.includes(position)) {
     bonus += Math.floor(cleanSheets / 5) * 5;
-    bonus += Math.floor(goals / 5) * 10;
-    bonus += Math.floor(assists / 5) * 12.5;
+    // Goals وAssists: bonus فقط — لا عقوبة لو نزلوا
+    bonus += Math.max(0, Math.floor(goals / 5) * 10);
+    bonus += Math.max(0, Math.floor(assists / 5) * 12.5);
   } else if (position === "GK") {
     bonus += Math.floor(cleanSheets / 5) * 10;
   }
@@ -341,8 +342,31 @@ export function calculatePerformanceGrowth(
   prevAssists: number,
   prevCleanSheets: number
 ): PerformanceGrowthResult {
+  const defenders = ["LB", "LCB", "RCB", "RB"];
   const currentBonus = getPerformanceBonusPct(position, currentGoals, currentAssists, currentCleanSheets);
-  const prevBonus = getPerformanceBonusPct(position, prevGoals, prevAssists, prevCleanSheets);
+
+  // للمدافعين: فقط Clean Sheets تؤثر سلبياً — Goals/Assists bonus فقط
+  let prevBonus: number;
+  if (defenders.includes(position)) {
+    const prevCSBonus = Math.floor(prevCleanSheets / 5) * 5;
+    const currCSBonus = Math.floor(currentCleanSheets / 5) * 5;
+    const currGoalBonus = Math.max(0, Math.floor(currentGoals / 5) * 10);
+    const currAstBonus  = Math.max(0, Math.floor(currentAssists / 5) * 12.5);
+    prevBonus = prevCSBonus; // فقط الـ CS السابق يُقارن
+    const netCS = currCSBonus - prevCSBonus;
+    const baseline = (Math.random() * 10) - 5;
+    const totalPct = netCS + currGoalBonus + currAstBonus + baseline;
+    const changeAbs = Math.round(currentValue * (totalPct / 100));
+    const newValue = Math.max(1, currentValue + changeAbs);
+    return {
+      newValue,
+      changePct: totalPct,
+      changeAbs,
+      direction: totalPct > 1 ? "up" : totalPct < -1 ? "down" : "flat",
+    };
+  }
+
+  prevBonus = getPerformanceBonusPct(position, prevGoals, prevAssists, prevCleanSheets);
 
   // الفرق بين الموسمين — إذا تحسّن يزيد، إذا انخفض ينقص
   const netPct = currentBonus - prevBonus;
