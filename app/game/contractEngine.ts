@@ -60,18 +60,22 @@ export function createNegotiation(
   marketValue: number
 ): ContractNegotiation {
   const requiredSalary = generateRequiredSalary(marketValue);
+  // اللاعب يبدأ بعرضه الأولي
+  const playerInitialSalary = Math.max(1, Math.round(marketValue * 0.10));
+  const playerInitialDuration = marketValue >= 50 ? 2 : 3;
   const defaultDuration = 2;
   const satisfaction = calculateSatisfaction(requiredSalary, requiredSalary, defaultDuration, marketValue);
 
   return {
     player, slot,
-    offeredSalary: requiredSalary,
-    offeredDuration: defaultDuration,
+    offeredSalary: playerInitialSalary,
+    offeredDuration: playerInitialDuration,
     satisfaction,
     requiredSalary,
     marketValue,
     timer: CONTRACT_TIMER_SECONDS,
     attempts: 0,
+    playerCounterMessage: `👋 I'm interested. My asking price is €${playerInitialSalary}M/yr for ${playerInitialDuration} years.`,
   };
 }
 
@@ -118,6 +122,66 @@ export function updateOffer(
 
 export function isRejected(negotiation: ContractNegotiation): boolean {
   return negotiation.satisfaction < PLAYER_SATISFACTION_REJECT_THRESHOLD;
+}
+
+// ============================================
+// ACCEPTANCE SYSTEM — حسب نسبة الرضا
+// ============================================
+
+export function getAcceptanceProbability(satisfaction: number): number {
+  if (satisfaction < 20) return 0;       // رفض تلقائي
+  if (satisfaction >= 100) return 1;     // قبول تلقائي
+  if (satisfaction >= 75) return 0.65;   // 65% قبول، 25% رفض
+  if (satisfaction >= 50) return 0.50;   // 50% قبول، 50% رفض
+  return 0.25;                           // أقل من 50% → 25% قبول
+}
+
+export function willPlayerAccept(satisfaction: number): boolean {
+  if (satisfaction < 20) return false;
+  if (satisfaction >= 100) return true;
+  return Math.random() < getAcceptanceProbability(satisfaction);
+}
+
+// ============================================
+// PLAYER COUNTER OFFER — اللاعب يقدم عرضه
+// ============================================
+
+export function generatePlayerCounterOffer(
+  negotiation: ContractNegotiation
+): { salary: number; duration: number; message: string } {
+  const { satisfaction, requiredSalary, marketValue, offeredSalary, offeredDuration } = negotiation;
+
+  // اللاعب يطلب زيادة حسب درجة رضاه
+  let demandMultiplier = 1.0;
+  if (satisfaction < 30) demandMultiplier = 1.40;
+  else if (satisfaction < 50) demandMultiplier = 1.25;
+  else if (satisfaction < 70) demandMultiplier = 1.10;
+  else demandMultiplier = 1.02;
+
+  const counterSalary = Math.max(
+    requiredSalary,
+    Math.round(Math.max(offeredSalary, requiredSalary) * demandMultiplier)
+  );
+
+  // مدة العقد المفضلة للاعب
+  const preferredDuration = marketValue >= 50 ? 2 : 3;
+
+  let message = "";
+  if (satisfaction < 30) message = `💢 This offer is insulting. I want €${counterSalary}M/yr for ${preferredDuration} years.`;
+  else if (satisfaction < 50) message = `🙁 Not good enough. I need at least €${counterSalary}M/yr.`;
+  else if (satisfaction < 70) message = `🤔 Getting closer. How about €${counterSalary}M/yr for ${preferredDuration} years?`;
+  else message = `😊 Almost there. Just raise it to €${counterSalary}M/yr and we have a deal.`;
+
+  return { salary: counterSalary, duration: preferredDuration, message };
+}
+
+// راتب الاعب يتحدد حسب سعر شرائه
+export function getRecommendedSalary(buyPrice: number): number {
+  if (buyPrice <= 5)  return Math.max(1, Math.round(buyPrice * 0.15));
+  if (buyPrice <= 15) return Math.max(1, Math.round(buyPrice * 0.12));
+  if (buyPrice <= 40) return Math.max(1, Math.round(buyPrice * 0.10));
+  if (buyPrice <= 80) return Math.max(1, Math.round(buyPrice * 0.08));
+  return Math.max(1, Math.round(buyPrice * 0.06));
 }
 
 export function finalizeContract(negotiation: ContractNegotiation, currentSeason: number): Contract {

@@ -259,44 +259,42 @@ function randBetween(min: number, max: number): number {
 // احسب نمو اللاعب بناءً على سعره النسبي من الميزانية
 export function applyPriceTierGrowth(
   currentPrice: number,
-  budget: number
+  budget: number,
+  rating: number = 70
 ): number {
   if (budget <= 0) return currentPrice;
 
-  const ratio = Math.min(1, currentPrice / budget); // 0.0 → 1.0
+  const ratio = Math.min(1, currentPrice / budget);
   const roll = Math.random();
 
-  // كل ما زاد ratio:
-  // - قلت احتمالية النزول
-  // - زادت احتمالية النمو
-  // - زاد سقف النمو (لكن أقصاه 30%)
+  // Rating يؤثر على احتمالية النمو
+  // rating 40 → ratingBonus = -0.15 (أقل نمو)
+  // rating 70 → ratingBonus = 0
+  // rating 99 → ratingBonus = +0.20 (نمو أعلى)
+  const ratingBonus = (rating - 70) / 200; // -0.15 → +0.145
 
-  const dropChance    = 0.65 - ratio * 0.55;   // 65% → 10%
-  const growBigChance = 0.05 + ratio * 0.25;   // 5% → 30%
-  // الباقي stable أو نمو بسيط
+  const dropChance    = Math.max(0.05, 0.65 - ratio * 0.55 - ratingBonus * 1.5);
+  const growBigChance = Math.min(0.60, 0.05 + ratio * 0.25 + ratingBonus * 2.0);
 
   let changePct: number;
 
   if (roll < dropChance) {
-    // ينزل: 3-20% حسب كم هو رخيص
-    const maxDrop = 0.20 - ratio * 0.15;       // 20% → 5%
+    const maxDrop = 0.20 - ratio * 0.15;
     changePct = -randBetween(0.02, Math.max(0.03, maxDrop));
   } else if (roll < dropChance + growBigChance) {
-    // يصعد بشكل ملحوظ: حتى 30% للـ elite
-    const maxGrow = 0.08 + ratio * 0.22;       // 8% → 30%
-    changePct = randBetween(0.06, maxGrow);
+    // rating عالي → نمو أعلى
+    const maxGrow = 0.08 + ratio * 0.22 + Math.max(0, ratingBonus) * 1.5;
+    changePct = randBetween(0.06, Math.min(0.50, maxGrow));
   } else {
-    // نمو بسيط أو ثبات: 0-8%
     changePct = randBetween(0.00, 0.08);
   }
 
-  // أقصى تغيير مطلق = 30%
-  changePct = Math.max(-0.30, Math.min(0.30, changePct));
+  changePct = Math.max(-0.30, Math.min(0.50, changePct));
 
   const newPrice = Math.round(currentPrice * (1 + changePct));
 
-  // أقصى قيمة = 5x الميزانية (الارتفاع الأعلى يكون عبر أحداث خاصة فقط)
-  const cap = Math.round(budget * 5);
+  // أقصى قيمة = 8x الميزانية (للاعبين الاستثنائيين)
+  const cap = Math.round(budget * 8);
   return Math.max(1, Math.min(cap, newPrice));
 }
 

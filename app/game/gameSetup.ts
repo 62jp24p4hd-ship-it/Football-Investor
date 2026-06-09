@@ -141,11 +141,16 @@ export function setupNewSeason(
     const updatedOwned = afterContracts.map((item) => {
       const effectiveBudget = item.budgetAtBuy && item.budgetAtBuy > 0
         ? item.budgetAtBuy
-        : Math.max(item.buyPrice * 3, 30); // fallback لو undefined
+        : Math.max(item.buyPrice * 3, 30);
       const safeCurrentValue = item.currentValue && item.currentValue > 0
         ? item.currentValue
         : item.buyPrice;
-      const newVal = applyPriceTierGrowth(safeCurrentValue, effectiveBudget);
+      // استخدم التقييم الحالي للاعب للموسم الجديد
+      const currentRating = item.player.statsBySeason?.[newSeason]?.rating
+        ?? item.player.statsBySeason?.[newSeason - 1]?.rating
+        ?? item.player.rating
+        ?? 70;
+      const newVal = applyPriceTierGrowth(safeCurrentValue, effectiveBudget, currentRating);
       return { ...item, currentValue: newVal, budgetAtBuy: effectiveBudget };
     });
 

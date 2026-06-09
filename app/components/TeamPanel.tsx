@@ -45,8 +45,10 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
         </div>
         <div className="flex items-center gap-2">
           {mode === "versus" && isActive && onSkipTurn && (
-            <button onClick={onSkipTurn} className="text-xs px-2 py-1 rounded-none bg-white/8 border border-white/10 text-gray-500 hover:text-white transition-all font-bold">
-              Skip
+            <button onClick={onSkipTurn}
+              className="text-xs px-3 py-1.5 rounded-none font-black transition-all hover:scale-105 active:scale-95"
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#9ca3af" }}>
+              ⏭ Skip Turn
             </button>
           )}
           <button onClick={onShowStats} className="text-xs px-2 py-1 rounded-none bg-white/8 border border-white/10 text-gray-500 hover:text-white transition-all">
@@ -126,7 +128,8 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
         </div>
       )}
 
-      {/* Special Cards */}
+      {/* Special Cards — فقط في طور versus */}
+      {mode === "versus" && (
       <div className="px-4 py-3">
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-bold">Special Cards</div>
         <div className="flex flex-col gap-1.5">
@@ -148,7 +151,7 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
                     </div>
                   </div>
                 </div>
-                {status === "ready" && (isActive || mode === "single") ? (
+                {status === "ready" && isActive ? (
                   <button onClick={() => onUseCard(playerIndex, card)}
                     className="text-xs px-2 py-1 rounded-none bg-white/20 hover:bg-white/30 text-white font-black transition-all active:scale-95">
                     Use
@@ -163,6 +166,7 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -647,6 +647,33 @@ export default function Home() {
 
     const currentList = listOverride ?? gamePlayers;
 
+    // فحص الميزانية السالبة — تنتهي اللعبة
+    const brokePlayers = currentList.filter(gp => gp.budget < 0);
+    if (brokePlayers.length > 0) {
+      if (mode === "single") {
+        // الطور الفردي — تنتهي اللعبة مباشرة
+        notify("💸 Bankrupt! Game Over.");
+        setTimeout(() => finishGame(currentList), 800);
+        return;
+      } else {
+        // طور versus — الخاسر هو اللاعب بالميزانية السالبة
+        const loserIndex = currentList.findIndex(gp => gp.budget < 0);
+        const winnerIndex = loserIndex === 0 ? 1 : 0;
+        const winner = currentList[winnerIndex];
+        const loser = currentList[loserIndex];
+        addNewsItem({
+          id: Date.now(),
+          season,
+          title: `💸 Bankruptcy — ${loser.name} is Eliminated!`,
+          description: `${loser.name} ran out of money. ${winner.name} wins the game!`,
+          tone: "bad",
+        });
+        notify(`💸 ${loser.name} is bankrupt! ${winner.name} wins!`);
+        setTimeout(() => finishGame(currentList), 1500);
+        return;
+      }
+    }
+
     if (gameLengthMode === "classic" && season >= GAME_END_SEASON) {
       finishGame(currentList);
       return;
@@ -703,9 +730,8 @@ export default function Home() {
   }
 
   function handleSkipTurn() {
-    spendPurchaseChance(activePlayerIndex);
     if (mode === "versus") endVersusTurn();
-    notify("Turn skipped");
+    notify("Turn skipped ⏭");
   }
 
   // ============================================

@@ -35,6 +35,7 @@ export function getPositivePlayerEvents(): PlayerEventEffect[] {
     {
       title: "🌟 Golden Boy Award", tone: "good",
       multiplier: 1, valueChangeMin: 15, valueChangeMax: 50,
+      maxAge: 21,
       ratingChange: 6, gamesChange: 5, goalsChange: 8, assistsChange: 6, cleanSheetsChange: 0,
     },
     {
@@ -114,6 +115,44 @@ export function applyEventToPlayer(
   });
 }
 
+function applySpecificEventToPlayer(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number,
+  picked: import("./types").OwnedPlayer,
+  effect: PlayerEventEffect
+): { updatedPlayers: GamePlayer[]; newsItem: NewsItem | null } {
+  const owner = gamePlayers[ownerIndex];
+  const currentOwnedValue = picked.currentValue && picked.currentValue > 0 ? picked.currentValue : picked.buyPrice;
+  const playerBefore = picked.player;
+  const playerAfter = applyEventToPlayer(picked.player, season, effect, currentOwnedValue);
+  const beforeStats = getSeasonStats(playerBefore, season);
+  const afterStats = getSeasonStats(playerAfter, season);
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: effect.title,
+    description: `${owner.name}: ${playerBefore.name} | Rating ${beforeStats.rating}→${afterStats.rating} | Value €${currentOwnedValue}M→€${afterStats.value}M`,
+    tone: effect.tone,
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, player: playerAfter, currentValue: afterStats.value }
+          : item
+      ),
+    };
+  });
+
+  return { updatedPlayers, newsItem };
+}
+
 // ============================================
 // APPLY EVENT TO RANDOM OWNED PLAYER
 // ============================================
@@ -134,9 +173,28 @@ export function applyEventToRandomOwnedPlayer(
     return { updatedPlayers: gamePlayers, newsItem: null };
   }
 
-  const picked = pickRandom(candidates);
   const effects = positive ? getPositivePlayerEvents() : getNegativePlayerEvents();
   const effect = pickRandom(effects);
+
+  // فلتر حسب maxAge إذا موجود في الإيفنت
+  let eligibleCandidates = candidates;
+  if (effect.maxAge) {
+    const young = candidates.filter(item => {
+      const age = item.player.startAge + (season - item.player.availableSeason);
+      return age <= effect.maxAge!;
+    });
+    if (young.length > 0) eligibleCandidates = young;
+    else {
+      // ما في لاعبين بالعمر المطلوب — اختار إيفنت ثاني بدون maxAge
+      const fallbackEffects = effects.filter(e => !e.maxAge);
+      if (fallbackEffects.length === 0) return { updatedPlayers: gamePlayers, newsItem: null };
+      const fallbackEffect = pickRandom(fallbackEffects);
+      const picked2 = pickRandom(candidates);
+      return applySpecificEventToPlayer(gamePlayers, ownerIndex, season, picked2, fallbackEffect);
+    }
+  }
+
+  const picked = pickRandom(eligibleCandidates);
 
   const playerBefore = picked.player;
   const playerAfter = applyEventToPlayer(
@@ -252,13 +310,53 @@ export function createRandomSeasonEvent(
   // 20% — hot market
   if (roll < 0.35) {
     const { event, newsItem } = createMarketEvent(season, true);
-    return { event, updatedPlayers, newsItems: [newsItem] };
+    const min = 10, max = 25;
+    const changes: string[] = [];
+    updatedPlayers = updatedPlayers.map(gp => ({
+      ...gp,
+      owned: gp.owned.map(item => {
+        const base = (item.currentValue && item.currentValue > 0) ? item.currentValue : item.buyPrice;
+        const change = Math.round(min + Math.random() * (max - min));
+        const newVal = Math.max(1, base + change);
+        changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
+        return { ...item, currentValue: newVal };
+      }),
+    }));
+    const detailNews: NewsItem = {
+      id: randomId(), season,
+      title: "🔥 Hot Market — Values Updated",
+      description: changes.length > 0 ? changes.join(" | ") : "No players affected.",
+      tone: "good",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    };
+    return { event, updatedPlayers, newsItems: [newsItem, detailNews] };
   }
 
   // 20% — market crash
   if (roll < 0.55) {
     const { event, newsItem } = createMarketEvent(season, false);
-    return { event, updatedPlayers, newsItems: [newsItem] };
+    const min = -25, max = -10;
+    const changes: string[] = [];
+    updatedPlayers = updatedPlayers.map(gp => ({
+      ...gp,
+      owned: gp.owned.map(item => {
+        const base = (item.currentValue && item.currentValue > 0) ? item.currentValue : item.buyPrice;
+        const change = Math.round(min + Math.random() * (max - min));
+        const newVal = Math.max(1, base + change);
+        changes.push(`${item.player.name.split(" ").pop()}: €${base}M → €${newVal}M`);
+        return { ...item, currentValue: newVal };
+      }),
+    }));
+    const detailNews: NewsItem = {
+      id: randomId(), season,
+      title: "📉 Market Crash — Values Updated",
+      description: changes.length > 0 ? changes.join(" | ") : "No players affected.",
+      tone: "bad",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    };
+    return { event, updatedPlayers, newsItems: [newsItem, detailNews] };
   }
 
   // 20% — one player event
