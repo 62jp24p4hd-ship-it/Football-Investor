@@ -915,3 +915,109 @@ export function triggerCasinoNight(
 
   return { event: null, updatedPlayers, newsItems: [newsItem] };
 }
+
+// ============================================
+// ONE SEASON WONDER — Temporary Positive
+// ============================================
+
+export function triggerOneSeasonWonder(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const candidates = owner.owned.filter(item =>
+    !(item.activeEffects ?? []).some(e => e.id === "oneSeason")
+  );
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  const valueBonus = Math.round(picked.currentValue * 0.60);
+  const newValue = picked.currentValue + valueBonus;
+
+  const effect: import("./types").ActiveEffect = {
+    id: "oneSeason",
+    name: "One Season Wonder",
+    emoji: "🎯",
+    expiresAfterSeason: season + 1,
+    valueChangePct: 0.60,
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `🎯 One Season Wonder — ${picked.player.name}`,
+    description: `${picked.player.name} is enjoying the best season of his career. His performances have exceeded all expectations and attracted attention from clubs around the world.`,
+    tone: "good",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, currentValue: newValue, activeEffects: [...(item.activeEffects ?? []), effect] }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}
+
+// ============================================
+// YOUTUBE GOES VIRAL — Temporary Positive
+// ============================================
+
+export function triggerYouTubeViral(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const owner = gamePlayers[ownerIndex];
+  if (!owner || owner.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const candidates = owner.owned.filter(item =>
+    !(item.activeEffects ?? []).some(e => e.id === "youtube")
+  );
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  const valueBonus = Math.round(picked.currentValue * 0.20);
+  const newValue = picked.currentValue + valueBonus;
+
+  const effect: import("./types").ActiveEffect = {
+    id: "youtube",
+    name: "YouTube Goes Viral",
+    emoji: "📺",
+    expiresAfterSeason: season + 1,
+    valueChangePct: 0.20,
+  };
+
+  const newsItem: NewsItem = {
+    id: randomId(), season,
+    title: `📺 YouTube Compilation Goes Viral — ${picked.player.name}`,
+    description: `A viral compilation has dramatically increased ${picked.player.name}'s popularity. The player has gained worldwide attention after a highlights video spread across social media.`,
+    tone: "good",
+    journalist: pickRandom(JOURNALISTS),
+    source: pickRandom(NEWS_SOURCES),
+  };
+
+  const updatedPlayers = gamePlayers.map((gp, i) => {
+    if (i !== ownerIndex) return gp;
+    return {
+      ...gp,
+      owned: gp.owned.map(item =>
+        item.player.name === picked.player.name
+          ? { ...item, currentValue: newValue, activeEffects: [...(item.activeEffects ?? []), effect] }
+          : item
+      ),
+    };
+  });
+
+  return { event: null, updatedPlayers, newsItems: [newsItem] };
+}

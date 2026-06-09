@@ -13,6 +13,8 @@ const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative"
   { id: "goldenBoy", label: "🌟 Golden Boy", type: "positive" },
   { id: "goldenBoot", label: "👟 Golden Boot", type: "positive" },
   { id: "wonderkid", label: "🚀 Wonderkid", type: "positive" },
+  { id: "oneSeasonWonder", label: "🎯 One Season Wonder", type: "positive" },
+  { id: "youTubeViral", label: "📺 YouTube Goes Viral", type: "positive" },
   { id: "saudiOffer", label: "💰 Saudi Offer", type: "positive" },
   { id: "recordTransfer", label: "💸 Record Transfer", type: "positive" },
   { id: "aclInjury", label: "🤕 ACL Injury", type: "negative" },

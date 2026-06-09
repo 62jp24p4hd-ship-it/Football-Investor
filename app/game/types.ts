@@ -363,7 +363,9 @@ export type DevEventId =
   | "bobPaisleyDisaster"
   | "fastFoodAddiction"
   | "breakupSeason"
-  | "casinoNight";
+  | "casinoNight"
+  | "oneSeasonWonder"
+  | "youTubeViral";
 
 // ============================================
 // PLAYER EVENT EFFECT
