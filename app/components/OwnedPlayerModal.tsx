@@ -7,6 +7,42 @@ import { calculateAge, nationalityFlag, positionBg, getSatisfactionColor, getRet
 import { getContractStatusLabel, isContractLastSeason } from "../game/contractEngine";
 import { sponsorBrandIcon, sponsorBrandColor } from "../game/sponsorshipEngine";
 
+// حساب تفاصيل نمو القيمة حسب المركز
+function getValueGrowthBreakdown(
+  position: string,
+  currentGoals: number,
+  currentAssists: number,
+  currentCleanSheets: number,
+  prevGoals: number,
+  prevAssists: number,
+  prevCleanSheets: number,
+) {
+  const attackers = ["ST", "LW", "RW"];
+  const midfielders = ["CAM", "LCM", "RCM"];
+  const defenders = ["LB", "LCB", "RCB", "RB"];
+
+  const rows: { icon: string; label: string; pct: number }[] = [];
+
+  if (attackers.includes(position)) {
+    const gDiff = currentGoals - prevGoals;
+    const aDiff = currentAssists - prevAssists;
+    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: Math.floor(currentGoals / 5) * 5 - Math.floor(prevGoals / 5) * 5 });
+    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: (Math.floor(currentAssists / 5) * 2.5) - (Math.floor(prevAssists / 5) * 2.5) });
+  } else if (midfielders.includes(position)) {
+    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: Math.floor(currentAssists / 5) * 5 - Math.floor(prevAssists / 5) * 5 });
+    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: (Math.floor(currentGoals / 5) * 2.5) - (Math.floor(prevGoals / 5) * 2.5) });
+  } else if (defenders.includes(position)) {
+    rows.push({ icon: "🧤", label: `Clean Sheets (${currentCleanSheets})`, pct: Math.floor(currentCleanSheets / 5) * 5 - Math.floor(prevCleanSheets / 5) * 5 });
+    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: (Math.floor(currentGoals / 5) * 10) - (Math.floor(prevGoals / 5) * 10) });
+    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: (Math.floor(currentAssists / 5) * 12.5) - (Math.floor(prevAssists / 5) * 12.5) });
+  } else if (position === "GK") {
+    rows.push({ icon: "🧤", label: `Clean Sheets (${currentCleanSheets})`, pct: Math.floor(currentCleanSheets / 5) * 10 - Math.floor(prevCleanSheets / 5) * 10 });
+  }
+
+  const total = rows.reduce((sum, r) => sum + r.pct, 0);
+  return { rows, total };
+}
+
 type Props = {
   owned: OwnedPlayer;
   ownerName: string;
@@ -18,9 +54,19 @@ type Props = {
   onRenew: () => void;
 };
 
+function Stat({ value, label, icon, highlight }: { value: number; label: string; icon?: string; highlight?: boolean }) {
+  return (
+    <div>
+      <div className={`text-2xl font-black ${highlight ? "text-emerald-400" : "text-white"}`}>{value}</div>
+      <div className="text-[10px] text-gray-500 uppercase mt-1">{icon ? `${icon} ` : ""}{label}</div>
+    </div>
+  );
+}
+
 export default function OwnedPlayerModal({ owned, ownerName, season, marketMultiplier, canSell, onSell, onKeep, onRenew }: Props) {
   const { player, buyPrice, buySeason, contract } = owned;
   const stats = getSeasonStats(player, season);
+  const prevStats = getSeasonStats(player, season - 1);
   const currentVal = (owned.currentValue && owned.currentValue > 0)
     ? owned.currentValue
     : owned.buyPrice;
@@ -28,6 +74,17 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
   const age = calculateAge(player.startAge, player.availableSeason, season);
   const warning = getRetirementWarning(age);
   const contractStatus = getContractStatusLabel(contract, season);
+
+  // Value Growth Breakdown
+  const breakdown = getValueGrowthBreakdown(
+    player.position,
+    stats.goals ?? 0,
+    stats.assists ?? 0,
+    stats.cleanSheets ?? 0,
+    prevStats?.goals ?? 0,
+    prevStats?.assists ?? 0,
+    prevStats?.cleanSheets ?? 0,
+  );
   const isLastSeason = isContractLastSeason(contract, season);
 
   const cardColor = player.secret
@@ -74,33 +131,41 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-6 bg-black/30 rounded-none p-5 text-center">
-            <div>
-              <div className="text-3xl font-black text-white">{stats.rating}</div>
-              <div className="text-xs text-gray-500 uppercase mt-1">Rating</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-white">{stats.games}</div>
-              <div className="text-xs text-gray-500 uppercase mt-1">Games</div>
-            </div>
-            {player.position === "GK" ? (
-              <div className="col-span-2">
-                <div className="text-2xl font-bold text-white">{stats.cleanSheets}</div>
-                <div className="text-xs text-gray-500 uppercase mt-1">Clean Sheets</div>
+          {/* Stats — حسب المركز */}
+          {(() => {
+            const attackers = ["ST","LW","RW"];
+            const midfielders = ["CAM","LCM","RCM"];
+            const defenders = ["LB","LCB","RCB","RB"];
+            const pos = player.position;
+
+            if (pos === "GK") return (
+              <div className="grid grid-cols-3 gap-4 mb-6 bg-black/30 rounded-none p-5 text-center">
+                <Stat value={stats.rating} label="Rating" />
+                <Stat value={stats.games} label="Games" />
+                <Stat value={stats.cleanSheets ?? 0} label="Clean Sheets" icon="🧤" />
               </div>
-            ) : (
-              <>
-                <div>
-                  <div className="text-2xl font-bold text-white">{stats.goals}</div>
-                  <div className="text-xs text-gray-500 uppercase mt-1">Goals</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-white">{stats.assists}</div>
-                  <div className="text-xs text-gray-500 uppercase mt-1">Assists</div>
-                </div>
-              </>
-            )}
-          </div>
+            );
+
+            if (defenders.includes(pos)) return (
+              <div className="grid grid-cols-5 gap-3 mb-6 bg-black/30 rounded-none p-5 text-center">
+                <Stat value={stats.rating} label="Rating" />
+                <Stat value={stats.games} label="Games" />
+                <Stat value={stats.goals ?? 0} label="Goals" icon="⚽" />
+                <Stat value={stats.assists ?? 0} label="Assists" icon="🎯" />
+                <Stat value={stats.cleanSheets ?? 0} label="Clean Sheets" icon="🧤" highlight />
+              </div>
+            );
+
+            // Attackers + Midfielders
+            return (
+              <div className="grid grid-cols-4 gap-4 mb-6 bg-black/30 rounded-none p-5 text-center">
+                <Stat value={stats.rating} label="Rating" />
+                <Stat value={stats.games} label="Games" />
+                <Stat value={stats.goals ?? 0} label="Goals" icon="⚽" />
+                <Stat value={stats.assists ?? 0} label="Assists" icon="🎯" />
+              </div>
+            );
+          })()}
 
           {/* Investment */}
           <div className="grid grid-cols-3 gap-4 mb-6">
@@ -118,6 +183,63 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
               </div>
               <div className="text-xs text-gray-500 mt-1">Profit / Loss</div>
             </div>
+
+            {/* Value Growth Breakdown */}
+            {breakdown.rows.length > 0 && (
+              <div className="rounded-none p-3 col-span-3"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="text-[10px] uppercase tracking-widest text-gray-600 mb-2 flex items-center gap-1">
+                  {breakdown.total >= 0 ? "📈" : "📉"} Value Growth Breakdown
+                </div>
+                <div className="space-y-1.5">
+                  {breakdown.rows.filter(r => r.pct !== 0).map((row, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">{row.icon} {row.label}</span>
+                      <span className="text-xs font-black" style={{ color: row.pct >= 0 ? "#34d399" : "#f87171" }}>
+                        {row.pct >= 0 ? "+" : ""}{row.pct}%
+                      </span>
+                    </div>
+                  ))}
+                  {breakdown.rows.filter(r => r.pct !== 0).length === 0 && (
+                    <div className="text-xs text-gray-600 text-center">No change from previous season</div>
+                  )}
+                </div>
+                {breakdown.rows.some(r => r.pct !== 0) && (
+                  <div className="flex items-center justify-between mt-2 pt-2"
+                    style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                    <span className="text-xs font-black text-gray-300">📊 Total Bonus</span>
+                    <span className="text-sm font-black" style={{ color: breakdown.total >= 0 ? "#34d399" : "#f87171" }}>
+                      {breakdown.total >= 0 ? "+" : ""}{breakdown.total}%
+                    </span>
+                  </div>
+                )}
+
+                {/* Prev vs Current stats */}
+                {season > player.availableSeason && (
+                  <div className="mt-3 pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="text-[9px] uppercase tracking-widest text-gray-700 mb-1.5">Season Comparison</div>
+                    {stats.goals !== undefined && (
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-600">⚽ Goals</span>
+                        <span className="text-gray-400">{prevStats?.goals ?? 0} → <span className="text-white font-bold">{stats.goals}</span></span>
+                      </div>
+                    )}
+                    {stats.assists !== undefined && (
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-600">🎯 Assists</span>
+                        <span className="text-gray-400">{prevStats?.assists ?? 0} → <span className="text-white font-bold">{stats.assists}</span></span>
+                      </div>
+                    )}
+                    {stats.cleanSheets !== undefined && (
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-600">🧤 Clean Sheets</span>
+                        <span className="text-gray-400">{prevStats?.cleanSheets ?? 0} → <span className="text-white font-bold">{stats.cleanSheets}</span></span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Contract */}
