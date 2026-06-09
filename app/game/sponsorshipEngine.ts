@@ -14,20 +14,34 @@ export function generateSponsorshipOffer(
   playerValue: number,
   currentSeason: number
 ): Sponsorship {
-  // Higher value = better sponsors
-  let availableBrands: SponsorBrand[];
+  // Tier حسب القيمة → نوع الراعي
+  let tier: "local" | "national" | "global" | "mega" | "legendary";
 
-  if (playerValue >= 60) {
-    availableBrands = ["Nike", "Adidas", "EA Sports", "Hublot"];
-  } else if (playerValue >= 30) {
-    availableBrands = ["Nike", "Adidas", "Puma", "Pepsi", "Red Bull"];
-  } else {
-    availableBrands = ["Puma", "Pepsi", "Red Bull", "Beats"];
-  }
+  if      (playerValue >= 150) tier = "legendary";
+  else if (playerValue >= 70)  tier = "mega";
+  else if (playerValue >= 30)  tier = "global";
+  else if (playerValue >= 10)  tier = "national";
+  else                         tier = "local";
 
-  const brand = pickRandom(availableBrands);
-  const incomeRange = SPONSOR_ANNUAL_INCOME[brand];
-  const annualIncome = randomBetween(incomeRange.min, incomeRange.max);
+  const incomeRanges = {
+    local:     { min: 3,   max: 5   },
+    national:  { min: 8,   max: 15  },
+    global:    { min: 20,  max: 40  },
+    mega:      { min: 50,  max: 100 },
+    legendary: { min: 150, max: 300 },
+  };
+
+  const tierLabels = {
+    local:     ["Local Brand", "Regional Club", "City Sponsor"],
+    national:  ["National Bank", "Telecom Co.", "Sports Brand"],
+    global:    ["Nike", "Adidas", "Pepsi", "Puma", "Red Bull"],
+    mega:      ["Adidas", "Nike", "EA Sports", "Hublot", "Beats"],
+    legendary: ["Nike", "Adidas", "EA Sports", "Hublot", "Crypto.com"],
+  };
+
+  const brand = pickRandom(tierLabels[tier]) as SponsorBrand;
+  const range = incomeRanges[tier];
+  const annualIncome = randomBetween(range.min, range.max);
   const duration = randomBetween(1, 3);
 
   return {
@@ -191,8 +205,76 @@ export function sponsorBrandColor(brand: SponsorBrand): string {
 // RANDOM SPONSORSHIP EVENT
 // ============================================
 
-export function shouldReceiveSponsorshipOffer(playerValue: number): boolean {
-  // Higher value players get offers more often
-  const chance = Math.min(0.4, playerValue / 200);
-  return Math.random() < chance;
+export function shouldReceiveSponsorshipOffer(
+  playerValue: number,
+  goals: number = 0,
+  assists: number = 0,
+  activeEffects: string[] = []
+): boolean {
+  // احتمال أساسي حسب القيمة
+  let chance = 0;
+  if      (playerValue >= 150) chance = 0.50;
+  else if (playerValue >= 70)  chance = 0.40;
+  else if (playerValue >= 30)  chance = 0.30;
+  else if (playerValue >= 10)  chance = 0.20;
+  else                         chance = 0.10;
+
+  // Performance bonuses
+  if (goals >= 20)                           chance += 0.10;
+  if (assists >= 15)                         chance += 0.10;
+  if (activeEffects.includes("dreamSeason")) chance += 0.15;
+  if (activeEffects.includes("youtube"))     chance += 0.20;
+
+  return Math.random() < Math.min(0.85, chance);
+}
+
+// فحص كل لاعب في الفريق بشكل مستقل — لا حد للعدد
+export type SponsorshipCheckResult = {
+  updatedPlayers: GamePlayer[];
+  newsItems: NewsItem[];
+};
+
+export function checkSeasonSponsorships(
+  gamePlayers: GamePlayer[],
+  season: number
+): SponsorshipCheckResult {
+  const newsItems: NewsItem[] = [];
+  const updatedPlayers = gamePlayers.map(gp => {
+    let updatedOwned = gp.owned.map(item => {
+      const value = item.currentValue || item.buyPrice;
+      const stats = item.player.statsBySeason?.[season - 1] ?? item.player.statsBySeason?.[season];
+      const goals = stats?.goals ?? 0;
+      const assists = stats?.assists ?? 0;
+      const activeEffectIds = (item.activeEffects ?? []).map(e => e.id);
+
+      // تحقق لو عنده راعي فعّال بالفعل
+      const hasActiveSponsor = item.sponsorships.some(
+        s => season >= s.startSeason && season <= s.endSeason
+      );
+      if (hasActiveSponsor) return item;
+
+      if (!shouldReceiveSponsorshipOffer(value, goals, assists, activeEffectIds)) return item;
+
+      const sponsorship = generateSponsorshipOffer(value, season);
+
+      newsItems.push({
+        id: randomId(),
+        season,
+        title: `🤝 Sponsorship Deal — ${item.player.name}`,
+        description: `${item.player.name} (${gp.name}) signed a new sponsorship deal: €${sponsorship.annualIncome}M/yr for ${sponsorship.duration} season${sponsorship.duration > 1 ? "s" : ""}.`,
+        tone: "good",
+        journalist: pickRandom(JOURNALISTS),
+        source: pickRandom(NEWS_SOURCES),
+      });
+
+      return {
+        ...item,
+        sponsorships: [...item.sponsorships, sponsorship],
+      };
+    });
+
+    return { ...gp, owned: updatedOwned };
+  });
+
+  return { updatedPlayers, newsItems };
 }

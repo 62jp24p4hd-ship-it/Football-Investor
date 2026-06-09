@@ -18,6 +18,7 @@ import { expireActiveEffects } from "./eventEngine";
 import { getSingleSeasonChances } from "./singleMode";
 import { getVersusSeasonChances } from "./versusMode";
 import { applyRetirementToSquad } from "./careerEngine";
+import { checkSeasonSponsorships } from "./sponsorshipEngine";
 import { createRetirementNews, createNewSeasonNews, createGameStartNews, createContractWarningNews, createContractExpiredNews } from "./newsEngine";
 import { isContractExpired, isContractLastSeason } from "./contractEngine";
 
@@ -253,6 +254,11 @@ export function setupNewSeason(
 
   // Expire temporary effects (Fast Food etc.)
   updatedPlayers = expireActiveEffects(updatedPlayers, newSeason);
+
+  // Check sponsorships for all players independently
+  const sponsorCheck = checkSeasonSponsorships(updatedPlayers, newSeason);
+  updatedPlayers = sponsorCheck.updatedPlayers;
+  sponsorshipNews.push(...sponsorCheck.newsItems);
 
   return {
     updatedPlayers,
