@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation } from "./animations/index";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -94,6 +94,8 @@ export default function Home() {
   const [showBallonDorAnim, setShowBallonDorAnim] = useState(false);
   const [showFastFoodAnim, setShowFastFoodAnim] = useState(false);
   const [showYouTubeAnim, setShowYouTubeAnim] = useState(false);
+  const [showGoldenBoyAnim, setShowGoldenBoyAnim] = useState(false);
+  const [showRecordTransferAnim, setShowRecordTransferAnim] = useState(false);
   const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
@@ -774,7 +776,9 @@ export default function Home() {
     if (eventId === "aclInjury")   setShowAclAnim(true);
     if (eventId === "saudiOffer")  setShowSaudiAnim(true);
     if (eventId === "goldenBoot")  setShowGoldenBootAnim(true);
-    if (eventId === "ballonDor")        setShowBallonDorAnim(true);
+    if (eventId === "ballonDor")   setShowBallonDorAnim(true);
+    if (eventId === "goldenBoy")   setShowGoldenBoyAnim(true);
+    if (eventId === "recordTransfer") setShowRecordTransferAnim(true);
     if ((eventId as string) === "fastFoodAddiction") setShowFastFoodAnim(true);
     if ((eventId as string) === "youTubeViral") setShowYouTubeAnim(true);
   }
@@ -879,6 +883,12 @@ export default function Home() {
         }
         if (singleResult.newsItems.some(n => n.title.includes("Ballon"))) {
           setTimeout(() => setShowBallonDorAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Golden Boy"))) {
+          setTimeout(() => setShowGoldenBoyAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Record Transfer"))) {
+          setTimeout(() => setShowRecordTransferAnim(true), 400);
         }
         if (singleResult.newsItems.some(n => n.title.includes("Fast Food") || n.title.includes("Food"))) {
           setTimeout(() => setShowFastFoodAnim(true), 400);
@@ -1229,6 +1239,14 @@ export default function Home() {
 
       {showBallonDorAnim && (
         <BallonDorAnimation onDone={() => setShowBallonDorAnim(false)} />
+      )}
+
+      {showGoldenBoyAnim && (
+        <GoldenBoyAnimation onDone={() => setShowGoldenBoyAnim(false)} />
+      )}
+
+      {showRecordTransferAnim && (
+        <RecordTransferAnimation onDone={() => setShowRecordTransferAnim(false)} />
       )}
 
       {showFastFoodAnim && (

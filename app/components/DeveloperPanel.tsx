@@ -15,6 +15,8 @@ const EVENT_PIXEL_IMAGES: Partial<Record<DevEventId, string>> = {
   saudiOffer:      "/images/saudi-offer-pixel.png",
   goldenBoot:      "/images/golden-boot-pixel.png",
   ballonDor:           "/images/ballon-dor-pixel.png",
+  goldenBoy:           "/images/golden-boy-pixel.png",
+  recordTransfer:      "/images/record-transfer-pixel.png",
   fastFoodAddiction:   "/images/fastfood-pixel.png",
   youTubeViral:        "/images/youtube-viral-pixel.png",
 };

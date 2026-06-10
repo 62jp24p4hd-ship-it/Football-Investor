@@ -13,6 +13,8 @@ const PIXEL_PORTRAITS: Record<string, string> = {
   "Saudi":             "/images/saudi-offer-pixel.png",
   "Golden Boot":       "/images/golden-boot-pixel.png",
   "Ballon":            "/images/ballon-dor-pixel.png",
+  "Golden Boy":        "/images/golden-boy-pixel.png",
+  "Record Transfer":   "/images/record-transfer-pixel.png",
   "Fast Food":         "/images/fastfood-pixel.png",
   "Food Addiction":    "/images/fastfood-pixel.png",
   "YouTube":           "/images/youtube-viral-pixel.png",

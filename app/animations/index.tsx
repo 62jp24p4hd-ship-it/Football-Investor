@@ -1106,5 +1106,293 @@ export function YouTubeViralAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
+// GOLDEN BOY — Best young player award
+// trigger: goldenBoy event
+// ============================================
+
+export function GoldenBoyAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  1100);
+    const t2 = setTimeout(() => setPhase("exit"),  3600);
+    const t3 = setTimeout(() => onDone(),          4400);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.8s ease-in" : "opacity 0.4s ease",
+      }}
+    >
+      {/* Warm gold backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at 50% 45%, rgba(100,75,0,0.65) 0%, rgba(0,0,0,0.92) 70%)"
+          : "rgba(0,0,0,0.85)",
+        transition: "background 1s ease",
+      }} />
+
+      {/* Star confetti */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["⭐","✨","🌟","💛","⭐","✨","💫","🌟","⭐","✨","⭐","💛","🌟","✨"].map((em, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              left: `${(i * 7.4) % 95}%`,
+              top: "-30px",
+              fontSize: `${12 + (i % 4) * 7}px`,
+              animation: `gbConfetti ${1.2 + i * 0.14}s linear ${i * 0.08}s infinite`,
+            }}>{em}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Glow rings */}
+      {phase === "hold" && (<>
+        <div className="absolute rounded-full" style={{
+          width: "clamp(250px, 40vw, 390px)", height: "clamp(250px, 40vw, 390px)",
+          border: "2px solid rgba(255,200,0,0.6)",
+          animation: "gbRing 1.7s ease-in-out infinite",
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: "clamp(310px, 50vw, 480px)", height: "clamp(310px, 50vw, 480px)",
+          border: "1px solid rgba(255,200,0,0.25)",
+          animation: "gbRing 2.1s ease-in-out 0.4s infinite reverse",
+        }} />
+      </>)}
+
+      <div className="relative z-10 flex flex-col items-center gap-5">
+        <img
+          src="/images/golden-boy-pixel.png"
+          alt="Golden Boy"
+          style={{
+            width: "clamp(160px, 28vw, 230px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "enter"
+              ? "gbEnter 1.1s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "gbFloat 2.2s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 28px rgba(255,200,0,1)) drop-shadow(0 0 56px rgba(212,175,55,0.6)) drop-shadow(0 0 84px rgba(212,175,55,0.2))"
+              : "drop-shadow(0 0 10px rgba(212,175,55,0.4))",
+            transition: "filter 0.4s ease",
+          }}
+        />
+
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.5s ease 0.2s",
+          textAlign: "center",
+        }}>
+          <div className="px-9 py-4" style={{
+            background: "linear-gradient(135deg, rgba(0,0,0,0.92), rgba(22,16,0,0.92))",
+            border: "1px solid rgba(255,200,0,0.8)",
+            boxShadow: "0 0 40px rgba(255,200,0,0.3), inset 0 0 20px rgba(255,200,0,0.04)",
+          }}>
+            <div className="text-[10px] tracking-[0.45em] uppercase mb-1.5" style={{ color: "rgba(255,200,0,0.55)" }}>
+              🌟 Young Award
+            </div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{
+              color: "#ffc800",
+              textShadow: "0 0 24px rgba(255,200,0,1), 0 0 48px rgba(212,175,55,0.5)",
+            }}>
+              Golden Boy
+            </div>
+            <div className="text-xs tracking-[0.25em] uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Best young player of the year
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes gbEnter {
+          0%   { opacity: 0; transform: scale(0.25) translateY(50px) rotate(10deg); }
+          55%  { opacity: 1; transform: scale(1.1) translateY(-8px) rotate(-2deg); }
+          75%  { transform: scale(0.97) translateY(3px) rotate(0deg); }
+          100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+        }
+        @keyframes gbFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50%       { transform: translateY(-10px) rotate(1.5deg); }
+        }
+        @keyframes gbConfetti {
+          0%   { transform: translateY(0) rotate(0deg);       opacity: 1; }
+          100% { transform: translateY(110vh) rotate(500deg); opacity: 0; }
+        }
+        @keyframes gbRing {
+          0%, 100% { transform: scale(1);    opacity: 0.5; }
+          50%       { transform: scale(1.09); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// RECORD TRANSFER FEE
+// trigger: recordTransfer event
+// Style: slides from LEFT, green money theme, counter effect
+// ============================================
+
+export function RecordTransferAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3400);
+    const t3 = setTimeout(() => onDone(),          4100);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  // Counter animation
+  useEffect(() => {
+    if (phase !== "hold") return;
+    let val = 0;
+    const interval = setInterval(() => {
+      val += 7;
+      if (val >= 100) { setCounter(100); clearInterval(interval); return; }
+      setCounter(val);
+    }, 18);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.7s ease-in" : "opacity 0.3s ease",
+      }}
+    >
+      {/* Dark green tinted backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at 35% 50%, rgba(0,60,20,0.6) 0%, rgba(0,0,0,0.92) 70%)"
+          : "rgba(0,0,0,0.82)",
+        transition: "background 0.9s ease",
+      }} />
+
+      {/* Scanline effect */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)",
+      }} />
+
+      {/* Floating dollar signs from right side */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["$","€","£","$","€","$","£","$"].map((s, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              right: `${(i * 12) % 85}%`,
+              top: `${(i * 13 + 5) % 80}%`,
+              fontSize: `${14 + (i % 3) * 10}px`,
+              fontWeight: 900,
+              color: `rgba(0,${180 + i * 10},${60 + i * 8},${0.15 + (i % 3) * 0.08})`,
+              animation: `rtFloat ${2 + i * 0.3}s ease-in-out ${i * 0.2}s infinite alternate`,
+              fontFamily: "monospace",
+            }}>{s}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Main content — slides from LEFT */}
+      <div
+        className="relative z-10 flex items-center gap-6 px-8 py-6"
+        style={{
+          animation: phase === "enter"
+            ? "rtSlideFromLeft 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
+            : phase === "exit"
+            ? "rtSlideToRight 0.7s ease-in forwards"
+            : "none",
+          background: phase === "hold" ? "rgba(0,0,0,0.85)" : "transparent",
+          border: phase === "hold" ? "1px solid rgba(0,200,80,0.5)" : "none",
+          boxShadow: phase === "hold" ? "0 0 40px rgba(0,180,60,0.2), inset 0 0 20px rgba(0,180,60,0.04)" : "none",
+          transition: "background 0.4s, border 0.4s, box-shadow 0.4s",
+          maxWidth: "90vw",
+        }}
+      >
+        {/* Image */}
+        <img
+          src="/images/record-transfer-pixel.png"
+          alt="Record Transfer"
+          style={{
+            width: "clamp(130px, 22vw, 200px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            flexShrink: 0,
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 20px rgba(0,220,80,0.8)) drop-shadow(0 0 40px rgba(0,180,60,0.4))"
+              : "none",
+            animation: phase === "hold" ? "rtImageBob 2s ease-in-out infinite" : "none",
+            transition: "filter 0.4s ease",
+          }}
+        />
+
+        {/* Text */}
+        <div style={{ opacity: phase === "hold" ? 1 : 0, transition: "opacity 0.5s ease 0.1s" }}>
+          <div className="text-[9px] tracking-[0.5em] uppercase mb-1" style={{ color: "rgba(0,200,80,0.6)" }}>
+            💸 Breaking Record
+          </div>
+          <div className="font-black text-xl tracking-wide uppercase leading-tight" style={{
+            color: "#00e060",
+            textShadow: "0 0 20px rgba(0,220,80,0.9)",
+          }}>
+            Record Transfer Fee
+          </div>
+          <div className="text-xs tracking-[0.2em] uppercase mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Historic deal completed
+          </div>
+
+          {/* Progress bar */}
+          <div className="mt-3">
+            <div className="flex justify-between text-[9px] mb-1" style={{ color: "rgba(0,200,80,0.6)" }}>
+              <span>TRANSFER VALUE</span><span>{counter}%</span>
+            </div>
+            <div className="h-1.5" style={{ background: "rgba(255,255,255,0.08)", width: "180px" }}>
+              <div className="h-full" style={{
+                width: `${counter}%`,
+                background: "linear-gradient(90deg, #00b840, #00e060)",
+                boxShadow: "0 0 8px rgba(0,200,80,0.8)",
+                transition: "width 0.05s linear",
+              }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes rtSlideFromLeft {
+          0%   { opacity: 0; transform: translateX(-120px) scale(0.85); }
+          60%  { opacity: 1; transform: translateX(8px) scale(1.02); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes rtSlideToRight {
+          0%   { opacity: 1; transform: translateX(0); }
+          100% { opacity: 0; transform: translateX(120px); }
+        }
+        @keyframes rtImageBob {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50%       { transform: translateY(-8px) scale(1.03); }
+        }
+        @keyframes rtFloat {
+          0%   { transform: translateY(0) rotate(-5deg); }
+          100% { transform: translateY(-20px) rotate(5deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
 // أضف أنيميشنات جديدة هنا
 // ============================================
