@@ -532,5 +532,579 @@ export function GoatSigningAnimation({ onDone, playerName }: GoatAnimProps) {
 }
 
 // ============================================
+// GOLDEN BOOT — Award celebration
+// trigger: goldenBoot event
+// ============================================
+
+export function GoldenBootAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  1000);
+    const t2 = setTimeout(() => setPhase("exit"),  3200);
+    const t3 = setTimeout(() => onDone(),          4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.8s ease-in" : "opacity 0.4s ease",
+      }}
+    >
+      {/* Gold backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at center, rgba(90,65,0,0.65) 0%, rgba(0,0,0,0.9) 100%)"
+          : "rgba(0,0,0,0.82)",
+        transition: "background 0.8s ease",
+      }} />
+
+      {/* Spotlight beam */}
+      {phase === "hold" && (
+        <div className="absolute" style={{
+          width: "3px",
+          height: "100vh",
+          top: 0,
+          background: "linear-gradient(180deg, rgba(212,175,55,0.6) 0%, transparent 60%)",
+          animation: "bootSpotlight 2s ease-in-out infinite",
+          transformOrigin: "top center",
+        }} />
+      )}
+
+      {/* Gold confetti */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["⭐","✨","🌟","💛","⭐","✨","🌟","💫","⭐","✨","🌟","💛","✨","⭐"].map((em, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              left: `${(i * 7.3) % 95}%`,
+              top: "-30px",
+              fontSize: `${12 + (i % 4) * 7}px`,
+              animation: `bootConfetti ${1.3 + i * 0.15}s linear ${i * 0.08}s infinite`,
+            }}>{em}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Glow rings */}
+      {phase === "hold" && (<>
+        <div className="absolute rounded-full" style={{
+          width: "clamp(260px, 42vw, 400px)", height: "clamp(260px, 42vw, 400px)",
+          border: "2px solid rgba(212,175,55,0.6)",
+          animation: "bootRing 1.8s ease-in-out infinite",
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: "clamp(320px, 52vw, 490px)", height: "clamp(320px, 52vw, 490px)",
+          border: "1px solid rgba(212,175,55,0.25)",
+          animation: "bootRing 2.2s ease-in-out infinite reverse",
+        }} />
+      </>)}
+
+      <div className="relative z-10 flex flex-col items-center gap-5">
+        {/* Golden Boot pixel image */}
+        <img
+          src="/images/golden-boot-pixel.png"
+          alt="Golden Boot"
+          style={{
+            width: "clamp(180px, 32vw, 260px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "enter"
+              ? "bootSlideIn 1s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "bootFloat 2s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 30px rgba(212,175,55,1)) drop-shadow(0 0 60px rgba(212,175,55,0.5)) drop-shadow(0 0 90px rgba(255,200,0,0.3))"
+              : "drop-shadow(0 0 10px rgba(212,175,55,0.5))",
+            transition: "filter 0.4s ease",
+          }}
+        />
+
+        {/* Badge */}
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.5s ease",
+          textAlign: "center",
+        }}>
+          <div className="px-8 py-4" style={{
+            background: "linear-gradient(135deg, rgba(0,0,0,0.92), rgba(20,14,0,0.92))",
+            border: "1px solid rgba(212,175,55,0.8)",
+            boxShadow: "0 0 40px rgba(212,175,55,0.35), inset 0 0 20px rgba(212,175,55,0.05)",
+          }}>
+            <div className="text-xs tracking-[0.4em] uppercase mb-1" style={{ color: "rgba(212,175,55,0.6)" }}>
+              👟 Award
+            </div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{
+              color: "#D4AF37",
+              textShadow: "0 0 24px rgba(212,175,55,0.9), 0 0 48px rgba(212,175,55,0.4)",
+            }}>
+              Golden Boot
+            </div>
+            <div className="text-xs tracking-[0.25em] uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+              Top scorer of the season
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bootSlideIn {
+          0%   { opacity: 0; transform: translateY(60px) rotate(-15deg) scale(0.4); }
+          55%  { opacity: 1; transform: translateY(-10px) rotate(4deg) scale(1.1); }
+          75%  { transform: translateY(4px) rotate(-1deg) scale(0.97); }
+          100% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+        }
+        @keyframes bootFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50%       { transform: translateY(-12px) rotate(2deg); }
+        }
+        @keyframes bootConfetti {
+          0%   { transform: translateY(0) rotate(0deg);      opacity: 1; }
+          100% { transform: translateY(110vh) rotate(480deg); opacity: 0; }
+        }
+        @keyframes bootRing {
+          0%, 100% { transform: scale(1);    opacity: 0.5; }
+          50%       { transform: scale(1.1);  opacity: 1; }
+        }
+        @keyframes bootSpotlight {
+          0%, 100% { transform: rotate(-8deg); opacity: 0.6; }
+          50%       { transform: rotate(8deg);  opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// BALLON D'OR — Greatest individual award
+// trigger: ballonDor event
+// ============================================
+
+export function BallonDorAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  1200);
+    const t2 = setTimeout(() => setPhase("exit"),  4000);
+    const t3 = setTimeout(() => onDone(),          4800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.8s ease-in" : "opacity 0.4s ease",
+      }}
+    >
+      {/* Deep gold backdrop with cinematic feel */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at 50% 40%, rgba(100,72,0,0.75) 0%, rgba(0,0,0,0.95) 70%)"
+          : "rgba(0,0,0,0.88)",
+        transition: "background 1.2s ease",
+      }} />
+
+      {/* Dramatic light beams */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="absolute" style={{
+              width: "2px",
+              height: "60vh",
+              top: 0,
+              left: `${15 + i * 14}%`,
+              background: `linear-gradient(180deg, rgba(212,175,55,${0.3 + (i % 3) * 0.15}) 0%, transparent 100%)`,
+              animation: `bdBeam ${2 + i * 0.3}s ease-in-out ${i * 0.2}s infinite alternate`,
+              transformOrigin: "top center",
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Gold confetti burst */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["✨","⭐","🌟","💛","✨","⭐","🌟","💫","⭐","✨","🌟","💛","✨","⭐","💫","🌟"].map((em, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              left: `${(i * 6.5) % 95}%`,
+              top: "-30px",
+              fontSize: `${10 + (i % 5) * 7}px`,
+              animation: `bdConfetti ${1.2 + i * 0.13}s linear ${i * 0.07}s infinite`,
+            }}>{em}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Triple rings */}
+      {phase === "hold" && (<>
+        <div className="absolute rounded-full" style={{
+          width: "clamp(240px, 38vw, 380px)", height: "clamp(240px, 38vw, 380px)",
+          border: "2px solid rgba(212,175,55,0.7)",
+          animation: "bdRing 1.6s ease-in-out infinite",
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: "clamp(300px, 48vw, 470px)", height: "clamp(300px, 48vw, 470px)",
+          border: "1.5px solid rgba(212,175,55,0.35)",
+          animation: "bdRing 2s ease-in-out 0.3s infinite reverse",
+        }} />
+        <div className="absolute rounded-full" style={{
+          width: "clamp(360px, 58vw, 560px)", height: "clamp(360px, 58vw, 560px)",
+          border: "1px solid rgba(212,175,55,0.15)",
+          animation: "bdRing 2.4s ease-in-out 0.6s infinite",
+        }} />
+      </>)}
+
+      <div className="relative z-10 flex flex-col items-center gap-5">
+        {/* Trophy image */}
+        <img
+          src="/images/ballon-dor-pixel.png"
+          alt="Ballon d'Or"
+          style={{
+            width: "clamp(180px, 30vw, 250px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "enter"
+              ? "bdTrophyIn 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "bdTrophyFloat 2.5s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 32px rgba(255,200,0,1)) drop-shadow(0 0 64px rgba(212,175,55,0.7)) drop-shadow(0 0 100px rgba(212,175,55,0.3))"
+              : "drop-shadow(0 0 12px rgba(212,175,55,0.5))",
+            transition: "filter 0.5s ease",
+          }}
+        />
+
+        {/* Badge */}
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.6s ease 0.2s",
+          textAlign: "center",
+        }}>
+          <div className="px-10 py-5" style={{
+            background: "linear-gradient(135deg, rgba(0,0,0,0.95), rgba(25,18,0,0.95))",
+            border: "1px solid rgba(212,175,55,0.9)",
+            boxShadow: "0 0 50px rgba(212,175,55,0.4), 0 0 100px rgba(212,175,55,0.15), inset 0 0 30px rgba(212,175,55,0.06)",
+          }}>
+            <div className="text-[10px] tracking-[0.5em] uppercase mb-2" style={{ color: "rgba(212,175,55,0.55)" }}>
+              The Ultimate Award
+            </div>
+            <div className="font-black text-3xl tracking-widest uppercase" style={{
+              color: "#D4AF37",
+              textShadow: "0 0 30px rgba(212,175,55,1), 0 0 60px rgba(212,175,55,0.5), 0 0 90px rgba(255,200,0,0.3)",
+            }}>
+              Ballon d&apos;Or
+            </div>
+            <div className="text-xs tracking-[0.3em] uppercase mt-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Best player in the world
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bdTrophyIn {
+          0%   { opacity: 0; transform: scale(0.2) translateY(80px) rotate(-10deg); }
+          50%  { opacity: 1; transform: scale(1.12) translateY(-12px) rotate(3deg); }
+          75%  { transform: scale(0.96) translateY(4px) rotate(-1deg); }
+          100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+        }
+        @keyframes bdTrophyFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          33%       { transform: translateY(-14px) rotate(2deg) scale(1.03); }
+          66%       { transform: translateY(-6px) rotate(-1deg) scale(1.01); }
+        }
+        @keyframes bdConfetti {
+          0%   { transform: translateY(0) rotate(0deg) scale(1);      opacity: 1; }
+          100% { transform: translateY(110vh) rotate(600deg) scale(0.4); opacity: 0; }
+        }
+        @keyframes bdRing {
+          0%, 100% { transform: scale(1);    opacity: 0.6; }
+          50%       { transform: scale(1.08); opacity: 1; }
+        }
+        @keyframes bdBeam {
+          0%   { transform: rotate(-6deg); opacity: 0.4; }
+          100% { transform: rotate(6deg);  opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// FAST FOOD ADDICTION
+// trigger: fastFoodAddiction event
+// ============================================
+
+export function FastFoodAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3200);
+    const t3 = setTimeout(() => onDone(),          4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.8s ease-in" : "opacity 0.4s ease",
+      }}
+    >
+      {/* Greasy reddish backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at center, rgba(80,20,0,0.65) 0%, rgba(0,0,0,0.92) 100%)"
+          : "rgba(0,0,0,0.85)",
+        transition: "background 0.8s ease",
+      }} />
+
+      {/* Falling junk food */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["🍔","🍟","🌭","🍕","🌮","🍔","🍟","🥤","🍔","🍟","🌭","🍕"].map((em, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              left: `${(i * 8.5) % 95}%`,
+              top: "-30px",
+              fontSize: `${16 + (i % 4) * 7}px`,
+              animation: `ffFall ${1.1 + i * 0.16}s linear ${i * 0.09}s infinite`,
+            }}>{em}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Warning pulse ring */}
+      {phase === "hold" && (
+        <div className="absolute rounded-full" style={{
+          width: "clamp(260px, 42vw, 400px)", height: "clamp(260px, 42vw, 400px)",
+          border: "2px solid rgba(239,68,68,0.5)",
+          animation: "ffWarningRing 1s ease-in-out infinite",
+        }} />
+      )}
+
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        {/* Pixel image */}
+        <img
+          src="/images/fastfood-pixel.png"
+          alt="Fast Food Addiction"
+          style={{
+            width: "clamp(180px, 30vw, 250px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "enter"
+              ? "ffBounceIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "ffWobble 0.6s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 24px rgba(239,68,68,0.8)) drop-shadow(0 0 48px rgba(239,68,68,0.3))"
+              : "none",
+            transition: "filter 0.3s ease",
+          }}
+        />
+
+        {/* Badge */}
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.4s ease",
+          textAlign: "center",
+        }}>
+          <div className="px-8 py-4" style={{
+            background: "rgba(0,0,0,0.9)",
+            border: "1px solid rgba(239,68,68,0.7)",
+            boxShadow: "0 0 30px rgba(239,68,68,0.25)",
+          }}>
+            <div className="text-[10px] tracking-[0.4em] uppercase mb-1" style={{ color: "rgba(239,68,68,0.6)" }}>
+              ⚠️ Lifestyle Issue
+            </div>
+            <div className="font-black text-2xl tracking-wide uppercase" style={{
+              color: "#ef4444",
+              textShadow: "0 0 20px rgba(239,68,68,0.8)",
+            }}>
+              Fast Food Addiction
+            </div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Player performance declining
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes ffBounceIn {
+          0%   { opacity: 0; transform: scale(0.3) translateY(-50px); }
+          55%  { opacity: 1; transform: scale(1.1) translateY(8px); }
+          75%  { transform: scale(0.95) translateY(-3px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes ffWobble {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          25%       { transform: rotate(-3deg) scale(1.03); }
+          75%       { transform: rotate(3deg) scale(1.03); }
+        }
+        @keyframes ffFall {
+          0%   { transform: translateY(0) rotate(0deg);      opacity: 1; }
+          100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+        @keyframes ffWarningRing {
+          0%, 100% { transform: scale(1);    opacity: 0.4; }
+          50%       { transform: scale(1.08); opacity: 0.9; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// YOUTUBE VIRAL
+// trigger: youTubeViral event
+// ============================================
+
+export function YouTubeViralAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3400);
+    const t3 = setTimeout(() => onDone(),          4200);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.8s ease-in" : "opacity 0.4s ease",
+      }}
+    >
+      {/* Red backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at center, rgba(180,0,0,0.55) 0%, rgba(0,0,0,0.92) 100%)"
+          : "rgba(0,0,0,0.85)",
+        transition: "background 0.8s ease",
+      }} />
+
+      {/* Notification popups */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[
+            { text: "+1M views", left: "5%",  top: "15%", delay: "0s" },
+            { text: "+500K 👍", left: "75%", top: "20%", delay: "0.2s" },
+            { text: "TRENDING 🔥", left: "10%", top: "70%", delay: "0.4s" },
+            { text: "+2M views", left: "70%", top: "65%", delay: "0.6s" },
+            { text: "VIRAL ⚡",  left: "40%", top: "10%", delay: "0.3s" },
+          ].map((n, i) => (
+            <div key={i} className="absolute font-black text-xs px-2 py-1" style={{
+              left: n.left, top: n.top,
+              background: "rgba(255,0,0,0.85)",
+              color: "white",
+              border: "1px solid rgba(255,100,100,0.6)",
+              boxShadow: "0 0 10px rgba(255,0,0,0.5)",
+              animation: `ytNotif 2s ease-in-out ${n.delay} infinite`,
+              whiteSpace: "nowrap",
+            }}>{n.text}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Red glow ring */}
+      {phase === "hold" && (
+        <div className="absolute rounded-full" style={{
+          width: "clamp(260px, 42vw, 400px)", height: "clamp(260px, 42vw, 400px)",
+          border: "2px solid rgba(255,0,0,0.5)",
+          animation: "ytRing 1.4s ease-in-out infinite",
+        }} />
+      )}
+
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img
+          src="/images/youtube-viral-pixel.png"
+          alt="YouTube Viral"
+          style={{
+            width: "clamp(200px, 34vw, 280px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "enter"
+              ? "ytZoomIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "ytPulse 1.2s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 28px rgba(255,0,0,0.9)) drop-shadow(0 0 56px rgba(255,80,0,0.4))"
+              : "none",
+            transition: "filter 0.3s ease",
+          }}
+        />
+
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.4s ease",
+          textAlign: "center",
+        }}>
+          <div className="px-8 py-4" style={{
+            background: "rgba(0,0,0,0.9)",
+            border: "1px solid rgba(255,0,0,0.7)",
+            boxShadow: "0 0 30px rgba(255,0,0,0.3)",
+          }}>
+            <div className="text-[10px] tracking-[0.4em] uppercase mb-1" style={{ color: "rgba(255,80,0,0.7)" }}>
+              📺 Going Viral
+            </div>
+            <div className="font-black text-2xl tracking-wide uppercase" style={{
+              color: "#ff4444",
+              textShadow: "0 0 20px rgba(255,0,0,0.9)",
+            }}>
+              YouTube Viral
+            </div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Millions watching
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes ytZoomIn {
+          0%   { opacity: 0; transform: scale(0.3) rotate(-5deg); }
+          55%  { opacity: 1; transform: scale(1.1) rotate(2deg); }
+          75%  { transform: scale(0.97) rotate(-1deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes ytPulse {
+          0%, 100% { transform: scale(1); }
+          50%       { transform: scale(1.05); }
+        }
+        @keyframes ytNotif {
+          0%   { opacity: 0; transform: translateY(8px) scale(0.9); }
+          20%  { opacity: 1; transform: translateY(0) scale(1); }
+          80%  { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(-8px) scale(0.9); }
+        }
+        @keyframes ytRing {
+          0%, 100% { transform: scale(1);    opacity: 0.5; }
+          50%       { transform: scale(1.08); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
 // أضف أنيميشنات جديدة هنا
 // ============================================

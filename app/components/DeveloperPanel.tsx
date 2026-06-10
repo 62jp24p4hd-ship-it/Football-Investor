@@ -13,6 +13,10 @@ const EVENT_PIXEL_IMAGES: Partial<Record<DevEventId, string>> = {
   florentinoPerez: "/images/florentino-pixel.png",
   aclInjury:       "/images/acl-injury-pixel.png",
   saudiOffer:      "/images/saudi-offer-pixel.png",
+  goldenBoot:      "/images/golden-boot-pixel.png",
+  ballonDor:           "/images/ballon-dor-pixel.png",
+  fastFoodAddiction:   "/images/fastfood-pixel.png",
+  youTubeViral:        "/images/youtube-viral-pixel.png",
 };
 
 const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative" | "special" }[] = [

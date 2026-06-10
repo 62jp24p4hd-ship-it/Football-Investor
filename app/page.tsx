@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation } from "./animations/index";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -90,6 +90,10 @@ export default function Home() {
   const [showFlorentinoAnim, setShowFlorentinoAnim] = useState(false);
   const [showAclAnim, setShowAclAnim] = useState(false);
   const [showSaudiAnim, setShowSaudiAnim] = useState(false);
+  const [showGoldenBootAnim, setShowGoldenBootAnim] = useState(false);
+  const [showBallonDorAnim, setShowBallonDorAnim] = useState(false);
+  const [showFastFoodAnim, setShowFastFoodAnim] = useState(false);
+  const [showYouTubeAnim, setShowYouTubeAnim] = useState(false);
   const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
@@ -693,6 +697,7 @@ export default function Home() {
       const result = triggerFastFoodAddiction(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowFastFoodAnim(true);
       return;
     }
     if (eventId === "breakupSeason") {
@@ -717,6 +722,7 @@ export default function Home() {
       const result = triggerYouTubeViral(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowYouTubeAnim(true);
       return;
     }
     if (eventId === "dreamSeason") {
@@ -765,8 +771,12 @@ export default function Home() {
     const result = forcedSpecificEvent(eventId, season, gamePlayers, activePlayerIndex);
     setGamePlayers(result.updatedPlayers);
     addNewsItems(result.newsItems);
-    if (eventId === "aclInjury")  setShowAclAnim(true);
-    if (eventId === "saudiOffer") setShowSaudiAnim(true);
+    if (eventId === "aclInjury")   setShowAclAnim(true);
+    if (eventId === "saudiOffer")  setShowSaudiAnim(true);
+    if (eventId === "goldenBoot")  setShowGoldenBootAnim(true);
+    if (eventId === "ballonDor")        setShowBallonDorAnim(true);
+    if ((eventId as string) === "fastFoodAddiction") setShowFastFoodAnim(true);
+    if ((eventId as string) === "youTubeViral") setShowYouTubeAnim(true);
   }
 
   // ============================================
@@ -863,6 +873,18 @@ export default function Home() {
         }
         if (singleResult.newsItems.some(n => n.title.includes("Saudi"))) {
           setTimeout(() => setShowSaudiAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Golden Boot"))) {
+          setTimeout(() => setShowGoldenBootAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Ballon"))) {
+          setTimeout(() => setShowBallonDorAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Fast Food") || n.title.includes("Food"))) {
+          setTimeout(() => setShowFastFoodAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("YouTube") || n.title.includes("Viral"))) {
+          setTimeout(() => setShowYouTubeAnim(true), 400);
         }
       }
     }
@@ -1199,6 +1221,22 @@ export default function Home() {
           playerName={goatSignedPlayer}
           onDone={() => setGoatSignedPlayer(null)}
         />
+      )}
+
+      {showGoldenBootAnim && (
+        <GoldenBootAnimation onDone={() => setShowGoldenBootAnim(false)} />
+      )}
+
+      {showBallonDorAnim && (
+        <BallonDorAnimation onDone={() => setShowBallonDorAnim(false)} />
+      )}
+
+      {showFastFoodAnim && (
+        <FastFoodAnimation onDone={() => setShowFastFoodAnim(false)} />
+      )}
+
+      {showYouTubeAnim && (
+        <YouTubeViralAnimation onDone={() => setShowYouTubeAnim(false)} />
       )}
 
       {showEndModal && (

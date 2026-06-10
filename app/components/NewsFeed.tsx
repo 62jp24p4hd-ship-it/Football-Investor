@@ -11,6 +11,12 @@ const PIXEL_PORTRAITS: Record<string, string> = {
   "Florentino":        "/images/florentino-pixel.png",
   "ACL":               "/images/acl-injury-pixel.png",
   "Saudi":             "/images/saudi-offer-pixel.png",
+  "Golden Boot":       "/images/golden-boot-pixel.png",
+  "Ballon":            "/images/ballon-dor-pixel.png",
+  "Fast Food":         "/images/fastfood-pixel.png",
+  "Food Addiction":    "/images/fastfood-pixel.png",
+  "YouTube":           "/images/youtube-viral-pixel.png",
+  "Viral":             "/images/youtube-viral-pixel.png",
 };
 
 function getNewsPortrait(title: string): string | null {
