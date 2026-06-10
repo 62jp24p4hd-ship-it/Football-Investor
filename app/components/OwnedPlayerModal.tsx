@@ -69,6 +69,8 @@ function Stat({ value, label, icon, highlight }: { value: number; label: string;
 const PIXEL_PORTRAITS: Record<string, string> = {
   "Yousef Alnuwasser": "/images/yousef-pixel.png",
   "Hussain Alrezk":    "/images/hussain-alrezk.png",
+  "ABDULLAH ALMUSAWI": "/images/abdullah-almusawi.png",
+  "Ali Alsaif":        "/images/ali-alsaif.png",
 };
 
 function PixelPortrait({ name, size = 72 }: { name: string; size?: number }) {

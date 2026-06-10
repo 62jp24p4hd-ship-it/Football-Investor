@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import FlorentinoEntrance from "./components/FlorentinoEntrance";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -88,6 +88,9 @@ export default function Home() {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
   const [showFlorentinoAnim, setShowFlorentinoAnim] = useState(false);
+  const [showAclAnim, setShowAclAnim] = useState(false);
+  const [showSaudiAnim, setShowSaudiAnim] = useState(false);
+  const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
 
@@ -446,6 +449,11 @@ export default function Home() {
     setPendingSlot(null);
     notify(`✅ ${negotiation.player.name} signed!`);
 
+    // GOAT animation — fires for secret/easter egg players
+    if (negotiation.player.secret) {
+      setTimeout(() => setGoatSignedPlayer(negotiation.player.name), 300);
+    }
+
     // Check sponsorship
     if (shouldReceiveSponsorshipOffer(value)) {
       const sponsorship = generateSponsorshipOffer(value, season);
@@ -757,6 +765,8 @@ export default function Home() {
     const result = forcedSpecificEvent(eventId, season, gamePlayers, activePlayerIndex);
     setGamePlayers(result.updatedPlayers);
     addNewsItems(result.newsItems);
+    if (eventId === "aclInjury")  setShowAclAnim(true);
+    if (eventId === "saudiOffer") setShowSaudiAnim(true);
   }
 
   // ============================================
@@ -847,6 +857,12 @@ export default function Home() {
         // Florentino animation — fires when any news title contains his name
         if (singleResult.newsItems.some(n => n.title.includes("Florentino"))) {
           setTimeout(() => setShowFlorentinoAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("ACL"))) {
+          setTimeout(() => setShowAclAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Saudi"))) {
+          setTimeout(() => setShowSaudiAnim(true), 400);
         }
       }
     }
@@ -1166,6 +1182,23 @@ export default function Home() {
       {/* Florentino Pérez Boss Entrance */}
       {showFlorentinoAnim && (
         <FlorentinoEntrance onDone={() => setShowFlorentinoAnim(false)} />
+      )}
+
+      {/* ACL Injury Animation */}
+      {showAclAnim && (
+        <AclInjuryAnimation onDone={() => setShowAclAnim(false)} />
+      )}
+
+      {showSaudiAnim && (
+        <SaudiOfferAnimation onDone={() => setShowSaudiAnim(false)} />
+      )}
+
+      {/* GOAT Signing — Easter Egg players */}
+      {goatSignedPlayer && (
+        <GoatSigningAnimation
+          playerName={goatSignedPlayer}
+          onDone={() => setGoatSignedPlayer(null)}
+        />
       )}
 
       {showEndModal && (

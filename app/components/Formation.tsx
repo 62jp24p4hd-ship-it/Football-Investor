@@ -9,6 +9,8 @@ import { positionBg } from "../game/helpers";
 const PIXEL_PORTRAITS: Record<string, string> = {
   "Yousef Alnuwasser": "/images/yousef-pixel.png",
   "Hussain Alrezk":    "/images/hussain-alrezk.png",
+  "ABDULLAH ALMUSAWI": "/images/abdullah-almusawi.png",
+  "Ali Alsaif":        "/images/ali-alsaif.png",
 };
 
 function PixelPortrait({ name }: { name: string }) {

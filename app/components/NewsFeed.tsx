@@ -6,7 +6,11 @@ import type { NewsItem, SeasonEvent } from "../game/types";
 const PIXEL_PORTRAITS: Record<string, string> = {
   "Yousef Alnuwasser": "/images/yousef-pixel.png",
   "Hussain Alrezk":    "/images/hussain-alrezk.png",
+  "ABDULLAH ALMUSAWI": "/images/abdullah-almusawi.png",
+  "Ali Alsaif":        "/images/ali-alsaif.png",
   "Florentino":        "/images/florentino-pixel.png",
+  "ACL":               "/images/acl-injury-pixel.png",
+  "Saudi":             "/images/saudi-offer-pixel.png",
 };
 
 function getNewsPortrait(title: string): string | null {
@@ -14,6 +18,15 @@ function getNewsPortrait(title: string): string | null {
     if (title.includes(name)) return src;
   }
   return null;
+}
+
+function cleanTitle(title: string, hasPortrait: boolean): string {
+  if (hasPortrait) {
+    return title
+      .replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2B00}-\u{2BFF}⚠️💰🤕👑🔥📺🚀🏆🌟👟💸🚑🪑📉💔🍔🎰✈️🗣️💼🤝🎯💵💴💶]+\s*/gu, "")
+      .trim();
+  }
+  return title.replace("👑 ", "");
 }
 
 type Props = {
@@ -180,17 +193,17 @@ export default function NewsFeed({ news, seasonEvent, season }: Props) {
                   <div
                     className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 shadow-sm ${cfg.dot} ${cfg.dotGlow}`}
                   />
-                  <div className="font-black text-sm leading-tight flex items-center gap-1.5" style={{ color: cfg.titleColor }}>
+                  <div className="font-black text-sm leading-tight flex items-center gap-2" style={{ color: cfg.titleColor }}>
                     {getNewsPortrait(item.title) && (
                       <img
                         src={getNewsPortrait(item.title)!}
                         alt=""
-                        width={22}
-                        height={22}
+                        width={36}
+                        height={36}
                         style={{ imageRendering: "pixelated", objectFit: "contain", flexShrink: 0 }}
                       />
                     )}
-                    {item.title.replace("👑 ", "")}
+                    {cleanTitle(item.title, !!getNewsPortrait(item.title))}
                   </div>
                 </div>
 
