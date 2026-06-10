@@ -30,18 +30,20 @@ function Btn({
       onClick={onClick}
       className={`relative transition-all duration-150 font-black rounded-none select-none ${className}`}
       style={selected ? {
-        background: `${color}22`,
+        background: `${color}1a`,
         border: `2px solid ${color}`,
-        boxShadow: `0 0 20px ${color}55, inset 0 0 12px ${color}11`,
+        boxShadow: `0 0 20px ${color}44, inset 0 0 12px ${color}0d`,
         transform: "scale(1.02)",
         color: "white",
       } : {
-        background: "rgba(255,255,255,0.04)",
-        border: "2px solid rgba(255,255,255,0.08)",
+        background: "rgba(5,10,20,0.35)",
+        border: "1.5px solid rgba(255,255,255,0.09)",
         color: "#6b7280",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
       }}
-      onMouseEnter={e => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = `${color}66`; (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af"; } }}
-      onMouseLeave={e => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; } }}
+      onMouseEnter={e => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = `${color}55`; (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af"; } }}
+      onMouseLeave={e => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; } }}
       onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.95)"; }}
       onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = selected ? "scale(1.02)" : "scale(1)"; }}>
       {children}
@@ -53,11 +55,20 @@ function Btn({
 function Section({ label, accent = "#10b981", children }: { label: string; accent?: string; children: React.ReactNode }) {
   return (
     <div className="mb-4 rounded-none overflow-hidden"
-      style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 2px 16px rgba(0,0,0,0.3)" }}>
-      <div className="px-4 py-2 flex items-center gap-2"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
-        <div className="w-1 h-4 rounded-full" style={{ background: accent }} />
-        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: accent }}>{label}</span>
+      style={{
+        background: "rgba(3,6,14,0.22)",
+        border: `1px solid ${accent}33`,
+        boxShadow: `0 4px 32px rgba(0,0,0,0.45), 0 0 0 0.5px ${accent}22, inset 0 1px 0 ${accent}11`,
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+      }}>
+      <div className="px-4 py-2.5 flex items-center gap-2.5"
+        style={{
+          borderBottom: `1px solid ${accent}22`,
+          background: `linear-gradient(90deg, ${accent}18 0%, transparent 60%)`,
+        }}>
+        <div className="w-[3px] h-4 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
+        <span className="text-[10px] font-black tracking-[0.22em] uppercase" style={{ color: accent, textShadow: `0 0 12px ${accent}88` }}>{label}</span>
       </div>
       <div className="p-3">{children}</div>
     </div>
@@ -106,16 +117,45 @@ export default function StartScreen({ onStart, onContinue }: Props) {
   }
 
   return (
-    <main className="min-h-screen text-white flex flex-col items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: "radial-gradient(ellipse at 20% 50%, #050d1a 0%, #060912 60%, #030610 100%)" }}>
+    <main className="min-h-screen text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
 
-      {/* Background grid */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] rounded-full blur-[200px]" style={{ background: "rgba(16,185,129,0.06)" }} />
-        <div className="absolute bottom-[-20%] right-[10%] w-[400px] h-[400px] rounded-full blur-[180px]" style={{ background: "rgba(59,130,246,0.05)" }} />
-      </div>
+      {/* ── Full-screen background image ── */}
+      <div
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: "url('/images/start-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
+          // fallback colour while image loads
+          backgroundColor: "#050810",
+        }}
+      />
+
+      {/* ── Dark overlay: 50% opacity keeps artwork visible ── */}
+      <div
+        className="fixed inset-0 z-[1]"
+        style={{ background: "rgba(4,7,15,0.52)" }}
+      />
+
+      {/* ── Vignette: darkens edges, keeps centre clear ── */}
+      <div
+        className="fixed inset-0 z-[2] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.55) 80%, rgba(0,0,0,0.82) 100%)",
+        }}
+      />
+
+      {/* ── Subtle dot-grid texture ── */}
+      <div
+        className="fixed inset-0 z-[2] pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(255,255,255,0.01) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
+      />
 
       {/* ── Save popup ── */}
       {showSavePopup && saveInfo && !showNewGameConfirm && (
@@ -168,20 +208,39 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         </div>
       )}
 
+      {/* ══════════════════════════════════════
+          MAIN CONTENT — sits above all layers
+          z-10 to clear the bg/overlay/vignette
+         ══════════════════════════════════════ */}
       <div className="relative z-10 w-full max-w-xl">
 
-        {/* ── Title ── */}
+        {/* ── Logo ── */}
         <div className="text-center mb-6">
-          <p onClick={() => {
+          {/* Image logo — mix-blend-mode:screen removes black background */}
+          <div className="flex justify-center mb-1">
+            <img
+              src="/images/logo.png"
+              alt="Football Investor"
+              style={{
+                width: "clamp(160px, 40vw, 220px)",
+                height: "auto",
+                mixBlendMode: "screen",
+                filter: "drop-shadow(0 0 24px rgba(212,175,55,0.5)) drop-shadow(0 0 48px rgba(212,175,55,0.2))",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+
+          {/* Easter-egg trigger */}
+          <p
+            onClick={() => {
               const n = easterClicks + 1;
               setEasterClicks(n);
               if (n >= 5) {
-                // حفظ الـ flag
                 if (!easterUnlocked) {
                   setEasterUnlocked(true);
                   try { localStorage.setItem("fi_easter_unlocked", "1"); } catch {}
                 }
-                // الأنيميشن والـ popup دايماً يظهرون بعد 5 نقرات
                 setEasterClicks(0);
                 setShowShatoor(true);
                 setTimeout(() => {
@@ -190,16 +249,22 @@ export default function StartScreen({ onStart, onContinue }: Props) {
                 }, 1400);
               }
             }}
-            className="text-sm font-black mb-3 cursor-pointer select-none transition-all duration-150"
+            className="text-sm font-black mb-3 cursor-pointer select-none transition-all duration-150 mt-3"
             style={{
               color: "#D4AF37",
               textShadow: `0 0 ${20 + easterClicks * 8}px rgba(212,175,55,${0.5 + easterClicks * 0.1})`,
-              transform: "scale(1)",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1.06)"; (e.currentTarget as HTMLParagraphElement).style.textShadow = "0 0 30px rgba(212,175,55,0.8)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1)"; (e.currentTarget as HTMLParagraphElement).style.textShadow = `0 0 ${20 + easterClicks * 8}px rgba(212,175,55,0.5)`; }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1.06)";
+              (e.currentTarget as HTMLParagraphElement).style.textShadow = "0 0 30px rgba(212,175,55,0.8)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1)";
+              (e.currentTarget as HTMLParagraphElement).style.textShadow = `0 0 ${20 + easterClicks * 8}px rgba(212,175,55,0.5)`;
+            }}
             onMouseDown={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(0.95)"; }}
-            onMouseUp={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1.06)"; }}>
+            onMouseUp={e => { (e.currentTarget as HTMLParagraphElement).style.transform = "scale(1.06)"; }}
+          >
             👀 حجي المطور المستقل
             {easterClicks > 0 && easterClicks < 5 && (
               <span className="ml-2 text-xs opacity-70">{"👀".repeat(easterClicks)}</span>
@@ -209,13 +274,15 @@ export default function StartScreen({ onStart, onContinue }: Props) {
           {/* شطور animation */}
           {showShatoor && (
             <div className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none">
-              <p className="font-black text-center"
+              <p
+                className="font-black text-center"
                 style={{
                   fontSize: "96px",
                   color: "#D4AF37",
                   textShadow: "0 0 60px rgba(212,175,55,0.9), 0 0 120px rgba(212,175,55,0.5)",
                   animation: "shatoorAnim 1.4s ease forwards",
-                }}>
+                }}
+              >
                 شطور
               </p>
               <style>{`
@@ -232,13 +299,15 @@ export default function StartScreen({ onStart, onContinue }: Props) {
           {/* Easter popup */}
           {showEasterPopup && (
             <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.88)" }}>
-              <div className="w-full max-w-sm p-7 text-center shadow-2xl"
+              <div
+                className="w-full max-w-sm p-7 text-center shadow-2xl"
                 style={{
                   background: "linear-gradient(135deg, #0d1117, #1a1200)",
                   border: "1px solid rgba(212,175,55,0.5)",
                   boxShadow: "0 0 60px rgba(212,175,55,0.2)",
                   animation: "fadeInScale 0.4s ease forwards",
-                }}>
+                }}
+              >
                 <style>{`
                   @keyframes fadeInScale {
                     from { opacity: 0; transform: scale(0.85); }
@@ -246,52 +315,97 @@ export default function StartScreen({ onStart, onContinue }: Props) {
                   }
                 `}</style>
                 <div className="text-5xl mb-4">😏</div>
-                <p className="text-white font-black text-lg leading-relaxed mb-6"
-                  style={{ textShadow: "0 0 20px rgba(212,175,55,0.3)" }}>
+                <p
+                  className="text-white font-black text-lg leading-relaxed mb-6"
+                  style={{ textShadow: "0 0 20px rgba(212,175,55,0.3)" }}
+                >
                   شطور... الحين دور عن بطاقتي و بطايق الشباب في اللعبة 😏
                 </p>
-                <button onClick={() => setShowEasterPopup(false)}
+                <button
+                  onClick={() => setShowEasterPopup(false)}
                   className="w-full py-3 font-black text-sm uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
                   style={{
                     background: "linear-gradient(135deg, #D4AF37, #b8960a)",
                     color: "#000",
                     boxShadow: "0 4px 20px rgba(212,175,55,0.4)",
-                  }}>
+                  }}
+                >
                   ✅ فهمت
                 </button>
               </div>
             </div>
           )}
-          <div style={{ fontSize: "72px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg,#fff 0%,#a8f5d0 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Football</div>
-          <div style={{ fontSize: "72px", fontWeight: 900, lineHeight: 1, background: "linear-gradient(135deg,#10b981,#34d399,#6ee7b7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Investor</div>
-          <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mt-3">Build The Most Valuable Squad</p>
+
+          <p className="text-gray-400 text-xs tracking-[0.3em] uppercase mt-1"
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>
+            Build The Most Valuable Squad
+          </p>
         </div>
 
         {/* ── How To Play ── */}
-        <button onClick={() => setShowHowToPlay(!showHowToPlay)}
+        <button
+          onClick={() => setShowHowToPlay(!showHowToPlay)}
           className="w-full mb-3 py-3 font-bold text-sm transition-all hover:scale-[1.01] active:scale-[0.98]"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af" }}>
+          style={{
+            background: "rgba(0,0,0,0.20)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "#9ca3af",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+        >
           {showHowToPlay ? "▲ Hide Guide — إخفاء الدليل" : "📖 How To Play — كيف تلعب"}
         </button>
         {showHowToPlay && (
-          <div className="mb-3 p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div
+            className="mb-3 p-4"
+            style={{
+              background: "rgba(0,0,0,0.20)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+            }}
+          >
             {HOW_TO_PLAY.map((item, i) => (
-              <div key={i} className="flex items-start gap-3 pb-3" style={{ borderBottom: i < HOW_TO_PLAY.length-1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+              <div
+                key={i}
+                className="flex items-start gap-3 pb-3"
+                style={{ borderBottom: i < HOW_TO_PLAY.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+              >
                 <span className="text-xl flex-shrink-0">{item.emoji}</span>
-                <div><div className="text-white font-bold text-xs">{item.en}</div><div className="text-gray-500 text-[10px] mt-0.5">{item.ar}</div></div>
+                <div>
+                  <div className="text-white font-bold text-xs">{item.en}</div>
+                  <div className="text-gray-500 text-[10px] mt-0.5">{item.ar}</div>
+                </div>
               </div>
             ))}
           </div>
         )}
 
         {/* ── Developer Message ── */}
-        <button onClick={() => setShowDevMsg(!showDevMsg)}
+        <button
+          onClick={() => setShowDevMsg(!showDevMsg)}
           className="w-full mb-4 py-3 font-bold text-sm transition-all hover:scale-[1.01] active:scale-[0.98]"
-          style={{ background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.2)", color: "#D4AF37" }}>
+          style={{
+            background: "rgba(212,175,55,0.05)",
+            border: "1px solid rgba(212,175,55,0.22)",
+            color: "#D4AF37",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+        >
           {showDevMsg ? "▲ إخفاء رسالة المطور" : "💌 رسالة من المطور"}
         </button>
         {showDevMsg && (
-          <div className="mb-4 p-5 text-sm leading-relaxed" style={{ background: "rgba(212,175,55,0.04)", border: "1px solid rgba(212,175,55,0.12)" }}>
+          <div
+            className="mb-4 p-5 text-sm leading-relaxed"
+            style={{
+              background: "rgba(10,8,0,0.30)",
+              border: "1px solid rgba(212,175,55,0.12)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+            }}
+          >
             <p className="text-gray-300 mb-3">السلام عليكم،</p>
             <p className="text-gray-300 mb-3">أنا يوسف <span className="text-yellow-400 font-bold">(7GE)</span>، شخص يعشق كرة القدم وبايرن ميونخ وقضى ساعات طويلة في ألعاب الكورة.</p>
             <p className="text-gray-300 mb-3">في يوم جتني فكرة: <span className="text-white font-bold italic">"ليش أكون مدرب… إذا أقدر أكون مستثمر؟"</span></p>
@@ -317,10 +431,10 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         <Section label="Game Mode — وضع اللعبة" accent="#3b82f6">
           <div className="grid grid-cols-2 gap-2.5">
             {([
-              { key:"single", emoji:"👤", en:"Single Player", ar:"لاعب واحد", color:"#3b82f6" },
-              { key:"versus", emoji:"👥", en:"Versus Friend", ar:"ضد صديق", color:"#a855f7" },
+              { key: "single", emoji: "👤", en: "Single Player", ar: "لاعب واحد", color: "#3b82f6" },
+              { key: "versus", emoji: "👥", en: "Versus Friend", ar: "ضد صديق", color: "#a855f7" },
             ] as const).map(m => (
-              <Btn key={m.key} selected={mode===m.key} color={m.color} onClick={() => setMode(m.key)} className="py-4 text-center">
+              <Btn key={m.key} selected={mode === m.key} color={m.color} onClick={() => setMode(m.key)} className="py-4 text-center">
                 <div className="text-2xl mb-1.5">{m.emoji}</div>
                 <div className="text-sm leading-none">{m.en}</div>
                 <div className="text-[10px] font-normal mt-1 opacity-60">{m.ar}</div>
@@ -333,17 +447,25 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         {mode && (
           <Section label="Team Names — أسماء الفرق" accent="#6366f1">
             <div className={`grid gap-3 ${mode === "versus" ? "grid-cols-2" : "grid-cols-1"}`}>
-              <input value={team1Name} onChange={e => setTeam1Name(e.target.value)} placeholder="Team 1"
+              <input
+                value={team1Name}
+                onChange={e => setTeam1Name(e.target.value)}
+                placeholder="Team 1"
                 className="px-4 py-3 text-white placeholder-gray-600 font-bold text-sm focus:outline-none transition-all"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
                 onFocus={e => (e.target.style.borderColor = "#6366f155")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")} />
+                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+              />
               {mode === "versus" && (
-                <input value={team2Name} onChange={e => setTeam2Name(e.target.value)} placeholder="Team 2"
+                <input
+                  value={team2Name}
+                  onChange={e => setTeam2Name(e.target.value)}
+                  placeholder="Team 2"
                   className="px-4 py-3 text-white placeholder-gray-600 font-bold text-sm focus:outline-none transition-all"
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
                   onFocus={e => (e.target.style.borderColor = "#a855f755")}
-                  onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")} />
+                  onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                />
               )}
             </div>
           </Section>
@@ -353,14 +475,14 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         <Section label="Starting Budget — الميزانية" accent="#D4AF37">
           <div className="grid grid-cols-2 gap-2.5">
             {([
-              { key:"lucky",       emoji:"🍀", label:"Lucky",       amount:"€10M",  color:"#10b981" },
-              { key:"balanced",    emoji:"⚖️", label:"Balanced",    amount:"€30M",  color:"#3b82f6" },
-              { key:"rich",        emoji:"💰", label:"Rich",        amount:"€100M", color:"#D4AF37" },
-              { key:"billionaire", emoji:"💎", label:"Billionaire", amount:"€200M", color:"#06b6d4" },
+              { key: "lucky",       emoji: "🍀", label: "Lucky",       amount: "€10M",  color: "#10b981" },
+              { key: "balanced",    emoji: "⚖️", label: "Balanced",    amount: "€30M",  color: "#3b82f6" },
+              { key: "rich",        emoji: "💰", label: "Rich",        amount: "€100M", color: "#D4AF37" },
+              { key: "billionaire", emoji: "💎", label: "Billionaire", amount: "€200M", color: "#06b6d4" },
             ] as const).map(b => (
-              <Btn key={b.key} selected={budgetMode===b.key} color={b.color} onClick={() => setBudgetMode(b.key)} className="py-3.5 text-center">
+              <Btn key={b.key} selected={budgetMode === b.key} color={b.color} onClick={() => setBudgetMode(b.key)} className="py-3.5 text-center">
                 <div className="text-xl mb-1">{b.emoji}</div>
-                <div className="text-base font-black leading-none" style={budgetMode===b.key ? { color: b.color } : {}}>{b.amount}</div>
+                <div className="text-base font-black leading-none" style={budgetMode === b.key ? { color: b.color } : {}}>{b.amount}</div>
                 <div className="text-[10px] font-normal mt-0.5 opacity-60">{b.label}</div>
               </Btn>
             ))}
@@ -371,10 +493,10 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         <Section label="Game Length — طول اللعبة" accent="#D4AF37">
           <div className="grid grid-cols-2 gap-2.5">
             {([
-              { key:"classic",  emoji:"🏆", label:"Classic",  desc:"2008 → 2028", color:"#D4AF37" },
-              { key:"infinite", emoji:"♾️", label:"Infinite", desc:"بلا نهاية",  color:"#a855f7" },
+              { key: "classic",  emoji: "🏆", label: "Classic",  desc: "2008 → 2028", color: "#D4AF37" },
+              { key: "infinite", emoji: "♾️", label: "Infinite", desc: "بلا نهاية",  color: "#a855f7" },
             ] as const).map(g => (
-              <Btn key={g.key} selected={gameLengthMode===g.key} color={g.color} onClick={() => setGameLengthMode(g.key)} className="py-3.5 text-center">
+              <Btn key={g.key} selected={gameLengthMode === g.key} color={g.color} onClick={() => setGameLengthMode(g.key)} className="py-3.5 text-center">
                 <div className="text-xl mb-1">{g.emoji}</div>
                 <div className="text-sm leading-none">{g.label}</div>
                 <div className="text-[10px] font-normal mt-0.5 opacity-50">{g.desc}</div>
@@ -390,22 +512,24 @@ export default function StartScreen({ onStart, onContinue }: Props) {
               <div className="text-white text-xs font-bold">Random events affecting player values</div>
               <div className="text-gray-600 text-[10px] mt-0.5">أحداث عشوائية تؤثر على قيم اللاعبين</div>
             </div>
-            <button onClick={() => setEventsEnabled(!eventsEnabled)}
+            <button
+              onClick={() => setEventsEnabled(!eventsEnabled)}
               className="px-4 py-2 font-black text-sm transition-all hover:scale-105 active:scale-95"
               style={eventsEnabled ? {
-                background: "rgba(16,185,129,0.15)", border: "1px solid #10b981", color: "#10b981", boxShadow: "0 0 12px rgba(16,185,129,0.3)"
-              } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#4b5563" }}>
+                background: "rgba(16,185,129,0.15)", border: "1px solid #10b981", color: "#10b981", boxShadow: "0 0 12px rgba(16,185,129,0.3)",
+              } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#4b5563" }}
+            >
               {eventsEnabled ? "ON" : "OFF"}
             </button>
           </div>
           {eventsEnabled && (
             <div className="grid grid-cols-3 gap-2">
               {([
-                { key:"all",      emoji:"🎲", label:"All",           color:"#10b981" },
-                { key:"positive", emoji:"✅", label:"Positive Only", color:"#3b82f6" },
-                { key:"negative", emoji:"❌", label:"Negative Only", color:"#ef4444" },
+                { key: "all",      emoji: "🎲", label: "All",           color: "#10b981" },
+                { key: "positive", emoji: "✅", label: "Positive Only", color: "#3b82f6" },
+                { key: "negative", emoji: "❌", label: "Negative Only", color: "#ef4444" },
               ] as const).map(e => (
-                <Btn key={e.key} selected={eventType===e.key} color={e.color} onClick={() => setEventType(e.key)} className="py-2.5 text-center">
+                <Btn key={e.key} selected={eventType === e.key} color={e.color} onClick={() => setEventType(e.key)} className="py-2.5 text-center">
                   <div className="text-base mb-0.5">{e.emoji}</div>
                   <div className="text-[10px] leading-tight">{e.label}</div>
                 </Btn>
@@ -418,14 +542,20 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         <Section label="Negative Budget — الميزانية بالسالب" accent="#ef4444">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-white text-xs font-bold">{negativeBudgetEndsGame ? "Game ends when budget goes negative" : "Game continues if budget goes negative"}</div>
-              <div className="text-gray-600 text-[10px] mt-0.5">{negativeBudgetEndsGame ? "تنتهي اللعبة عند الميزانية السالبة" : "تكمل اللعبة عند الميزانية السالبة"}</div>
+              <div className="text-white text-xs font-bold">
+                {negativeBudgetEndsGame ? "Game ends when budget goes negative" : "Game continues if budget goes negative"}
+              </div>
+              <div className="text-gray-600 text-[10px] mt-0.5">
+                {negativeBudgetEndsGame ? "تنتهي اللعبة عند الميزانية السالبة" : "تكمل اللعبة عند الميزانية السالبة"}
+              </div>
             </div>
-            <button onClick={() => setNegativeBudgetEndsGame(!negativeBudgetEndsGame)}
+            <button
+              onClick={() => setNegativeBudgetEndsGame(!negativeBudgetEndsGame)}
               className="px-4 py-2 font-black text-sm transition-all hover:scale-105 active:scale-95"
               style={negativeBudgetEndsGame ? {
-                background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", color: "#ef4444", boxShadow: "0 0 12px rgba(239,68,68,0.25)"
-              } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#4b5563" }}>
+                background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", color: "#ef4444", boxShadow: "0 0 12px rgba(239,68,68,0.25)",
+              } : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#4b5563" }}
+            >
               {negativeBudgetEndsGame ? "ON" : "OFF"}
             </button>
           </div>
@@ -435,12 +565,12 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         <Section label="Turn Timer — مؤقت الدور" accent="#f59e0b">
           <div className="grid grid-cols-4 gap-2">
             {([
-              { val:null,  label:"Off",  emoji:"🚫", color:"#10b981" },
-              { val:15,    label:"15s",  emoji:"⚡", color:"#3b82f6" },
-              { val:30,    label:"30s",  emoji:"⏱", color:"#f97316" },
-              { val:60,    label:"60s",  emoji:"🔴", color:"#ef4444" },
+              { val: null, label: "Off", emoji: "🚫", color: "#10b981" },
+              { val: 15,   label: "15s", emoji: "⚡", color: "#3b82f6" },
+              { val: 30,   label: "30s", emoji: "⏱", color: "#f97316" },
+              { val: 60,   label: "60s", emoji: "🔴", color: "#ef4444" },
             ] as const).map(t => (
-              <Btn key={String(t.val)} selected={timerSeconds===t.val} color={t.color} onClick={() => setTimerSeconds(t.val)} className="py-3 text-center">
+              <Btn key={String(t.val)} selected={timerSeconds === t.val} color={t.color} onClick={() => setTimerSeconds(t.val)} className="py-3 text-center">
                 <div className="text-base mb-0.5">{t.emoji}</div>
                 <div className="text-xs">{t.label}</div>
               </Btn>
@@ -449,7 +579,9 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         </Section>
 
         {/* ── START ── */}
-        <button onClick={handleStart} disabled={!mode}
+        <button
+          onClick={handleStart}
+          disabled={!mode}
           className="w-full py-5 font-black text-base uppercase tracking-[0.2em] transition-all duration-200 mb-4"
           style={mode ? {
             background: "linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)",
@@ -457,7 +589,7 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             boxShadow: "0 8px 32px rgba(16,185,129,0.45), inset 0 1px 0 rgba(255,255,255,0.15)",
             border: "1px solid rgba(16,185,129,0.5)",
           } : {
-            background: "rgba(255,255,255,0.04)",
+            background: "rgba(0,0,0,0.20)",
             color: "#374151",
             cursor: "not-allowed",
             border: "1px solid rgba(255,255,255,0.06)",
@@ -465,7 +597,8 @@ export default function StartScreen({ onStart, onContinue }: Props) {
           onMouseEnter={e => { if (mode) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px) scale(1.01)"; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}
           onMouseDown={e => { if (mode) (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98)"; }}
-          onMouseUp={e => { if (mode) (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}>
+          onMouseUp={e => { if (mode) (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}
+        >
           {mode ? "▶  Start Game" : "Select a Mode to Continue"}
         </button>
 
