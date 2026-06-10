@@ -124,6 +124,23 @@ export default function PlayerSelectionModal({
                         </div>
                       )}
 
+                      {/* Pixel portrait — Easter Egg player only */}
+                      {player.name === "Yousef Alnuwasser" && (
+                        <div className="flex justify-center mb-3">
+                          <img
+                            src="/images/yousef-pixel.png"
+                            alt="Yousef"
+                            width={56}
+                            height={56}
+                            style={{
+                              imageRendering: "pixelated",
+                              objectFit: "contain",
+                              filter: "drop-shadow(0 0 8px rgba(212,175,55,0.7))",
+                            }}
+                          />
+                        </div>
+                      )}
+
                       {/* Position */}
                       <div className={`text-[10px] font-black px-1.5 py-0.5 rounded-none inline-block mb-2 ${positionBg(player.position)}`}>
                         {player.position}
@@ -189,6 +206,21 @@ export default function PlayerSelectionModal({
                     }}>
 
                     <div className="text-center mb-6">
+                      {selected.name === "Yousef Alnuwasser" && (
+                        <div className="flex justify-center mb-3">
+                          <img
+                            src="/images/yousef-pixel.png"
+                            alt="Yousef"
+                            width={72}
+                            height={72}
+                            style={{
+                              imageRendering: "pixelated",
+                              objectFit: "contain",
+                              filter: "drop-shadow(0 0 12px rgba(212,175,55,0.8))",
+                            }}
+                          />
+                        </div>
+                      )}
                       <div className="text-4xl mb-2">{nationalityFlag(selected.nationality)}</div>
                       <h3 className="text-3xl font-black text-white leading-tight">{selected.name}</h3>
                       <div className={`inline-block mt-2 text-xs font-black px-2.5 py-1 rounded-none ${positionBg(selected.position)}`}>

@@ -54,6 +54,22 @@ function SlotCard({
         }`}
       >
         <div className={`text-xs font-black px-1.5 py-0.5 rounded-none inline-block mb-2 ${positionBg(slot)}`}>{slot}</div>
+        {/* Pixel portrait — Easter Egg player only */}
+        {owned.player.name === "Yousef Alnuwasser" && (
+          <div className="flex justify-center mb-1">
+            <img
+              src="/images/yousef-pixel.png"
+              alt="Yousef"
+              width={40}
+              height={40}
+              style={{
+                imageRendering: "pixelated",
+                objectFit: "contain",
+                filter: "drop-shadow(0 0 6px rgba(212,175,55,0.8))",
+              }}
+            />
+          </div>
+        )}
         <div className="text-sm font-black text-white leading-tight truncate mb-1">
           {owned.player.name.split(" ").pop()}
           {owned.activeEffects && owned.activeEffects.length > 0 && (
