@@ -65,6 +65,30 @@ function Stat({ value, label, icon, highlight }: { value: number; label: string;
   );
 }
 
+// ── Custom player pixel portraits ──────────────
+const PIXEL_PORTRAITS: Record<string, string> = {
+  "Yousef Alnuwasser": "/images/yousef-pixel.png",
+  "Hussain Alrezk":    "/images/hussain-alrezk.png",
+};
+
+function PixelPortrait({ name, size = 72 }: { name: string; size?: number }) {
+  const src = PIXEL_PORTRAITS[name];
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={name}
+      width={size}
+      height={size}
+      style={{
+        imageRendering: "pixelated",
+        objectFit: "contain",
+        filter: "drop-shadow(0 0 10px rgba(212,175,55,0.7))",
+      }}
+    />
+  );
+}
+
 export default function OwnedPlayerModal({ owned, ownerName, season, marketMultiplier, canSell, onSell, onKeep, onRenew }: Props) {
   const { player, buyPrice, buySeason, contract } = owned;
   const stats = getSeasonStats(player, season);
@@ -123,7 +147,10 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
           {/* Player header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <div className="text-3xl mb-2">{nationalityFlag(player.nationality)}</div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">{nationalityFlag(player.nationality)}</div>
+                <PixelPortrait name={player.name} size={64} />
+              </div>
               <h2 className="text-4xl font-black text-white leading-tight">{player.name}</h2>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`text-sm font-black px-2.5 py-1 rounded-none ${positionBg(player.position)}`}>

@@ -2,6 +2,20 @@
 
 import type { NewsItem, SeasonEvent } from "../game/types";
 
+// ── Custom player pixel portraits ──────────────
+const PIXEL_PORTRAITS: Record<string, string> = {
+  "Yousef Alnuwasser": "/images/yousef-pixel.png",
+  "Hussain Alrezk":    "/images/hussain-alrezk.png",
+  "Florentino":        "/images/florentino-pixel.png",
+};
+
+function getNewsPortrait(title: string): string | null {
+  for (const [name, src] of Object.entries(PIXEL_PORTRAITS)) {
+    if (title.includes(name)) return src;
+  }
+  return null;
+}
+
 type Props = {
   news: NewsItem[];
   seasonEvent: SeasonEvent | null;
@@ -167,10 +181,10 @@ export default function NewsFeed({ news, seasonEvent, season }: Props) {
                     className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 shadow-sm ${cfg.dot} ${cfg.dotGlow}`}
                   />
                   <div className="font-black text-sm leading-tight flex items-center gap-1.5" style={{ color: cfg.titleColor }}>
-                    {item.title.includes("Florentino") && (
+                    {getNewsPortrait(item.title) && (
                       <img
-                        src="/images/florentino-pixel.png"
-                        alt="Florentino"
+                        src={getNewsPortrait(item.title)!}
+                        alt=""
                         width={22}
                         height={22}
                         style={{ imageRendering: "pixelated", objectFit: "contain", flexShrink: 0 }}

@@ -125,6 +125,7 @@ export function createSecretPlayers(): Player[] {
     buildDynamicCareer({ id: "goat_yousef",    name: "Yousef Alnuwasser",   position: "ST",  availableSeason: 2016, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_abdullah",  name: "ABDULLAH ALMUSAWI",   position: "RCM", availableSeason: 2017, startAge: 25, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_ali_b",     name: "Ali Albrahim",        position: "CAM", availableSeason: 2018, startAge: 25, nationality: "Saudi Arabia", ...goatBase }),
+    buildDynamicCareer({ id: "goat_mohammed",  name: "Mohammed Al Abullah", position: "RB",  availableSeason: 2019, startAge: 22, nationality: "Saudi Arabia", ...goatBase }),
     buildDynamicCareer({ id: "goat_abdulaziz", name: "Abdulaziz Alghariri", position: "RCB", availableSeason: 2020, startAge: 21, nationality: "Saudi Arabia", ...goatBase }),
   ];
 

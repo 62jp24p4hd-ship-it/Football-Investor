@@ -5,6 +5,32 @@ import { getCurrentValue } from "../game/valueEngine";
 import { getSeasonStats } from "../game/statsEngine";
 import { positionBg } from "../game/helpers";
 
+// ── Custom player pixel portraits ──────────────
+const PIXEL_PORTRAITS: Record<string, string> = {
+  "Yousef Alnuwasser": "/images/yousef-pixel.png",
+  "Hussain Alrezk":    "/images/hussain-alrezk.png",
+};
+
+function PixelPortrait({ name }: { name: string }) {
+  const src = PIXEL_PORTRAITS[name];
+  if (!src) return null;
+  return (
+    <div className="flex justify-center mb-1">
+      <img
+        src={src}
+        alt={name}
+        width={40}
+        height={40}
+        style={{
+          imageRendering: "pixelated",
+          objectFit: "contain",
+          filter: "drop-shadow(0 0 6px rgba(212,175,55,0.8))",
+        }}
+      />
+    </div>
+  );
+}
+
 type Props = {
   gamePlayer: GamePlayer;
   playerIndex: number;
@@ -54,22 +80,8 @@ function SlotCard({
         }`}
       >
         <div className={`text-xs font-black px-1.5 py-0.5 rounded-none inline-block mb-2 ${positionBg(slot)}`}>{slot}</div>
-        {/* Pixel portrait — Easter Egg player only */}
-        {owned.player.name === "Yousef Alnuwasser" && (
-          <div className="flex justify-center mb-1">
-            <img
-              src="/images/yousef-pixel.png"
-              alt="Yousef"
-              width={40}
-              height={40}
-              style={{
-                imageRendering: "pixelated",
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 6px rgba(212,175,55,0.8))",
-              }}
-            />
-          </div>
-        )}
+        {/* Pixel portrait — custom players */}
+        <PixelPortrait name={owned.player.name} />
         <div className="text-sm font-black text-white leading-tight truncate mb-1">
           {owned.player.name.split(" ").pop()}
           {owned.activeEffects && owned.activeEffects.length > 0 && (

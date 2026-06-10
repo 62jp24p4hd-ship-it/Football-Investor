@@ -399,8 +399,28 @@ export default function Home() {
 
     if (gp.budget < value) return notify("Insufficient budget");
 
+    // Zero out stats for the buy season — player just joined, no stats yet
+    const playerWithZeroFirstSeason: typeof negotiation.player = {
+      ...negotiation.player,
+      statsBySeason: {
+        ...(negotiation.player.statsBySeason ?? {}),
+        [season]: {
+          ...(negotiation.player.statsBySeason?.[season] ?? {}),
+          season,
+          games: 0,
+          goals: 0,
+          assists: 0,
+          cleanSheets: 0,
+          yellowCards: 0,
+          redCards: 0,
+          rating: negotiation.player.statsBySeason?.[season]?.rating ?? 70,
+          value,
+        },
+      },
+    };
+
     const newOwned: OwnedPlayer = {
-      player: negotiation.player,
+      player: playerWithZeroFirstSeason,
       slot: negotiation.slot,
       buySeason: season,
       buyPrice: value,
