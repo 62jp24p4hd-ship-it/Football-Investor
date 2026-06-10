@@ -5,83 +5,202 @@ import type { NewsItem, SeasonEvent } from "../game/types";
 type Props = {
   news: NewsItem[];
   seasonEvent: SeasonEvent | null;
+  season: number;
 };
 
-function toneStyle(tone: string) {
-  if (tone === "good") return "border-emerald-500/60 bg-emerald-950/30";
-  if (tone === "bad") return "border-red-500/60 bg-red-950/30";
-  if (tone === "special") return "border-purple-500/60 bg-purple-950/30";
-  return "border-white/10 bg-white/5";
+function toneConfig(tone: string) {
+  if (tone === "good") return {
+    border: "border-emerald-500/70",
+    bg: "rgba(6,78,59,0.25)",
+    glow: "0 0 12px rgba(16,185,129,0.15)",
+    dot: "bg-emerald-400",
+    dotGlow: "shadow-emerald-400/80",
+    titleColor: "#34d399",
+    badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+  };
+  if (tone === "bad") return {
+    border: "border-red-500/70",
+    bg: "rgba(127,29,29,0.25)",
+    glow: "0 0 12px rgba(239,68,68,0.15)",
+    dot: "bg-red-400",
+    dotGlow: "shadow-red-400/80",
+    titleColor: "#f87171",
+    badge: "bg-red-500/20 text-red-300 border-red-500/40",
+  };
+  if (tone === "special") return {
+    border: "border-purple-500/70",
+    bg: "rgba(88,28,135,0.25)",
+    glow: "0 0 12px rgba(168,85,247,0.2)",
+    dot: "bg-purple-400",
+    dotGlow: "shadow-purple-400/80",
+    titleColor: "#c084fc",
+    badge: "bg-purple-500/20 text-purple-300 border-purple-500/40",
+  };
+  return {
+    border: "border-white/12",
+    bg: "rgba(255,255,255,0.04)",
+    glow: "none",
+    dot: "bg-gray-500",
+    dotGlow: "",
+    titleColor: "#e5e7eb",
+    badge: "bg-white/10 text-gray-400 border-white/15",
+  };
 }
 
-function toneDot(tone: string) {
-  if (tone === "good") return "bg-emerald-400";
-  if (tone === "bad") return "bg-red-400";
-  if (tone === "special") return "bg-purple-400";
-  return "bg-gray-500";
+function toneLabel(tone: string) {
+  if (tone === "good") return "✅ Good";
+  if (tone === "bad") return "🔴 Breaking";
+  if (tone === "special") return "⭐ Special";
+  return "📋 News";
 }
 
-export default function NewsFeed({ news, seasonEvent }: Props) {
+export default function NewsFeed({ news, seasonEvent, season }: Props) {
+  // Only show news from current season
+  const currentNews = news.filter(item => item.season === season);
+
   return (
-    <aside className="bg-[#0d1128] border-2 border-white/8 rounded-none overflow-hidden flex flex-col h-full">
-
-      <div className="px-6 py-4 border-b border-white/8 bg-white/3">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">📰</span>
-          <h2 className="font-black text-white text-base">Football News</h2>
-          {news.length > 0 && (
-            <span className="ml-auto text-sm text-gray-600 bg-white/5 px-3 py-1 rounded-none">
-              {news.length}
-            </span>
-          )}
-        </div>
+    <aside
+      className="rounded-none overflow-hidden flex flex-col h-full"
+      style={{
+        background: "rgba(5,8,20,0.75)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
+    >
+      {/* Header */}
+      <div
+        className="px-4 py-3 flex items-center gap-3"
+        style={{
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          background: "linear-gradient(90deg, rgba(16,185,129,0.12) 0%, transparent 60%)",
+        }}
+      >
+        <div className="w-[3px] h-5 rounded-full bg-emerald-400" style={{ boxShadow: "0 0 8px #34d399" }} />
+        <span className="font-black text-white text-sm tracking-wide">Football News</span>
+        {currentNews.length > 0 && (
+          <span
+            className="ml-auto text-xs font-black px-2 py-0.5 rounded-full"
+            style={{ background: "rgba(16,185,129,0.2)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}
+          >
+            {currentNews.length}
+          </span>
+        )}
       </div>
 
       {/* Active Event */}
-      <div className="px-6 py-4 border-b border-white/8">
-        <div className="text-sm uppercase tracking-widest text-gray-500 mb-3 font-bold">Active Event</div>
-        {seasonEvent ? (
-          <div className={`border rounded-none p-4 ${toneStyle(seasonEvent.tone)}`}>
-            <div className="font-black text-white text-lg">{seasonEvent.title}</div>
-            <div className="text-base text-gray-300 mt-1.5 leading-relaxed">{seasonEvent.description}</div>
-            {seasonEvent.marketMultiplier && (
-              <div className={`text-sm font-black mt-2 ${seasonEvent.marketMultiplier > 1 ? "text-emerald-400" : "text-red-400"}`}>
-                Market ×{seasonEvent.marketMultiplier}
+      <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div
+          className="text-[9px] uppercase tracking-[0.2em] font-black mb-2"
+          style={{ color: "#6b7280" }}
+        >
+          ⚡ Active Event
+        </div>
+        {seasonEvent ? (() => {
+          const cfg = toneConfig(seasonEvent.tone);
+          return (
+            <div
+              className={`border rounded-none p-3 ${cfg.border}`}
+              style={{ background: cfg.bg, boxShadow: cfg.glow }}
+            >
+              <div className="font-black text-sm leading-tight mb-1" style={{ color: cfg.titleColor }}>
+                {seasonEvent.title}
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="border border-white/8 rounded-none p-4 text-sm text-gray-600 text-center">
+              <div className="text-xs text-gray-300 leading-relaxed">{seasonEvent.description}</div>
+              {seasonEvent.marketMultiplier && (
+                <div
+                  className="text-xs font-black mt-2 inline-block px-2 py-0.5 rounded-none"
+                  style={{
+                    background: seasonEvent.marketMultiplier > 1 ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
+                    color: seasonEvent.marketMultiplier > 1 ? "#34d399" : "#f87171",
+                    border: `1px solid ${seasonEvent.marketMultiplier > 1 ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
+                  }}
+                >
+                  Market ×{seasonEvent.marketMultiplier}
+                </div>
+              )}
+            </div>
+          );
+        })() : (
+          <div
+            className="rounded-none p-3 text-xs text-center"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#4b5563" }}
+          >
             No active event this season
           </div>
         )}
       </div>
 
-      {/* News list */}
-      <div className="overflow-y-auto flex-1 p-4 space-y-3">
-        {news.length === 0 ? (
-          <div className="text-gray-600 text-base text-center py-8">No news yet</div>
+      {/* News list — current season only */}
+      <div className="overflow-y-auto flex-1 p-3 space-y-2">
+        {currentNews.length === 0 ? (
+          <div className="text-center py-8" style={{ color: "#374151" }}>
+            <div className="text-2xl mb-2">📭</div>
+            <div className="text-xs">No news this season yet</div>
+          </div>
         ) : (
-          news.map((item) => (
-            <div key={item.id} className={`border rounded-none p-4 transition-all ${toneStyle(item.tone)}`}
-              style={{ animation: "fadeIn 0.3s ease-out" }}>
-              <div className="flex items-start justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-none flex-shrink-0 mt-0.5 ${toneDot(item.tone)}`} />
-                  <div className="font-black text-white text-base leading-tight">{item.title}</div>
+          currentNews.map((item) => {
+            const cfg = toneConfig(item.tone);
+            return (
+              <div
+                key={item.id}
+                className={`border rounded-none p-3 transition-all ${cfg.border}`}
+                style={{
+                  background: cfg.bg,
+                  boxShadow: cfg.glow,
+                  animation: "slideInNews 0.35s ease-out both",
+                }}
+              >
+                {/* Badge + Season */}
+                <div className="flex items-center justify-between mb-1.5">
+                  <span
+                    className={`text-[9px] font-black px-1.5 py-0.5 rounded-none border ${cfg.badge}`}
+                  >
+                    {toneLabel(item.tone)}
+                  </span>
+                  <span className="text-[10px] font-bold" style={{ color: "#4b5563" }}>{item.season}</span>
                 </div>
-                <div className="text-sm text-gray-600 whitespace-nowrap flex-shrink-0">{item.season}</div>
+
+                {/* Title */}
+                <div className="flex items-start gap-1.5 mb-1">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 shadow-sm ${cfg.dot} ${cfg.dotGlow}`}
+                  />
+                  <div className="font-black text-sm leading-tight flex items-center gap-1.5" style={{ color: cfg.titleColor }}>
+                    {item.title.includes("Florentino") && (
+                      <img
+                        src="/images/florentino-pixel.png"
+                        alt="Florentino"
+                        width={22}
+                        height={22}
+                        style={{ imageRendering: "pixelated", objectFit: "contain", flexShrink: 0 }}
+                      />
+                    )}
+                    {item.title.replace("👑 ", "")}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="text-xs text-gray-300 leading-relaxed pl-3">{item.description}</div>
+
+                {/* Journalist */}
+                {item.journalist && (
+                  <div className="text-[10px] mt-1.5 pl-3" style={{ color: "#4b5563" }}>
+                    ✍️ {item.journalist} · {item.source}
+                  </div>
+                )}
               </div>
-              <div className="text-base text-gray-300 leading-relaxed pl-4">{item.description}</div>
-              {item.journalist && (
-                <div className="text-sm text-gray-600 mt-2 pl-4">
-                  ✍️ {item.journalist} • {item.source}
-                </div>
-              )}
-            </div>
-          ))
+            );
+          })
         )}
       </div>
+
+      <style>{`
+        @keyframes slideInNews {
+          from { opacity: 0; transform: translateX(10px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
     </aside>
   );
 }

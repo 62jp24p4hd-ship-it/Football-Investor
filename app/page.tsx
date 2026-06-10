@@ -46,6 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
+import FlorentinoEntrance from "./components/FlorentinoEntrance";
 
 // ============================================
 // MAIN GAME PAGE
@@ -86,6 +87,7 @@ export default function Home() {
   const [showStats, setShowStats] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [showFlorentinoAnim, setShowFlorentinoAnim] = useState(false);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
 
@@ -650,6 +652,7 @@ export default function Home() {
       const result = triggerFlorentinoPerezEvent(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowFlorentinoAnim(true);
       return;
     }
     if (eventId === "bobPaisleyDisaster") {
@@ -821,6 +824,10 @@ export default function Home() {
         eventPlayers = singleResult.updatedPlayers;
         eventNewsItems = singleResult.newsItems;
         setSeasonEvent(singleResult.event);
+        // Florentino animation — fires when any news title contains his name
+        if (singleResult.newsItems.some(n => n.title.includes("Florentino"))) {
+          setTimeout(() => setShowFlorentinoAnim(true), 400);
+        }
       }
     }
 
@@ -986,7 +993,7 @@ export default function Home() {
             </div>
             {/* News — 1 col */}
             <div className="xl:col-span-1 min-h-[700px]">
-              <NewsFeed news={news} seasonEvent={seasonEvent} />
+              <NewsFeed news={news} seasonEvent={seasonEvent} season={season} />
             </div>
           </div>
         ) : (
@@ -1048,7 +1055,7 @@ export default function Home() {
             </div>
             {/* News — 3 cols wide */}
             <div className="xl:col-span-3 min-h-[800px]">
-              <NewsFeed news={news} seasonEvent={seasonEvent} />
+              <NewsFeed news={news} seasonEvent={seasonEvent} season={season} />
             </div>
           </div>
         )}
@@ -1134,6 +1141,11 @@ export default function Home() {
 
       {showHowToPlay && (
         <HowToPlayModal onClose={() => setShowHowToPlay(false)} />
+      )}
+
+      {/* Florentino Pérez Boss Entrance */}
+      {showFlorentinoAnim && (
+        <FlorentinoEntrance onDone={() => setShowFlorentinoAnim(false)} />
       )}
 
       {showEndModal && (
