@@ -227,104 +227,214 @@ export function FlorentinoEntrance({ onDone }: AnimProps) {
 }
 
 export function AclInjuryAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"enter"|"fall"|"hold"|"exit">("enter");
+  const [phase, setPhase] = useState<"enter"|"crack"|"hold"|"exit">("enter");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("fall"),  400);
-    const t2 = setTimeout(() => setPhase("hold"),  1200);
-    const t3 = setTimeout(() => setPhase("exit"),  3800);
-    const t4 = setTimeout(() => onDone(),          4500);
+    const t1 = setTimeout(() => setPhase("crack"), 500);
+    const t2 = setTimeout(() => setPhase("hold"),  1100);
+    const t3 = setTimeout(() => setPhase("exit"),  5500);
+    const t4 = setTimeout(() => onDone(),          6200);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
-        background:"#000", animation:phase==="fall"?"aclShock 0.4s ease-out":"none" }}>
-      <SkipHint />
-      <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center, rgba(100,0,0,0.6) 0%,rgba(0,0,0,0.97) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.8s ease"}} />
-      {/* X-ray style scan lines */}
-      {phase==="hold" && <div className="absolute inset-0" style={{backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 6px)"}} />}
-      {/* Alert bars */}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none",
+        animation:phase==="crack"?"aclShock 0.5s ease-out":"none" }}>
+      <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(100,0,0,0.65) 0%,rgba(0,0,0,0.97) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.5s"}} />
+      {/* X-ray scanlines */}
+      {phase==="hold" && <div className="absolute inset-0 pointer-events-none" style={{backgroundImage:"repeating-linear-gradient(0deg,rgba(255,0,0,0.03) 0,rgba(255,0,0,0.03) 1px,transparent 1px,transparent 5px)"}} />}
+      {/* Red flash on crack */}
+      {phase==="crack" && <div className="absolute inset-0" style={{background:"rgba(255,0,0,0.35)",animation:"aclFlash 0.5s ease-out forwards"}} />}
+      {/* Alert bar */}
       {phase==="hold" && (
-        <div className="absolute top-0 left-0 right-0" style={{background:"rgba(200,0,0,0.9)",padding:"6px",textAlign:"center",animation:"aclBlink 1s steps(1) infinite",zIndex:3}}>
-          <span style={{color:"#fff",fontWeight:900,fontSize:"11px",letterSpacing:"0.3em"}}>⚠️ MEDICAL EMERGENCY — ACL RUPTURE</span>
+        <div className="absolute top-12 left-0 right-0 text-center py-2" style={{background:"rgba(200,0,0,0.9)",animation:"aclBlink 1s steps(1) infinite",zIndex:3}}>
+          <span style={{color:"#fff",fontWeight:900,fontSize:"11px",letterSpacing:"0.3em"}}>⚠️ MEDICAL EMERGENCY — SEASON ENDING</span>
         </div>
       )}
-      <div className="relative z-10 flex flex-col items-center gap-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
         <img src="/images/acl-injury-pixel.png" alt="ACL Injury"
-          style={{ width:"clamp(200px,32vw,280px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="fall" ? "aclFall 0.8s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "aclPain 2s ease-in-out infinite" : "none",
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            animation:phase==="enter"?"aclDrop 0.5s cubic-bezier(0.55,-0.5,0.7,1) forwards"
+              :phase==="crack"?"aclImpact 0.5s ease-out forwards"
+              :phase==="hold"?"aclPain 2s ease-in-out infinite":"none",
             filter:phase==="hold"?"drop-shadow(0 0 20px rgba(255,0,0,0.7)) grayscale(0.4)":"none",
           }}
         />
         {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
-            <div className="px-8 py-4" style={{background:"rgba(8,0,0,0.97)",border:"1px solid rgba(255,0,0,0.7)",boxShadow:"0 0 40px rgba(200,0,0,0.3)"}}>
-              <div className="text-[9px] tracking-[0.5em] uppercase mb-1" style={{color:"rgba(255,80,80,0.6)"}}>Season-Ending</div>
+          <div style={{textAlign:"center",animation:"aclBadgeIn 0.6s ease both"}}>
+            <div className="px-8 py-5" style={{background:"rgba(8,0,0,0.97)",border:"1px solid rgba(255,0,0,0.7)",boxShadow:"0 0 40px rgba(200,0,0,0.3)"}}>
+              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(255,80,80,0.6)"}}>Season-Ending</div>
               <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#ff2222",textShadow:"0 0 20px rgba(255,0,0,0.9)"}}>ACL Rupture</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Out for the entire season</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Out for the entire season</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes aclShock{0%,100%{transform:translate(0)}20%{transform:translate(-12px,6px)}40%{transform:translate(12px,-6px)}60%{transform:translate(-6px,3px)}80%{transform:translate(6px,-3px)}}@keyframes aclFall{0%{opacity:0;transform:translateY(-40px) scale(0.8)}60%{opacity:1;transform:translateY(5px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes aclPain{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.03) rotate(-1deg)}70%{transform:scale(0.98) rotate(1deg)}}@keyframes aclBlink{0%,100%{opacity:1}50%{opacity:0}}`}</style>
-    </div>
-  );
-}
-
-// ============================================
-// SAUDI OFFER — طائرة تهبط + ذهب يتساقط
-// ============================================
-export function SaudiOfferAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"enter"|"land"|"hold"|"exit">("enter");
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase("land"),  300);
-    const t2 = setTimeout(() => setPhase("hold"),  1200);
-    const t3 = setTimeout(() => setPhase("exit"),  3800);
-    const t4 = setTimeout(() => onDone(),          4500);
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
-  }, [onDone]);
-  return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.4s",
-        background:"radial-gradient(ellipse at center, rgba(0,40,0,0.7) 0%, #000 75%)" }}>
       <SkipHint />
-      {/* Gold rain */}
-      {phase==="hold" && (
-        <div className="absolute inset-0 overflow-hidden">
-          {["💰","💵","💴","💶","💰","💵","$","$","€"].map((s,i)=>(
-            <span key={i} style={{position:"absolute",left:`${(i*11.5)%93}%`,top:"-20px",
-              fontSize:`${14+(i%3)*8}px`,animation:`saudiRain ${1.2+i*0.13}s linear ${i*0.09}s infinite`}}>{s}</span>
-          ))}
-        </div>
-      )}
-      {/* Saudi flag colors shimmer */}
-      {phase==="hold" && <div className="absolute inset-0" style={{background:"linear-gradient(135deg,rgba(0,100,0,0.05) 0%,transparent 50%,rgba(255,255,255,0.02) 100%)"}} />}
-      <div className="relative z-10 flex flex-col items-center gap-5">
-        <img src="/images/saudi-offer-pixel.png" alt="Saudi Offer"
-          style={{ width:"clamp(180px,28vw,240px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="land" ? "saudiLand 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "saudiFloat 2.5s ease-in-out infinite" : "none",
-            filter:phase==="hold"?"drop-shadow(0 0 24px rgba(0,200,50,0.8)) drop-shadow(0 0 50px rgba(0,150,40,0.4))":"none",
-          }}
-        />
-        {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
-            <div className="px-9 py-5" style={{background:"rgba(0,5,0,0.97)",border:"1px solid rgba(0,180,50,0.7)",boxShadow:"0 0 50px rgba(0,150,40,0.3)"}}>
-              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(0,200,60,0.6)"}}>Mega Deal</div>
-              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#00cc44",textShadow:"0 0 25px rgba(0,200,60,1)"}}>Saudi Offer</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Untold millions on the table</div>
-            </div>
-          </div>
-        )}
-      </div>
-      <style>{`@keyframes saudiLand{0%{opacity:0;transform:translateY(-80px) rotate(-8deg) scale(0.6)}60%{opacity:1;transform:translateY(6px) rotate(2deg) scale(1.05)}80%{transform:translateY(-2px) rotate(-1deg)}100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}}@keyframes saudiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes saudiRain{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(360deg);opacity:0}}`}</style>
+      <style>{`
+        @keyframes aclShock{0%,100%{transform:translate(0)}20%{transform:translate(-12px,6px)}40%{transform:translate(12px,-6px)}60%{transform:translate(-6px,4px)}80%{transform:translate(6px,-4px)}}
+        @keyframes aclDrop{0%{opacity:0;transform:translateY(-80px) scale(0.8) rotate(-5deg)}70%{opacity:1;transform:translateY(8px) scale(1.05) rotate(2deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+        @keyframes aclImpact{0%{transform:scale(1.1) rotate(2deg)}50%{transform:scale(0.9) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
+        @keyframes aclPain{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.03) rotate(-1.5deg)}70%{transform:scale(0.98) rotate(1.5deg)}}
+        @keyframes aclFlash{0%{opacity:0.4}100%{opacity:0}}
+        @keyframes aclBlink{0%,100%{opacity:1}50%{opacity:0}}
+        @keyframes aclBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
   );
 }
 
+export function SaudiOfferAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"black"|"jet"|"open"|"hold"|"exit">("black");
+  const [amount, setAmount] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("jet"),  300);
+    const t2 = setTimeout(() => setPhase("open"), 1400);
+    const t3 = setTimeout(() => setPhase("hold"), 2200);
+    const t4 = setTimeout(() => setPhase("exit"), 6500);
+    const t5 = setTimeout(() => onDone(),         7200);
+
+    // Money counter
+    let v = 0; const target = 500;
+    const iv = setInterval(() => {
+      v += Math.floor(Math.random()*25+15);
+      if(v >= target){ v = target; clearInterval(iv); }
+      setAmount(v);
+    }, 35);
+
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5);clearInterval(iv); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 1s ease-in":"none" }}>
+
+      {/* ── Deep desert night sky ── */}
+      <div className="absolute inset-0" style={{
+        background: phase==="hold"||phase==="open"
+          ? "radial-gradient(ellipse at 50% 30%, rgba(0,60,20,0.5) 0%, rgba(0,20,5,0.8) 50%, #000 100%)"
+          : "#000",
+        transition:"background 1.5s ease",
+      }} />
+
+      {/* ── Stars ── */}
+      {(phase==="hold") && [...Array(20)].map((_,i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${1+(i%2)}px`, height:`${1+(i%2)}px`,
+          left:`${(i*5.3)%96}%`, top:`${(i*4.7)%40}%`,
+          background:"rgba(255,255,255,0.8)",
+          animation:`saudiStar ${2+i*0.3}s ease-in-out ${i*0.2}s infinite alternate`,
+        }} />
+      ))}
+
+      {/* ── Private jet flies in ── */}
+      {(phase==="jet"||phase==="open") && (
+        <div className="absolute" style={{
+          top:"20%", fontSize:"clamp(40px,6vw,60px)",
+          animation: phase==="jet"
+            ? "saudiJetFly 1.1s cubic-bezier(0.22,1,0.36,1) forwards"
+            : "saudiJetHover 3s ease-in-out infinite",
+          filter:"drop-shadow(0 8px 20px rgba(0,0,0,0.8))",
+        }}>✈️</div>
+      )}
+
+      {/* ── Gold coins explosion ── */}
+      {phase==="hold" && [...Array(14)].map((_,i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${6+(i%3)*4}px`, height:`${6+(i%3)*4}px`,
+          left:`${(i*7.2)%92}%`, bottom:`${5+(i%4)*8}%`,
+          background:`radial-gradient(circle, #FFD700, #DAA520)`,
+          boxShadow:`0 0 8px rgba(255,215,0,0.8)`,
+          animation:`saudiCoin ${2+i*0.15}s ease-out ${i*0.08}s infinite`,
+        }} />
+      ))}
+
+      {/* ── Saudi green shimmer ── */}
+      {phase==="hold" && (
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background:"linear-gradient(45deg, transparent 0%, rgba(0,100,40,0.06) 30%, transparent 50%, rgba(0,80,30,0.04) 70%, transparent 100%)",
+          animation:"saudiShimmer 4s ease-in-out infinite",
+        }} />
+      )}
+
+      {/* ── Main content ── */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+
+        {/* Briefcase image */}
+        <div style={{
+          opacity: phase==="black"||phase==="jet"?0:1,
+          transition:"opacity 0.5s ease",
+          animation: phase==="open"?"saudiOpen 0.8s cubic-bezier(0.22,1,0.36,1) forwards"
+            :phase==="hold"?"saudiBriefcase 3s ease-in-out infinite":"none",
+        }}>
+          <img src="/images/saudi-offer-pixel.png" alt="Saudi Offer"
+            style={{
+              width:"clamp(160px,24vw,210px)", imageRendering:"pixelated", objectFit:"contain",
+              filter:phase==="hold"
+                ?"drop-shadow(0 0 30px rgba(0,200,80,0.8)) drop-shadow(0 0 60px rgba(0,150,50,0.4)) drop-shadow(0 0 100px rgba(0,100,30,0.2))"
+                :"none",
+              transition:"filter 0.8s ease",
+            }}
+          />
+        </div>
+
+        {/* Amount counter */}
+        {(phase==="open"||phase==="hold") && (
+          <div style={{textAlign:"center"}}>
+            <div className="font-black tabular-nums" style={{
+              fontSize:"clamp(2.5rem,7vw,4.5rem)",
+              color:"#FFD700",
+              textShadow:"0 0 40px rgba(255,215,0,0.9), 0 0 80px rgba(255,200,0,0.5), 0 0 120px rgba(255,180,0,0.2)",
+              lineHeight:1,
+              animation:"saudiCounter 0.1s ease-in-out infinite alternate",
+            }}>€{amount}M</div>
+            <div className="text-[10px] tracking-[0.5em] uppercase mt-1" style={{color:"rgba(255,215,0,0.4)"}}>per year</div>
+          </div>
+        )}
+
+        {/* Badge */}
+        {phase==="hold" && (
+          <div style={{textAlign:"center", animation:"saudiBadgeIn 0.8s cubic-bezier(0.22,1,0.36,1) both"}}>
+            <div style={{
+              background:"linear-gradient(135deg,rgba(0,5,0,0.98),rgba(0,15,5,0.98))",
+              border:"1px solid rgba(0,180,60,0.7)",
+              boxShadow:"0 0 60px rgba(0,150,50,0.35), 0 0 120px rgba(0,100,30,0.15)",
+              padding:"clamp(12px,2vw,20px) clamp(24px,4vw,44px)",
+            }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(0,180,60,0.5))"}} />
+                <span className="text-[9px] tracking-[0.5em] uppercase" style={{color:"rgba(0,200,70,0.5)"}}>🇸🇦 Mega Deal</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(0,180,60,0.5),transparent)"}} />
+              </div>
+              <div className="font-black tracking-widest uppercase" style={{
+                fontSize:"clamp(1.4rem,3.5vw,2.2rem)",
+                color:"#00cc44",
+                textShadow:"0 0 30px rgba(0,200,60,1), 0 0 60px rgba(0,150,40,0.5)",
+              }}>Saudi Offer</div>
+              <div className="text-xs tracking-[0.25em] uppercase mt-2" style={{color:"rgba(255,255,255,0.2)"}}>
+                Untold wealth awaits
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <SkipHint />
+      <style>{`
+        @keyframes saudiJetFly{0%{opacity:0;left:110%;transform:translateY(0)}60%{opacity:1;left:45%;transform:translateY(-8px)}100%{left:42%;transform:translateY(0)}}
+        @keyframes saudiJetHover{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-2deg)}}
+        @keyframes saudiOpen{0%{opacity:0;transform:scale(0.4) translateY(40px) rotate(-10deg)}60%{opacity:1;transform:scale(1.08) translateY(-6px) rotate(3deg)}100%{opacity:1;transform:scale(1) translateY(0) rotate(0)}}
+        @keyframes saudiBriefcase{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-12px) rotate(1deg)}}
+        @keyframes saudiCoin{0%{transform:translateY(0) scale(1);opacity:0.9}100%{transform:translateY(-80vh) scale(0.5);opacity:0}}
+        @keyframes saudiShimmer{0%,100%{opacity:0.5}50%{opacity:1}}
+        @keyframes saudiStar{0%{opacity:0.3;transform:scale(0.8)}100%{opacity:1;transform:scale(1.2)}}
+        @keyframes saudiCounter{0%{transform:scale(1)}100%{transform:scale(1.01)}}
+        @keyframes saudiBadgeIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
+    </div>
+  );
+}
 // ============================================
 // GOAT SIGNING — Easter egg portal opening
 // ============================================
@@ -754,152 +864,203 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
 
 
 export function GoldenBoyAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"rise"|"hold"|"exit">("rise");
+  const [phase, setPhase] = useState<"dark"|"rise"|"hold"|"exit">("dark");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("hold"),  1200);
-    const t2 = setTimeout(() => setPhase("exit"),  4000);
-    const t3 = setTimeout(() => onDone(),          4700);
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3); };
-  }, [onDone]);
-  return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.3s",
-        background:"radial-gradient(ellipse at 50% 60%, rgba(60,45,0,0.5) 0%,#000 70%)" }}>
-      <SkipHint />
-      {/* Ground crack effect */}
-      {(phase==="rise"||phase==="hold") && (
-        <div className="absolute" style={{bottom:"28%",left:0,right:0,height:"2px",background:"linear-gradient(90deg,transparent 10%,rgba(212,175,55,0.4) 50%,transparent 90%)",animation:"gbCrack 0.3s ease-out forwards"}} />
-      )}
-      {/* Star sparkles */}
-      {phase==="hold" && [...Array(10)].map((_,i)=>(
-        <div key={i} className="absolute" style={{
-          width:"4px",height:"4px",background:"#D4AF37",borderRadius:"50%",
-          left:`${(i*10.5)%90}%`,top:`${15+(i*7)%50}%`,
-          boxShadow:"0 0 6px rgba(212,175,55,0.9)",
-          animation:`gbStar ${1+i*0.2}s ease-in-out ${i*0.15}s infinite alternate`,
-        }} />
-      ))}
-      <div className="relative z-10 flex flex-col items-center gap-5">
-        <img src="/images/golden-boy-pixel.png" alt="Golden Boy"
-          style={{ width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="rise" ? "gbRise 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "gbFloat 3s ease-in-out infinite" : "none",
-            filter:phase==="hold"?"drop-shadow(0 0 28px rgba(212,175,55,1)) drop-shadow(0 0 56px rgba(212,175,55,0.5))":"none",
-          }}
-        />
-        {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
-            <div className="px-9 py-5" style={{background:"rgba(5,4,0,0.97)",border:"1px solid rgba(212,175,55,0.8)",boxShadow:"0 0 50px rgba(212,175,55,0.35)"}}>
-              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(212,175,55,0.5)"}}>Rising Star Award</div>
-              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#D4AF37",textShadow:"0 0 25px rgba(212,175,55,1)"}}>Golden Boy</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Best young player of the year</div>
-            </div>
-          </div>
-        )}
-      </div>
-      <style>{`@keyframes gbRise{0%{opacity:0;transform:translateY(100px) scale(0.6)}60%{opacity:1;transform:translateY(-8px) scale(1.08)}80%{transform:translateY(3px) scale(0.97)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes gbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}@keyframes gbCrack{0%{width:0;opacity:0}100%{opacity:1}}@keyframes gbStar{0%{transform:scale(0.5);opacity:0.3}100%{transform:scale(1.5);opacity:1}}`}</style>
-    </div>
-  );
-}
-
-// ============================================
-// RECORD TRANSFER — ticker tape + cash explosion
-// ============================================
-export function RecordTransferAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"enter"|"ticker"|"hold"|"exit">("enter");
-  const [amount, setAmount] = useState(0);
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase("ticker"), 400);
-    const t2 = setTimeout(() => setPhase("hold"),   1200);
-    const t3 = setTimeout(() => setPhase("exit"),   3800);
-    const t4 = setTimeout(() => onDone(),           4500);
-    let a = 0; const target = Math.floor(Math.random()*200+100);
-    const ai = setInterval(() => { a += Math.floor(Math.random()*30+10); if(a>=target){a=target;clearInterval(ai);} setAmount(a); }, 50);
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearInterval(ai); };
-  }, [onDone]);
-  return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
-        background:"radial-gradient(ellipse at center,rgba(0,50,10,0.6) 0%,#000 70%)" }}>
-      <SkipHint />
-      {/* Breaking news ticker */}
-      {(phase==="ticker"||phase==="hold") && (
-        <div className="absolute bottom-8 left-0 right-0" style={{background:"rgba(0,0,0,0.95)",borderTop:"3px solid #00cc44",padding:"6px 0",overflow:"hidden",zIndex:3}}>
-          <div style={{whiteSpace:"nowrap",animation:"rtTicker 6s linear infinite",color:"#00cc44",fontWeight:900,fontSize:"12px",letterSpacing:"0.1em"}}>
-            🚨 BREAKING: RECORD TRANSFER FEE AGREED &nbsp;&nbsp;&nbsp; 🚨 SOURCES CONFIRM: HISTORIC DEAL &nbsp;&nbsp;&nbsp; 🚨 UNPRECEDENTED AMOUNT PAID &nbsp;&nbsp;&nbsp;
-          </div>
-        </div>
-      )}
-      {/* Money explosion */}
-      {phase==="hold" && [...Array(10)].map((_,i)=>(
-        <div key={i} className="absolute rounded-full" style={{
-          width:`${3+(i%3)}px`,height:`${3+(i%3)}px`,
-          left:`${(i*10.3)%92}%`,bottom:"15%",
-          background:"#00cc44",boxShadow:"0 0 5px rgba(0,200,60,0.8)",
-          animation:`rtParticle ${1.5+i*0.2}s ease-out ${i*0.1}s infinite`,
-        }} />
-      ))}
-      <div className="relative z-10 flex flex-col items-center gap-4">
-        <img src="/images/record-transfer-pixel.png" alt="Record Transfer"
-          style={{ width:"clamp(180px,30vw,250px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="enter" ? "rtSlide 0.8s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "rtBob 2s ease-in-out infinite" : "none",
-            filter:phase==="hold"?"drop-shadow(0 0 24px rgba(0,200,80,0.8))":"none",
-          }}
-        />
-        {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
-            <div className="px-9 py-5" style={{background:"rgba(0,5,0,0.97)",border:"1px solid rgba(0,200,80,0.7)",boxShadow:"0 0 50px rgba(0,180,60,0.3)"}}>
-              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(0,200,80,0.6)"}}>Breaking Deal</div>
-              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#00cc44",textShadow:"0 0 25px rgba(0,200,60,1)"}}>Record Transfer</div>
-              <div className="font-black text-xl mt-1" style={{color:"#00ff55"}}>€{amount}M</div>
-            </div>
-          </div>
-        )}
-      </div>
-      <style>{`@keyframes rtSlide{0%{opacity:0;transform:translateX(-100px)}60%{opacity:1;transform:translateX(6px)}100%{opacity:1;transform:translateX(0)}}@keyframes rtBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes rtTicker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes rtParticle{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-80vh);opacity:0}}`}</style>
-    </div>
-  );
-}
-
-// ============================================
-// WONDERKID — glitch data scan reveal
-// ============================================
-export function WonderkidAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"scan"|"lock"|"hold"|"exit">("scan");
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase("lock"),  800);
-    const t2 = setTimeout(() => setPhase("hold"),  1400);
-    const t3 = setTimeout(() => setPhase("exit"),  3800);
-    const t4 = setTimeout(() => onDone(),          4500);
+    const t1 = setTimeout(() => setPhase("rise"),  300);
+    const t2 = setTimeout(() => setPhase("hold"),  1500);
+    const t3 = setTimeout(() => setPhase("exit"),  6000);
+    const t4 = setTimeout(() => onDone(),          6700);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
-        background:"radial-gradient(ellipse at center,rgba(0,20,60,0.7) 0%,#000 70%)" }}>
-      <SkipHint />
-      {/* Scan line */}
-      {(phase==="scan") && (
-        <div className="absolute" style={{left:0,right:0,height:"3px",background:"rgba(0,200,255,0.8)",boxShadow:"0 0 20px rgba(0,200,255,0.8)",animation:"wkScan 0.8s ease-in-out 1 forwards",zIndex:3}} />
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s":"none" }}>
+      <div className="absolute inset-0" style={{
+        background:phase==="hold"?"radial-gradient(ellipse at 50% 60%,rgba(60,45,0,0.6) 0%,rgba(0,0,0,0.97) 70%)":"rgba(0,0,0,0.9)",
+        transition:"background 1.2s",
+      }} />
+      {/* Ground crack */}
+      {(phase==="rise"||phase==="hold") && (
+        <div className="absolute" style={{bottom:"28%",left:0,right:0,height:"2px",background:"linear-gradient(90deg,transparent 10%,rgba(212,175,55,0.5) 50%,transparent 90%)",animation:"gbCrack 0.5s ease-out forwards"}} />
       )}
-      {/* Glitch lines */}
-      {(phase==="hold") && [...Array(5)].map((_,i)=>(
-        <div key={i} className="absolute w-full" style={{height:"1px",top:`${15+i*17}%`,background:`rgba(0,200,255,${0.08+i*0.03})`,animation:`wkGlitch ${0.8+i*0.2}s steps(1) ${i*0.15}s infinite`}} />
+      {/* Gold confetti */}
+      {phase==="hold" && [...Array(20)].map((_,i) => (
+        <div key={i} className="absolute" style={{
+          width:`${3+(i%3)*2}px`, height:`${7+(i%4)*4}px`,
+          left:`${(i*5.1)%96}%`, top:"-20px",
+          background:`hsl(${44+(i%12)*2},80%,${52+i%20}%)`,
+          borderRadius:"1px",
+          animation:`gbConf ${1.8+i*0.12}s linear ${i*0.07}s infinite`,
+        }} />
       ))}
-      {/* Data readout numbers */}
+      {/* Sparkles */}
+      {phase==="hold" && [...Array(8)].map((_,i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width:"4px", height:"4px",
+          left:`${(i*12.8)%92}%`, top:`${15+(i*8)%50}%`,
+          background:"#FFD54F", boxShadow:"0 0 6px rgba(255,213,79,0.9)",
+          animation:`gbStar ${1+i*0.2}s ease-in-out ${i*0.15}s infinite alternate`,
+        }} />
+      ))}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+        {/* Pedestal */}
+        {(phase==="rise"||phase==="hold") && (
+          <div style={{animation:"gbPedestal 0.8s cubic-bezier(0.22,1,0.36,1) forwards",marginBottom:"-6px"}}>
+            <div style={{width:"clamp(80px,12vw,110px)",height:"10px",background:"linear-gradient(180deg,#D4AF37,#8B6914)",margin:"0 auto",boxShadow:"0 4px 20px rgba(212,175,55,0.5)"}} />
+            <div style={{width:"clamp(50px,8vw,70px)",height:"clamp(20px,4vw,35px)",background:"linear-gradient(180deg,#b8960a,#6b4f08)",margin:"0 auto"}} />
+            <div style={{width:"clamp(90px,14vw,120px)",height:"8px",background:"linear-gradient(180deg,#8B6914,#4a3508)",margin:"0 auto"}} />
+          </div>
+        )}
+        <img src="/images/golden-boy-pixel.png" alt="Golden Boy"
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            opacity:phase==="dark"?0:1,
+            animation:phase==="rise"?"gbRise 1.2s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"gbFloat 3.5s ease-in-out infinite":"none",
+            filter:phase==="hold"?"drop-shadow(0 0 30px rgba(212,175,55,1)) drop-shadow(0 0 60px rgba(212,175,55,0.6)) sepia(0.15)":"none",
+            transition:"opacity 0.3s, filter 0.8s ease",
+          }}
+        />
+        {phase==="hold" && (
+          <div style={{textAlign:"center",animation:"gbBadgeIn 0.7s cubic-bezier(0.22,1,0.36,1) 0.3s both"}}>
+            <div className="px-10 py-5" style={{background:"linear-gradient(135deg,rgba(3,2,0,0.98),rgba(12,8,0,0.98))",border:"1px solid rgba(212,175,55,0.9)",boxShadow:"0 0 60px rgba(212,175,55,0.4)"}}>
+              <div className="flex items-center gap-3 mb-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(212,175,55,0.6))"}} />
+                <span className="text-[9px] tracking-[0.6em] uppercase" style={{color:"rgba(212,175,55,0.5)"}}>Rising Star</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(212,175,55,0.6),transparent)"}} />
+              </div>
+              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#FFD54F",textShadow:"0 0 30px rgba(255,213,79,1)"}}>Golden Boy</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Best young player of the year</div>
+            </div>
+          </div>
+        )}
+      </div>
+      <SkipHint />
+      <style>{`
+        @keyframes gbCrack{0%{opacity:0;width:0}100%{opacity:1;width:100%}}
+        @keyframes gbPedestal{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes gbRise{0%{opacity:0;transform:translateY(80px) scale(0.6)}60%{opacity:1;transform:translateY(-8px) scale(1.08)}80%{transform:translateY(3px) scale(0.97)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes gbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(1.02)}}
+        @keyframes gbConf{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+        @keyframes gbStar{0%{transform:scale(0.5);opacity:0.3}100%{transform:scale(1.5);opacity:1}}
+        @keyframes gbBadgeIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
+    </div>
+  );
+}
+
+export function RecordTransferAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"count"|"hold"|"exit">("enter");
+  const [amount, setAmount] = useState(0);
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("count"), 600);
+    const t2 = setTimeout(() => setPhase("hold"),  2200);
+    const t3 = setTimeout(() => setPhase("exit"),  5800);
+    const t4 = setTimeout(() => onDone(),          6500);
+    let v = 0; const target = 247;
+    const iv = setInterval(() => {
+      v += Math.floor(Math.random()*18+8);
+      if(v >= target){ v = target; clearInterval(iv); }
+      setAmount(v);
+    }, 40);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearInterval(iv); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
+      <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(0,50,15,0.65) 0%,rgba(0,0,0,0.97) 70%)":"rgba(0,0,0,0.9)",transition:"background 1s"}} />
+      {/* Breaking news ticker */}
+      {(phase==="count"||phase==="hold") && (
+        <div className="absolute bottom-16 left-0 right-0 overflow-hidden" style={{borderTop:"2px solid #10B981",borderBottom:"1px solid rgba(16,185,129,0.3)",background:"rgba(0,0,0,0.95)",padding:"6px 0",zIndex:3}}>
+          <div style={{whiteSpace:"nowrap",color:"#10B981",fontWeight:900,fontSize:"11px",letterSpacing:"0.15em",animation:"rtTicker 5s linear infinite"}}>
+            🚨 RECORD TRANSFER FEE CONFIRMED &nbsp;&nbsp;&nbsp; 💰 HISTORIC DEAL AGREED &nbsp;&nbsp;&nbsp; 📋 PAPERS SIGNED &nbsp;&nbsp;&nbsp; 🚨 RECORD TRANSFER FEE CONFIRMED &nbsp;&nbsp;&nbsp;
+          </div>
+        </div>
+      )}
+      {/* Money particles */}
+      {phase==="hold" && [...Array(10)].map((_,i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${3+(i%3)}px`,height:`${3+(i%3)}px`,
+          left:`${(i*10.3)%92}%`,bottom:"20%",
+          background:"#10B981",boxShadow:"0 0 5px rgba(16,185,129,0.8)",
+          animation:`rtMoney ${1.5+i*0.2}s ease-out ${i*0.1}s infinite`,
+        }} />
+      ))}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+        <img src="/images/record-transfer-pixel.png" alt="Record Transfer"
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            animation:phase==="enter"?"rtEnter 0.6s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"rtBob 2s ease-in-out infinite":"none",
+            filter:phase==="hold"?"drop-shadow(0 0 24px rgba(16,185,129,0.9))":"none",
+          }}
+        />
+        <div style={{textAlign:"center"}}>
+          {/* Counter */}
+          <div className="font-black tabular-nums" style={{
+            fontSize:"clamp(3rem,8vw,5rem)",
+            color:"#10B981",
+            textShadow:phase==="hold"?"0 0 40px rgba(16,185,129,0.9), 0 0 80px rgba(16,185,129,0.4)":"none",
+            transition:"text-shadow 0.5s",
+            lineHeight:1,
+          }}>€{amount}M</div>
+          {phase==="hold" && (
+            <div style={{animation:"rtBadgeIn 0.5s ease both"}}>
+              <div className="px-8 py-3 mt-3" style={{background:"rgba(0,5,0,0.97)",border:"1px solid rgba(16,185,129,0.7)",boxShadow:"0 0 30px rgba(16,185,129,0.25)"}}>
+                <div className="text-[9px] tracking-[0.5em] uppercase mb-1" style={{color:"rgba(16,185,129,0.6)"}}>Breaking Deal</div>
+                <div className="font-black text-xl tracking-widest uppercase" style={{color:"#10B981"}}>Record Transfer</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <SkipHint />
+      <style>{`
+        @keyframes rtEnter{0%{opacity:0;transform:translateX(-80px) scale(0.7)}60%{opacity:1;transform:translateX(5px) scale(1.05)}100%{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes rtBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes rtTicker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+        @keyframes rtMoney{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-80vh);opacity:0}}
+        @keyframes rtBadgeIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
+    </div>
+  );
+}
+
+export function WonderkidAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"scan"|"lock"|"hold"|"exit">("scan");
+  const [scanY, setScanY] = useState(0);
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("lock"),  900);
+    const t2 = setTimeout(() => setPhase("hold"),  1700);
+    const t3 = setTimeout(() => setPhase("exit"),  5800);
+    const t4 = setTimeout(() => onDone(),          6500);
+    // Scan line animation
+    let y = 0;
+    const iv = setInterval(() => { y += 2; if(y > 100) y = 0; setScanY(y); }, 16);
+    setTimeout(() => clearInterval(iv), 900);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearInterval(iv); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"radial-gradient(ellipse at center,rgba(0,15,40,0.9) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
+      {/* Scan line */}
+      {phase==="scan" && (
+        <div className="absolute w-full" style={{top:`${scanY}%`,height:"3px",background:"rgba(0,200,255,0.9)",boxShadow:"0 0 20px rgba(0,200,255,0.9), 0 0 40px rgba(0,200,255,0.4)",zIndex:3}} />
+      )}
+      {/* Grid bg */}
+      <div className="absolute inset-0" style={{backgroundImage:"linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px"}} />
+      {/* TARGET LOCKED */}
       {phase==="lock" && (
-        <div className="absolute inset-0 flex items-center justify-center" style={{zIndex:2}}>
-          <div style={{fontFamily:"monospace",fontSize:"clamp(40px,8vw,70px)",fontWeight:900,color:"rgba(0,200,255,0.8)",animation:"wkLock 0.6s steps(1) infinite",textShadow:"0 0 20px rgba(0,200,255,0.9)"}}>
+        <div className="absolute inset-0 flex items-center justify-center" style={{zIndex:5}}>
+          <div style={{fontFamily:"monospace",fontSize:"clamp(40px,7vw,60px)",fontWeight:900,color:"rgba(0,200,255,0.9)",textShadow:"0 0 30px rgba(0,200,255,0.9)",animation:"wkLock 0.1s steps(1) infinite",letterSpacing:"0.1em"}}>
             TARGET LOCKED
           </div>
         </div>
       )}
+      {/* Glitch lines */}
+      {phase==="hold" && [...Array(5)].map((_,i) => (
+        <div key={i} className="absolute w-full" style={{height:"1px",top:`${12+i*18}%`,background:`rgba(0,200,255,${0.06+i*0.02})`,animation:`wkGlitch ${0.8+i*0.2}s steps(1) ${i*0.12}s infinite`}} />
+      ))}
       {/* Rising particles */}
-      {phase==="hold" && [...Array(10)].map((_,i)=>(
+      {phase==="hold" && [...Array(10)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${2+(i%3)}px`,height:`${2+(i%3)}px`,
           left:`${(i*10.3)%92}%`,bottom:"5%",
@@ -907,32 +1068,37 @@ export function WonderkidAnimation({ onDone }: AnimProps) {
           animation:`wkRise ${2+i*0.2}s ease-out ${i*0.1}s infinite`,
         }} />
       ))}
-      <div className="relative z-10 flex flex-col items-center gap-5">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
         <img src="/images/wonderkid-pixel.png" alt="Wonderkid"
-          style={{ width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="scan" ? "wkAppear 0.8s ease-out forwards"
-              : phase==="hold" ? "wkElectric 2s ease-in-out infinite" : "none",
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            opacity:phase==="scan"?0.3:1, transition:"opacity 0.4s",
+            animation:phase==="hold"?"wkElectric 2s ease-in-out infinite":"none",
             filter:phase==="hold"?"drop-shadow(0 0 24px rgba(0,220,255,0.9)) drop-shadow(0 0 48px rgba(0,180,255,0.4))":"none",
           }}
         />
         {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
+          <div style={{textAlign:"center",animation:"wkBadgeIn 0.6s ease both"}}>
             <div className="px-9 py-5" style={{background:"rgba(0,3,12,0.97)",border:"1px solid rgba(0,200,255,0.6)",boxShadow:"0 0 50px rgba(0,180,255,0.25)"}}>
               <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(0,200,255,0.5)"}}>Rising Star</div>
               <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#00c8ff",textShadow:"0 0 25px rgba(0,200,255,1)"}}>Wonderkid</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>The next big thing</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>The next big thing</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes wkScan{0%{top:0}100%{top:100%}}@keyframes wkLock{0%,100%{opacity:1}50%{opacity:0}}@keyframes wkAppear{0%{opacity:0;transform:scaleX(0)}100%{opacity:1;transform:scaleX(1)}}@keyframes wkElectric{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}@keyframes wkRise{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-90vh);opacity:0}}@keyframes wkGlitch{0%,90%,100%{opacity:0;transform:translateX(0)}92%{opacity:1;transform:translateX(-8px)}96%{opacity:1;transform:translateX(8px)}}`}</style>
+      <SkipHint />
+      <style>{`
+        @keyframes wkLock{0%,100%{opacity:1}50%{opacity:0}}
+        @keyframes wkElectric{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+        @keyframes wkGlitch{0%,90%,100%{opacity:0;transform:translateX(0)}92%{opacity:1;transform:translateX(-8px)}96%{opacity:1;transform:translateX(8px)}}
+        @keyframes wkRise{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-90vh);opacity:0}}
+        @keyframes wkBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
   );
 }
 
-// ============================================
-// BOB PAISLEY — طائرة تطير من اليمين تنفجر + شاشة تهتز
-// ============================================
 export function BobPaisleyAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"fly"|"explode"|"hold"|"exit">("fly");
   useEffect(() => {
@@ -1053,65 +1219,93 @@ export function HotMarketAnimation({ onDone }: AnimProps) {
 // ONE SEASON WONDER — spotlight فلاش ثم تلاشي
 // ============================================
 export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"flash"|"hold"|"fade"|"exit">("flash");
+  const [phase, setPhase] = useState<"dark"|"rise"|"peak"|"fade"|"exit">("dark");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("hold"),  800);
-    const t2 = setTimeout(() => setPhase("fade"),  2500);
-    const t3 = setTimeout(() => setPhase("exit"),  3500);
-    const t4 = setTimeout(() => onDone(),          4200);
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
+    const t1 = setTimeout(() => setPhase("rise"),  300);
+    const t2 = setTimeout(() => setPhase("peak"),  1400);
+    const t3 = setTimeout(() => setPhase("fade"),  4500);
+    const t4 = setTimeout(() => setPhase("exit"),  6200);
+    const t5 = setTimeout(() => onDone(),          6800);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.3s",
-        background:"#000" }}>
-      <SkipHint />
-      {/* Initial flash */}
-      {phase==="flash" && <div className="absolute inset-0" style={{background:"rgba(255,200,0,0.3)",animation:"oswFlash 0.8s ease-out forwards"}} />}
-      {/* Spotlight beam */}
-      {(phase==="hold") && (
-        <div className="absolute" style={{top:0,left:"50%",transform:"translateX(-50%)",width:"250px",height:"100vh",
-          background:"linear-gradient(180deg,rgba(255,200,50,0.2) 0%,transparent 55%)",
-          clipPath:"polygon(20% 0%,80% 0%,100% 100%,0% 100%)",
-          animation:"oswSpot 2s ease-in-out infinite alternate"}} />
-      )}
-      {/* Fading particles (after peak) */}
-      {phase==="fade" && [...Array(8)].map((_,i)=>(
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.6s":"none" }}>
+      {/* Spotlight cone from top */}
+      <div className="absolute" style={{
+        top:0, left:"50%", transform:"translateX(-50%)",
+        width:"clamp(200px,35vw,360px)", height:"100vh",
+        background:"linear-gradient(180deg,rgba(255,220,100,0.35) 0%,rgba(255,200,50,0.08) 45%,transparent 70%)",
+        clipPath:"polygon(20% 0%,80% 0%,100% 100%,0% 100%)",
+        opacity:phase==="peak"?1:phase==="rise"?0.5:phase==="fade"?0:0,
+        transition:"opacity 1s ease",
+        animation:phase==="peak"?"oswSpotSway 3s ease-in-out infinite":"none",
+      }} />
+      {/* Dark vignette sides */}
+      <div className="absolute inset-0" style={{
+        background:"radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.85) 80%)",
+        opacity:phase==="peak"?1:0, transition:"opacity 1.2s ease",
+      }} />
+      {/* Gold star particles */}
+      {phase==="peak" && [...Array(12)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
-          width:`${4+(i%3)*2}px`,height:`${4+(i%3)*2}px`,
-          left:`${(i*12.5)%90}%`,top:`${20+(i*7)%50}%`,
-          background:"rgba(255,200,50,0.6)",
-          animation:`oswFade ${0.8+i*0.1}s ease-out ${i*0.05}s forwards`,
+          width:`${2+(i%3)}px`, height:`${2+(i%3)}px`,
+          left:`${(i*8.3)%92}%`, bottom:"5%",
+          background:"rgba(255,210,50,0.8)",
+          boxShadow:"0 0 4px rgba(255,210,50,0.8)",
+          animation:`oswStarRise ${2+i*0.2}s ease-out ${i*0.12}s infinite`,
         }} />
       ))}
-      <div className="relative z-10 flex flex-col items-center gap-4">
-        <img src="/images/one-season-wonder-pixel.png" alt="One Season Wonder"
-          style={{ width:"clamp(200px,34vw,280px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="flash" ? "oswEnter 0.8s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "oswGlow 2.5s ease-in-out infinite"
-              : phase==="fade" ? "oswShrink 1s ease-in forwards" : "none",
-            filter:phase==="hold"?"drop-shadow(0 0 28px rgba(255,200,50,0.9))":"none",
-          }}
-        />
-        {(phase==="hold"||phase==="fade") && (
-          <div style={{textAlign:"center",opacity:phase==="fade"?0:1,transition:"opacity 0.8s ease"}}>
-            <div className="px-9 py-5" style={{background:"rgba(8,6,0,0.97)",border:"1px solid rgba(255,180,0,0.7)",boxShadow:"0 0 40px rgba(255,160,0,0.3)"}}>
-              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(255,180,0,0.6)"}}>Flash of Brilliance</div>
-              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#ffb400",textShadow:"0 0 25px rgba(255,180,0,0.9)"}}>One Season Wonder</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Shine while it lasts</div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+        {/* Player portrait */}
+        <div style={{
+          animation:phase==="rise"?"oswPlayerRise 1.1s cubic-bezier(0.22,1,0.36,1) forwards"
+            :phase==="peak"?"oswPlayerFloat 3s ease-in-out infinite"
+            :phase==="fade"?"oswPlayerFade 1.8s ease-in forwards":"none",
+          opacity:phase==="dark"?0:1, transition:"opacity 0.3s",
+        }}>
+          <img src="/images/one-season-wonder-pixel.png" alt="One Season Wonder"
+            style={{
+              width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+              filter:phase==="peak"
+                ?"drop-shadow(0 0 30px rgba(255,210,50,1)) drop-shadow(0 0 60px rgba(255,180,0,0.5)) brightness(1.15)"
+                :phase==="fade"?"grayscale(0.8) brightness(0.5)":"none",
+              transition:"filter 1.5s ease",
+            }}
+          />
+        </div>
+        {/* Badge */}
+        {(phase==="peak"||phase==="fade") && (
+          <div style={{
+            textAlign:"center",
+            opacity:phase==="fade"?0:1, transition:"opacity 1.5s ease",
+            animation:"oswBadgeIn 0.8s cubic-bezier(0.22,1,0.36,1) both",
+          }}>
+            <div className="px-10 py-5" style={{
+              background:"linear-gradient(135deg,rgba(5,4,0,0.97),rgba(15,10,0,0.97))",
+              border:"1px solid rgba(255,210,50,0.8)",
+              boxShadow:"0 0 50px rgba(255,200,50,0.35)",
+            }}>
+              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(255,210,50,0.55)"}}>Flash of Brilliance</div>
+              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#FFD54F",textShadow:"0 0 25px rgba(255,210,50,1)"}}>One Season Wonder</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Shine while it lasts…</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes oswFlash{0%{opacity:0.4}100%{opacity:0}}@keyframes oswEnter{0%{opacity:0;transform:scale(1.5) translateY(-20px)}60%{opacity:1;transform:scale(0.97) translateY(4px)}100%{opacity:1;transform:scale(1) translateY(0)}}@keyframes oswGlow{0%,100%{filter:drop-shadow(0 0 28px rgba(255,200,50,0.9))}50%{filter:drop-shadow(0 0 45px rgba(255,220,60,1)) drop-shadow(0 0 80px rgba(255,200,50,0.5))}}@keyframes oswShrink{0%{transform:scale(1);opacity:1}100%{transform:scale(0.6);opacity:0}}@keyframes oswSpot{0%{transform:translateX(-50%) rotate(-6deg)}100%{transform:translateX(-50%) rotate(6deg)}}@keyframes oswFade{0%{transform:scale(1);opacity:0.6}100%{transform:scale(0.3) translateY(-30px);opacity:0}}`}</style>
+      <SkipHint />
+      <style>{`
+        @keyframes oswSpotSway{0%,100%{transform:translateX(-50%) rotate(-4deg)}50%{transform:translateX(-50%) rotate(4deg)}}
+        @keyframes oswPlayerRise{0%{opacity:0;transform:translateY(60px) scale(0.6)}60%{opacity:1;transform:translateY(-6px) scale(1.08)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes oswPlayerFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+        @keyframes oswPlayerFade{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0.7) translateY(30px)}}
+        @keyframes oswBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes oswStarRise{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-90vh);opacity:0}}
+      `}</style>
     </div>
   );
 }
 
-// ============================================
-// CASINO NIGHT — slot machine spin
-// ============================================
 export function CasinoNightAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"spin"|"hold"|"exit">("spin");
   const [slot, setSlot] = useState(["🎰","🎰","🎰"]);
@@ -1236,179 +1430,215 @@ export function MarketCrashAnimation({ onDone }: AnimProps) {
 // FAILED TRANSFER — deal papers torn apart
 // ============================================
 export function FailedTransferAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"enter"|"tear"|"hold"|"exit">("enter");
+  const [phase, setPhase] = useState<"enter"|"crack"|"shatter"|"hold"|"exit">("enter");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("tear"),  500);
-    const t2 = setTimeout(() => setPhase("hold"),  1100);
-    const t3 = setTimeout(() => setPhase("exit"),  3400);
-    const t4 = setTimeout(() => onDone(),          4100);
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
+    const t1 = setTimeout(() => setPhase("crack"),   700);
+    const t2 = setTimeout(() => setPhase("shatter"), 1400);
+    const t3 = setTimeout(() => setPhase("hold"),    2000);
+    const t4 = setTimeout(() => setPhase("exit"),    5500);
+    const t5 = setTimeout(() => onDone(),            6200);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
-        background:"radial-gradient(ellipse at center,rgba(50,0,50,0.6) 0%,#000 70%)" }}>
-      <SkipHint />
-      {/* Torn paper pieces */}
-      {phase==="tear" && [...Array(8)].map((_,i)=>(
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"radial-gradient(ellipse at center,rgba(40,0,50,0.7) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
+      {/* Crack overlay on image */}
+      {(phase==="crack"||phase==="shatter") && (
+        <div className="absolute inset-0 flex items-center justify-center" style={{zIndex:5,pointerEvents:"none"}}>
+          <svg width="200" height="200" viewBox="0 0 200 200" style={{position:"absolute",opacity:phase==="shatter"?0:1,transition:"opacity 0.3s"}}>
+            <line x1="100" y1="0" x2="60" y2="100" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" style={{filter:"drop-shadow(0 0 3px #fff)"}}/>
+            <line x1="60" y1="100" x2="20" y2="180" stroke="rgba(255,255,255,0.6)" strokeWidth="1"/>
+            <line x1="100" y1="0" x2="140" y2="80" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" style={{filter:"drop-shadow(0 0 3px #fff)"}}/>
+            <line x1="140" y1="80" x2="180" y2="160" stroke="rgba(255,255,255,0.6)" strokeWidth="1"/>
+            <line x1="60" y1="100" x2="100" y2="120" stroke="rgba(255,255,255,0.7)" strokeWidth="1"/>
+            <line x1="100" y1="120" x2="80" y2="200" stroke="rgba(255,255,255,0.5)" strokeWidth="1"/>
+          </svg>
+        </div>
+      )}
+      {/* Shatter pieces */}
+      {phase==="shatter" && [...Array(8)].map((_,i) => (
         <div key={i} className="absolute" style={{
-          width:`${20+(i%3)*15}px`,height:`${15+(i%4)*12}px`,
-          background:"rgba(200,180,200,0.9)",
-          left:`${30+(i*5)}%`,top:"40%",
-          animation:`ftTear 0.6s ease-out ${i*0.03}s forwards`,
+          width:`${15+(i%3)*10}px`,height:`${12+(i%4)*8}px`,
+          background:"rgba(180,150,220,0.7)",
+          top:"45%",left:"45%",
           borderRadius:"1px",
-          transform:`rotate(${(i-4)*15}deg)`,
+          animation:`ftShard 0.8s ease-out ${i*0.04}s forwards`,
+          transform:`rotate(${i*45}deg)`,
         }} />
       ))}
-      {/* X marks */}
+      {/* X mark */}
       {phase==="hold" && (
-        <div className="absolute" style={{top:"15%",left:"50%",transform:"translateX(-50%)",
-          fontSize:"clamp(30px,6vw,50px)",animation:"ftX 0.8s ease-out forwards"}}>❌</div>
+        <div className="absolute" style={{top:"15%",left:"50%",transform:"translateX(-50%)",fontSize:"clamp(30px,6vw,50px)",animation:"ftX 0.6s cubic-bezier(0.22,1,0.36,1) forwards"}}>❌</div>
       )}
-      <div className="relative z-10 flex flex-col items-center gap-4" style={{animation:phase==="tear"?"ftShake 0.4s ease-out":"none"}}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5"
+        style={{animation:phase==="crack"?"ftShake 0.4s ease-out":"none"}}>
         <img src="/images/failed-transfer-pixel.png" alt="Failed Transfer"
-          style={{ width:"clamp(180px,28vw,240px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="enter" ? "ftSlide 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "ftSad 2.5s ease-in-out infinite" : "none",
-            filter:phase==="hold"?"drop-shadow(0 0 20px rgba(180,0,180,0.7)) grayscale(0.2)":"none",
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            animation:phase==="enter"?"ftEnter 0.7s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"ftSad 2.5s ease-in-out infinite":"none",
+            filter:phase==="hold"?"drop-shadow(0 0 20px rgba(180,0,180,0.7)) grayscale(0.3)":"none",
+            opacity:phase==="shatter"?0.3:1, transition:"opacity 0.3s",
           }}
         />
         {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
+          <div style={{textAlign:"center",animation:"ftBadgeIn 0.5s ease both"}}>
             <div className="px-9 py-5" style={{background:"rgba(8,0,8,0.97)",border:"1px solid rgba(180,0,180,0.6)",boxShadow:"0 0 40px rgba(150,0,150,0.25)"}}>
               <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(200,0,200,0.6)"}}>Deal Collapsed</div>
               <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#cc00cc",textShadow:"0 0 25px rgba(180,0,180,0.9)"}}>Failed Transfer</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Negotiations broke down</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Negotiations broke down</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes ftSlide{0%{opacity:0;transform:translateX(100px) scale(0.7)}60%{opacity:1;transform:translateX(-5px) scale(1.04)}100%{opacity:1;transform:translateX(0) scale(1)}}@keyframes ftSad{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}@keyframes ftTear{0%{opacity:1;transform:translate(0) rotate(var(--r))}100%{opacity:0;transform:translate(calc((var(--i)-4)*40px),-60px) rotate(calc(var(--r)*3)) scale(0.3)}}@keyframes ftShake{0%,100%{transform:translate(0)}25%{transform:translate(-8px,3px)}75%{transform:translate(8px,-3px)}}@keyframes ftX{0%{opacity:0;transform:translateX(-50%) scale(3)}100%{opacity:1;transform:translateX(-50%) scale(1)}}`}</style>
+      <SkipHint />
+      <style>{`
+        @keyframes ftEnter{0%{opacity:0;transform:translateX(80px) scale(0.7)}60%{opacity:1;transform:translateX(-5px) scale(1.05)}100%{opacity:1;transform:translateX(0) scale(1)}}
+        @keyframes ftShake{0%,100%{transform:translate(0)}25%{transform:translate(-8px,3px)}75%{transform:translate(8px,-3px)}}
+        @keyframes ftShard{0%{opacity:1;transform:translate(0) rotate(var(--r)) scale(1)}100%{opacity:0;transform:translate(calc((var(--i)-4)*50px),calc((var(--i)%3-1)*-60px)) rotate(calc(var(--r)*4)) scale(0.2)}}
+        @keyframes ftX{0%{opacity:0;transform:translateX(-50%) scale(3)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+        @keyframes ftSad{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+        @keyframes ftBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
   );
 }
 
-// ============================================
-// BENCH WARMER — cold fog + sitting animation
-// ============================================
 export function BenchWarmerAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("hold"),  900);
-    const t2 = setTimeout(() => setPhase("exit"),  3400);
-    const t3 = setTimeout(() => onDone(),          4100);
+    const t1 = setTimeout(() => setPhase("hold"),  1000);
+    const t2 = setTimeout(() => setPhase("exit"),  5500);
+    const t3 = setTimeout(() => onDone(),          6200);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.4s",
-        background:"radial-gradient(ellipse at center,rgba(0,10,40,0.7) 0%,#000 70%)" }}>
-      <SkipHint />
-      {/* Fog/mist at bottom */}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"radial-gradient(ellipse at center,rgba(0,8,30,0.8) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.4s" }}>
+      {/* Cold fog */}
       {phase==="hold" && (
-        <div className="absolute bottom-0 left-0 right-0" style={{height:"30%",
-          background:"linear-gradient(0deg,rgba(100,150,255,0.08) 0%,transparent 100%)",
-          animation:"bwFog 3s ease-in-out infinite alternate"}} />
+        <div className="absolute bottom-0 left-0 right-0" style={{height:"35%",background:"linear-gradient(0deg,rgba(80,120,200,0.1) 0%,transparent 100%)",animation:"bwFog 4s ease-in-out infinite alternate"}} />
       )}
       {/* Ice crystals */}
-      {phase==="hold" && [...Array(8)].map((_,i)=>(
-        <div key={i} className="absolute" style={{
+      {phase==="hold" && [...Array(8)].map((_,i) => (
+        <div key={i} className="absolute rounded-full" style={{
           width:`${3+(i%3)*2}px`,height:`${3+(i%3)*2}px`,
-          left:`${(i*12.8)%92}%`,top:`${10+(i*8)%60}%`,
-          background:"rgba(150,200,255,0.6)",borderRadius:"50%",
-          boxShadow:"0 0 4px rgba(150,200,255,0.8)",
+          left:`${(i*12.5)%90}%`,top:`${10+(i*9)%55}%`,
+          background:"rgba(150,200,255,0.6)",boxShadow:"0 0 4px rgba(150,200,255,0.8)",
           animation:`bwIce ${2+i*0.3}s ease-in-out ${i*0.2}s infinite alternate`,
         }} />
       ))}
-      {/* Sleep Z's */}
-      {phase==="hold" && ["💤","😴","💤","Zzz"].map((s,i)=>(
-        <span key={i} style={{position:"absolute",left:`${10+(i*20)}%`,bottom:`${30+(i%3)*10}%`,
-          fontSize:`${14+(i%3)*8}px`,color:`rgba(150,180,255,${0.3+i*0.1})`,
-          animation:`bwZzz ${2+i*0.4}s ease-in-out ${i*0.3}s infinite alternate`}}>{s}</span>
+      {/* ZZZ float */}
+      {phase==="hold" && ["💤","Zzz","💤","😴","Zzz"].map((s,i) => (
+        <span key={i} style={{
+          position:"absolute",left:`${8+(i*18)}%`,bottom:`${25+(i%3)*10}%`,
+          fontSize:`${12+(i%3)*7}px`,color:`rgba(130,160,255,${0.25+i*0.06})`,
+          animation:`bwZzz ${2+i*0.4}s ease-in-out ${i*0.3}s infinite alternate`,
+        }}>{s}</span>
       ))}
-      <div className="relative z-10 flex flex-col items-center gap-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
         <img src="/images/bench-warmer-pixel.png" alt="Bench Warmer"
-          style={{ width:"clamp(220px,36vw,300px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="enter" ? "bwSettle 1s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="hold" ? "bwDroop 3s ease-in-out infinite" : "none",
-            filter:phase==="hold"?"drop-shadow(0 0 20px rgba(80,120,255,0.5)) drop-shadow(0 0 40px rgba(50,100,200,0.25)) grayscale(0.2)":"none",
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            animation:phase==="enter"?"bwSettle 1s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"bwDroop 3.5s ease-in-out infinite":"none",
+            filter:phase==="hold"?"drop-shadow(0 0 18px rgba(80,120,255,0.5)) drop-shadow(0 0 36px rgba(50,100,200,0.25)) grayscale(0.25)":"none",
           }}
         />
         {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
+          <div style={{textAlign:"center",animation:"bwBadgeIn 0.7s ease both"}}>
             <div className="px-9 py-5" style={{background:"rgba(0,2,10,0.97)",border:"1px solid rgba(80,120,255,0.5)",boxShadow:"0 0 40px rgba(60,100,200,0.2)"}}>
               <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(100,140,255,0.6)"}}>Sidelined</div>
-              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#5080ff",textShadow:"0 0 25px rgba(60,100,255,0.8)"}}>Bench Warmer</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Not seeing any game time</div>
+              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#5080ff",textShadow:"0 0 20px rgba(60,100,255,0.8)"}}>Bench Warmer</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Not seeing any game time</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes bwSettle{0%{opacity:0;transform:translateY(-30px) scale(0.85)}60%{opacity:1;transform:translateY(5px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes bwDroop{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(6px) rotate(-1deg)}}@keyframes bwFog{0%{opacity:0.5}100%{opacity:1}}@keyframes bwIce{0%{transform:scale(0.5);opacity:0.3}100%{transform:scale(1.5);opacity:1}}@keyframes bwZzz{0%{transform:translateY(0);opacity:0.3}100%{transform:translateY(-20px);opacity:0.8}}`}</style>
+      <SkipHint />
+      <style>{`
+        @keyframes bwSettle{0%{opacity:0;transform:translateY(-30px) scale(0.85)}60%{opacity:1;transform:translateY(5px) scale(1.03)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes bwDroop{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(7px) rotate(-1deg)}}
+        @keyframes bwFog{0%{opacity:0.5}100%{opacity:1}}
+        @keyframes bwIce{0%{transform:scale(0.5);opacity:0.3}100%{transform:scale(1.5);opacity:1}}
+        @keyframes bwZzz{0%{transform:translateY(0);opacity:0.25}100%{transform:translateY(-18px);opacity:0.8}}
+        @keyframes bwBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
   );
 }
 
-// ============================================
-// BREAKUP SEASON — screen splits apart
-// ============================================
 export function BreakupSeasonAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"split"|"hold"|"exit">("enter");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("split"), 400);
-    const t2 = setTimeout(() => setPhase("hold"),  1000);
-    const t3 = setTimeout(() => setPhase("exit"),  3500);
-    const t4 = setTimeout(() => onDone(),          4200);
+    const t1 = setTimeout(() => setPhase("split"), 500);
+    const t2 = setTimeout(() => setPhase("hold"),  1200);
+    const t3 = setTimeout(() => setPhase("exit"),  5800);
+    const t4 = setTimeout(() => onDone(),          6500);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
-        background:"radial-gradient(ellipse at center,rgba(60,0,30,0.65) 0%,#000 70%)" }}>
-      <SkipHint />
-      {/* Split screen effect */}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"radial-gradient(ellipse at center,rgba(60,0,30,0.7) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
+      {/* Split panels */}
       {(phase==="split") && (
         <>
-          <div className="absolute left-0 top-0 bottom-0" style={{width:"50%",background:"rgba(0,0,0,0.8)",animation:"bsSplitL 0.5s ease-out forwards"}} />
-          <div className="absolute right-0 top-0 bottom-0" style={{width:"50%",background:"rgba(0,0,0,0.8)",animation:"bsSplitR 0.5s ease-out forwards"}} />
+          <div className="absolute top-0 left-0 bottom-0" style={{width:"50%",background:"rgba(0,0,0,0.85)",animation:"bsSplitL 0.7s cubic-bezier(0.22,1,0.36,1) forwards",zIndex:4}} />
+          <div className="absolute top-0 right-0 bottom-0" style={{width:"50%",background:"rgba(0,0,0,0.85)",animation:"bsSplitR 0.7s cubic-bezier(0.22,1,0.36,1) forwards",zIndex:4}} />
         </>
       )}
-      {/* Broken hearts */}
-      {phase==="hold" && [...Array(8)].map((_,i)=>(
-        <span key={i} style={{position:"absolute",left:`${(i*12.5)%93}%`,top:"-20px",
+      {/* Center crack line */}
+      {(phase==="hold") && (
+        <div className="absolute top-0 bottom-0" style={{left:"50%",width:"1px",background:"linear-gradient(180deg,transparent,rgba(200,0,80,0.4),transparent)",transform:"translateX(-50%)"}} />
+      )}
+      {/* Broken hearts rain */}
+      {phase==="hold" && [...Array(10)].map((_,i) => (
+        <span key={i} style={{
+          position:"absolute",left:`${(i*10.5)%93}%`,top:"-20px",
           fontSize:`${14+(i%3)*8}px`,
-          animation:`bsHeart ${1.3+i*0.13}s linear ${i*0.09}s infinite`}}>💔</span>
+          animation:`bsHeart ${1.3+i*0.13}s linear ${i*0.09}s infinite`,
+        }}>💔</span>
       ))}
-      <div className="relative z-10 flex flex-col items-center gap-4">
+      {/* Tear drops */}
+      {phase==="hold" && [...Array(5)].map((_,i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${4+(i%3)*2}px`,height:`${4+(i%3)*2}px`,
+          left:`${20+(i*12)}%`,top:"30%",
+          background:"rgba(100,160,255,0.7)",
+          animation:`bsTear ${1+i*0.2}s ease-in ${i*0.15}s infinite`,
+        }} />
+      ))}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
         <img src="/images/breakup-season-pixel.png" alt="Breakup Season"
-          style={{ width:"clamp(230px,38vw,320px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="enter" ? "bsEnter 0.4s ease-out forwards"
-              : phase==="split" ? "bsSplat 0.5s ease-out forwards"
-              : phase==="hold" ? "bsSad 3s ease-in-out infinite" : "none",
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            animation:phase==="enter"?"bsEnter 0.5s ease forwards":phase==="split"?"bsJolt 0.5s ease-out forwards":phase==="hold"?"bsSad 3s ease-in-out infinite":"none",
             filter:phase==="hold"?"drop-shadow(0 0 20px rgba(200,0,80,0.6)) saturate(0.8)":"none",
           }}
         />
         {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
+          <div style={{textAlign:"center",animation:"bsBadgeIn 0.6s ease both"}}>
             <div className="px-8 py-5" style={{background:"rgba(10,0,5,0.97)",border:"1px solid rgba(200,0,80,0.6)",boxShadow:"0 0 40px rgba(160,0,60,0.25)"}}>
               <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(220,0,90,0.6)"}}>Personal Life</div>
               <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#cc0050",textShadow:"0 0 25px rgba(200,0,80,0.9)"}}>Breakup Season</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Off-pitch troubles affecting performance</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Off-pitch troubles affecting performance</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes bsEnter{0%{opacity:0;transform:scale(0.6)}100%{opacity:1;transform:scale(1)}}@keyframes bsSplat{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}@keyframes bsSad{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(5px) rotate(-0.5deg)}}@keyframes bsHeart{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(180deg);opacity:0}}@keyframes bsSplitL{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}@keyframes bsSplitR{0%{transform:translateX(0)}100%{transform:translateX(100%)}}`}</style>
+      <SkipHint />
+      <style>{`
+        @keyframes bsSplitL{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+        @keyframes bsSplitR{0%{transform:translateX(0)}100%{transform:translateX(100%)}}
+        @keyframes bsEnter{0%{opacity:0;transform:scale(0.7)}100%{opacity:1;transform:scale(1)}}
+        @keyframes bsJolt{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        @keyframes bsSad{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(5px) rotate(-0.5deg)}}
+        @keyframes bsHeart{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(180deg);opacity:0}}
+        @keyframes bsTear{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(60vh);opacity:0}}
+        @keyframes bsBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
   );
 }
 
-// ============================================
-// FREE TRANSFER — player walks off into fog
-// ============================================
 export function FreeTransferAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"hold"|"walkoff"|"exit">("enter");
   useEffect(() => {
@@ -1469,57 +1699,60 @@ export function FreeTransferAnimation({ onDone }: AnimProps) {
 // MAJOR INJURY — heartbeat flatline
 // ============================================
 export function MajorInjuryAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"enter"|"alarm"|"hold"|"exit">("enter");
+  const [phase, setPhase] = useState<"white"|"red"|"hold"|"exit">("white");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("alarm"), 300);
-    const t2 = setTimeout(() => setPhase("hold"),  900);
-    const t3 = setTimeout(() => setPhase("exit"),  3400);
-    const t4 = setTimeout(() => onDone(),          4100);
+    const t1 = setTimeout(() => setPhase("red"),  400);
+    const t2 = setTimeout(() => setPhase("hold"), 1000);
+    const t3 = setTimeout(() => setPhase("exit"), 5500);
+    const t4 = setTimeout(() => onDone(),         6200);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
-  const beats = [0,5,2,20,-15,8,0,3,1,20,-12,6,0,2,0,5,20,-14,7,0];
-  const pts = beats.map((v,i)=>`${(i/(beats.length-1))*280},${35-(v/22)*28}`).join(" ");
+  const pts = "0,35 20,35 30,10 40,55 50,5 60,60 70,35 80,35 100,35 120,35 140,35 160,35 180,35 200,35 220,35 240,35 260,35 280,35";
+  const flatPts = [...Array(18)].map((_,i)=>`${i*16},35`).join(" ");
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
-        background:"#000", animation:phase==="alarm"?"miAlarm 0.3s steps(2) 3":"none" }}>
-      <SkipHint />
-      <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(70,0,0,0.7) 0%,rgba(0,0,0,0.97) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.6s"}} />
-      {/* Heartbeat monitor */}
-      {(phase==="alarm"||phase==="hold") && (
-        <div className="absolute top-8 left-0 right-0 flex justify-center" style={{zIndex:3}}>
-          <div style={{background:"rgba(0,0,0,0.95)",border:"1px solid rgba(255,0,0,0.6)",padding:"8px 16px",minWidth:"320px"}}>
-            <div className="text-[9px] tracking-widest uppercase mb-1" style={{color:"rgba(255,0,0,0.7)",animation:"miRedBlink 0.5s steps(1) infinite"}}>
-              ⚠️ CRITICAL INJURY ALERT
-            </div>
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:phase==="white"?"#fff":"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":phase==="red"?"background 0.3s":"none" }}>
+      {phase==="red" && <div className="absolute inset-0" style={{background:"radial-gradient(ellipse at center,rgba(150,0,0,0.7) 0%,rgba(0,0,0,0.97) 65%)",animation:"miRedFade 0.5s ease forwards"}} />}
+      {(phase==="hold") && <div className="absolute inset-0" style={{background:"radial-gradient(ellipse at center,rgba(80,0,0,0.7) 0%,rgba(0,0,0,0.97) 65%)"}} />}
+      {/* ECG monitor */}
+      {(phase==="hold") && (
+        <div className="absolute top-12 left-0 right-0 flex justify-center" style={{zIndex:3}}>
+          <div style={{background:"rgba(0,0,0,0.95)",border:"1px solid rgba(255,0,0,0.6)",padding:"8px 20px",minWidth:"300px"}}>
+            <div className="text-[9px] tracking-widest uppercase mb-2" style={{color:"rgba(255,0,0,0.8)",animation:"miBlink 0.8s steps(1) infinite"}}>⚠️ CRITICAL — MONITORING VITAL SIGNS</div>
             <svg width="280" height="50" style={{display:"block"}}>
-              <polyline points={pts} fill="none" stroke="#ff2200" strokeWidth="2.5"
-                style={{filter:"drop-shadow(0 0 5px #ff2200)",animation:phase==="alarm"?"miBeat 0.5s ease-in-out 3":"none"}} />
+              <polyline points={pts} fill="none" stroke="#ff2222" strokeWidth="2.5"
+                style={{filter:"drop-shadow(0 0 5px #ff2222)"}} />
             </svg>
           </div>
         </div>
       )}
-      <div className="relative z-10 flex flex-col items-center gap-4 mt-16">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
         <img src="/images/major-injury-pixel.png" alt="Major Injury"
-          style={{ width:"clamp(230px,38vw,320px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="enter" ? "miEnter 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase==="alarm" ? "miShake 0.3s ease-in-out 3"
-              : phase==="hold" ? "miBreath 3s ease-in-out infinite" : "none",
+          style={{
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            opacity:phase==="white"?0:1, transition:"opacity 0.3s",
+            animation:phase==="red"?"miShake 0.4s ease-out forwards":phase==="hold"?"miBreath 3s ease-in-out infinite":"none",
             filter:phase==="hold"?"drop-shadow(0 0 24px rgba(255,0,0,0.7)) drop-shadow(0 0 50px rgba(200,0,0,0.3))":"none",
           }}
         />
         {phase==="hold" && (
-          <div style={{textAlign:"center"}}>
-            <div className="px-9 py-5" style={{background:"rgba(8,0,0,0.97)",border:"1px solid rgba(255,0,0,0.7)",boxShadow:"0 0 50px rgba(200,0,0,0.35)"}}>
+          <div style={{textAlign:"center",animation:"miBadgeIn 0.6s ease 0.3s both"}}>
+            <div className="px-8 py-5" style={{background:"rgba(8,0,0,0.97)",border:"1px solid rgba(255,0,0,0.7)",boxShadow:"0 0 50px rgba(200,0,0,0.35)"}}>
               <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(255,80,80,0.6)"}}>Emergency</div>
               <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#ff2222",textShadow:"0 0 25px rgba(255,0,0,0.9)"}}>Major Injury</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{color:"rgba(255,255,255,0.25)"}}>Long-term absence expected</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Long-term absence expected</div>
             </div>
           </div>
         )}
       </div>
-      <style>{`@keyframes miEnter{0%{opacity:0;transform:translateY(50px) scale(0.7)}60%{opacity:1;transform:translateY(-5px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes miShake{0%,100%{transform:translateX(0)}33%{transform:translateX(-8px)}66%{transform:translateX(8px)}}@keyframes miBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}@keyframes miAlarm{0%,100%{background:#000}50%{background:rgba(150,0,0,0.3)}}@keyframes miRedBlink{0%,100%{opacity:1}50%{opacity:0}}@keyframes miBeat{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.3)}}`}</style>
+      <SkipHint />
+      <style>{`
+        @keyframes miRedFade{0%{opacity:0}100%{opacity:1}}
+        @keyframes miShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+        @keyframes miBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+        @keyframes miBlink{0%,100%{opacity:1}50%{opacity:0}}
+        @keyframes miBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
     </div>
   );
 }
@@ -2054,101 +2287,91 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
 // Concept: paparazzi camera flashes + spotlight
 // ============================================
 export function GirlsMagnetAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  const [phase, setPhase] = useState<"enter"|"flash"|"hold"|"exit">("enter");
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("hold"),  800);
-    const t2 = setTimeout(() => setPhase("exit"),  4000);
-    const t3 = setTimeout(() => onDone(),          4700);
-    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3); };
+    const t1 = setTimeout(() => setPhase("flash"), 400);
+    const t2 = setTimeout(() => setPhase("hold"),  1600);
+    const t3 = setTimeout(() => setPhase("exit"),  5800);
+    const t4 = setTimeout(() => onDone(),          6500);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
-
   return (
-    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
-      style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.3s",
-        background:"#000" }}>
-
-      <SkipHint />
-
-      {/* Camera flashes */}
-      {phase==="hold" && (
-        <div className="absolute inset-0">
-          {[...Array(8)].map((_,i) => (
-            <div key={i} className="absolute inset-0" style={{
-              background:"rgba(255,255,255,0.9)",
-              animation:`gmFlash 2s steps(1) ${i*0.25}s infinite`,
-              opacity:0,
-            }} />
-          ))}
-        </div>
-      )}
-
-      {/* Spotlight beam from top */}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+      style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
+      <div className="absolute inset-0" style={{
+        background:phase==="hold"?"radial-gradient(ellipse at center,rgba(80,0,50,0.6) 0%,rgba(0,0,0,0.95) 70%)":"rgba(0,0,0,0.9)",
+        transition:"background 1s",
+      }} />
+      {/* Paparazzi camera flashes */}
+      {phase==="flash" && [...Array(8)].map((_,i) => (
+        <div key={i} className="absolute inset-0" style={{
+          background:`rgba(255,255,255,${0.3+i*0.05})`,
+          animation:`gmFlash 1.2s steps(1) ${i*0.1}s forwards`,
+        }} />
+      ))}
+      {/* Camera flash dots from edges */}
+      {phase==="hold" && [...Array(6)].map((_,i) => (
+        <div key={i} className="absolute" style={{
+          width:"8px", height:"8px",
+          borderRadius:"50%",
+          left:i%2===0?`${5+i*8}%`:"auto",
+          right:i%2===1?`${5+i*8}%`:"auto",
+          top:`${15+i*14}%`,
+          background:"rgba(255,255,255,0.9)",
+          boxShadow:"0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,255,255,0.5)",
+          animation:`gmCamFlash ${0.8+i*0.15}s ease-in-out ${i*0.2}s infinite`,
+        }} />
+      ))}
+      {/* Floating hearts */}
+      {phase==="hold" && ["💋","❤️","💕","💖","💗","💓"].map((em,i) => (
+        <span key={i} style={{
+          position:"absolute", left:`${15+(i*14)}%`, bottom:"-20px",
+          fontSize:`${18+(i%3)*10}px`,
+          animation:`gmHeart ${1.5+i*0.3}s ease-out ${i*0.15}s infinite`,
+        }}>{em}</span>
+      ))}
+      {/* Spotlight */}
       {phase==="hold" && (
         <div className="absolute" style={{
           top:0, left:"50%", transform:"translateX(-50%)",
-          width:"200px", height:"100vh",
-          background:"linear-gradient(180deg, rgba(255,200,255,0.15) 0%, transparent 70%)",
+          width:"clamp(180px,28vw,300px)", height:"100vh",
+          background:"linear-gradient(180deg,rgba(255,150,200,0.2) 0%,rgba(255,100,180,0.04) 50%,transparent 75%)",
+          clipPath:"polygon(20% 0%,80% 0%,100% 100%,0% 100%)",
           animation:"gmSpot 2s ease-in-out infinite alternate",
-          clipPath:"polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)",
         }} />
       )}
-
-      {/* Floating hearts */}
-      {phase==="hold" && (
-        <div className="absolute inset-0 overflow-hidden">
-          {["💋","❤️","💕","💖","💗","💓"].map((em,i) => (
-            <span key={i} style={{
-              position:"absolute",
-              left:`${15+(i*14)}%`, bottom:"-20px",
-              fontSize:`${20+(i%3)*12}px`,
-              animation:`gmHeart ${1.5+i*0.3}s ease-out ${i*0.15}s infinite`,
-            }}>{em}</span>
-          ))}
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center gap-5"
-        style={{ animation: phase==="enter" ? "gmReveal 0.8s cubic-bezier(0.22,1,0.36,1) forwards" : "none" }}>
-
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
         <img src="/images/girls-magnet-pixel.png" alt="Girls Magnet"
           style={{
-            width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
-            animation: phase==="hold" ? "gmPose 3s ease-in-out infinite" : "none",
-            filter: phase==="hold" ? "drop-shadow(0 0 30px rgba(255,150,200,0.9)) drop-shadow(0 0 60px rgba(255,80,180,0.4)) saturate(1.3)" : "none",
+            width:"clamp(150px,22vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+            animation:phase==="enter"?"gmReveal 0.6s ease forwards":phase==="hold"?"gmPose 3s ease-in-out infinite":"none",
+            filter:phase==="hold"?"drop-shadow(0 0 30px rgba(255,100,180,0.9)) drop-shadow(0 0 60px rgba(255,50,150,0.4)) saturate(1.2)":"none",
           }}
         />
-
         {phase==="hold" && (
-          <div style={{ textAlign:"center" }}>
-            <div className="px-10 py-5" style={{
-              background:"linear-gradient(135deg,rgba(10,0,8,0.97),rgba(30,0,20,0.97))",
-              border:"1px solid rgba(255,100,180,0.8)",
-              boxShadow:"0 0 50px rgba(255,80,160,0.35), inset 0 0 30px rgba(255,80,160,0.05)" }}>
-              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{ color:"rgba(255,150,200,0.6)" }}>CELEBRITY STATUS</div>
-              <div className="font-black text-3xl tracking-widest uppercase" style={{ color:"#ff3080", textShadow:"0 0 30px rgba(255,60,140,1), 0 0 60px rgba(255,60,140,0.4)" }}>Girls Magnet</div>
-              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{ color:"rgba(255,255,255,0.25)" }}>Marketing value +25% · Salary demands +30%</div>
+          <div style={{textAlign:"center",animation:"gmBadgeIn 0.5s ease both"}}>
+            <div className="px-10 py-5" style={{background:"linear-gradient(135deg,rgba(10,0,6,0.97),rgba(30,0,20,0.97))",border:"1px solid rgba(255,100,180,0.8)",boxShadow:"0 0 50px rgba(255,80,160,0.35)"}}>
+              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{color:"rgba(255,150,200,0.6)"}}>Celebrity Status</div>
+              <div className="font-black text-2xl tracking-widest uppercase" style={{color:"#ff3080",textShadow:"0 0 30px rgba(255,60,140,1)"}}>Girls Magnet</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{color:"rgba(255,255,255,0.25)"}}>Marketing value +25% · Salary +30%</div>
             </div>
           </div>
         )}
       </div>
-
+      <SkipHint />
       <style>{`
-        @keyframes gmFlash{0%,90%,100%{opacity:0}92%{opacity:0.6}95%{opacity:0}}
-        @keyframes gmSpot{0%{transform:translateX(-50%) rotate(-5deg)}100%{transform:translateX(-50%) rotate(5deg)}}
-        @keyframes gmHeart{0%{transform:translateY(0) scale(0.5);opacity:1}100%{transform:translateY(-100vh) scale(1.5);opacity:0}}
+        @keyframes gmFlash{0%,100%{opacity:0}10%{opacity:0.6}20%{opacity:0}}
+        @keyframes gmCamFlash{0%,100%{opacity:0.1;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}
         @keyframes gmReveal{0%{opacity:0;transform:scale(0.5)}60%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
-        @keyframes gmPose{0%,100%{transform:scale(1) rotate(0deg)}25%{transform:scale(1.04) rotate(-2deg)}75%{transform:scale(1.04) rotate(2deg)}}
+        @keyframes gmPose{0%,100%{transform:scale(1) rotate(0)}25%{transform:scale(1.04) rotate(-2deg)}75%{transform:scale(1.04) rotate(2deg)}}
+        @keyframes gmHeart{0%{transform:translateY(0) scale(0.5);opacity:1}100%{transform:translateY(-100vh) scale(1.5);opacity:0}}
+        @keyframes gmSpot{0%{transform:translateX(-50%) rotate(-5deg)}100%{transform:translateX(-50%) rotate(5deg)}}
+        @keyframes gmBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
       `}</style>
     </div>
   );
 }
 
-// ============================================
-// RACIST ATTACK
-// Concept: screen cracks + color drains + fist rises
-// ============================================
 export function RacistAttackAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"crack"|"hold"|"fist"|"exit">("enter");
   useEffect(() => {
