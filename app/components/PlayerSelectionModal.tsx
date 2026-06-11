@@ -6,6 +6,7 @@ import { getCurrentValue } from "../game/valueEngine";
 import { getSeasonStats } from "../game/statsEngine";
 import { calculateAge, nationalityFlag, positionBg, getRetirementWarning } from "../game/helpers";
 import { getRatingColor, getRatingBg } from "../game/valueEngine";
+import { YousefCardAnimation } from "../animations/index";
 
 type Props = {
   slot: string;
@@ -49,6 +50,125 @@ function PixelPortrait({ name, size = 56 }: { name: string; size?: number }) {
   );
 }
 
+// ── Yousef special card ────────────────────────
+function YousefSpecialCard({ player, budget, season, marketMultiplier, onClick }: {
+  player: Player; budget: number; season: number; marketMultiplier: number; onClick: () => void;
+}) {
+  const stats = getSeasonStats(player, season);
+  const value = getCurrentValue(player, season, marketMultiplier);
+  const affordable = value <= budget;
+  const age = calculateAge(player.startAge, player.availableSeason, season);
+
+  return (
+    <button
+      onClick={onClick}
+      className="relative overflow-hidden text-left transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer col-span-1"
+      style={{
+        background: "linear-gradient(135deg, #0d0b00 0%, #1a1400 50%, #0d0b00 100%)",
+        border: "2px solid #D4AF37",
+        boxShadow: "0 0 30px rgba(212,175,55,0.4), 0 0 60px rgba(212,175,55,0.15), inset 0 0 20px rgba(212,175,55,0.05)",
+        animation: "yousefPulse 3s ease-in-out infinite, fadeInUp 0.4s ease-out both",
+        padding: "1.5rem",
+      }}
+    >
+      {/* Animated corner decorations */}
+      <div className="absolute top-0 left-0 w-6 h-6" style={{ borderTop: "2px solid #D4AF37", borderLeft: "2px solid #D4AF37" }} />
+      <div className="absolute top-0 right-0 w-6 h-6" style={{ borderTop: "2px solid #D4AF37", borderRight: "2px solid #D4AF37" }} />
+      <div className="absolute bottom-0 left-0 w-6 h-6" style={{ borderBottom: "2px solid #D4AF37", borderLeft: "2px solid #D4AF37" }} />
+      <div className="absolute bottom-0 right-0 w-6 h-6" style={{ borderBottom: "2px solid #D4AF37", borderRight: "2px solid #D4AF37" }} />
+
+      {/* Glow sweep animation */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: "linear-gradient(45deg, transparent 30%, rgba(212,175,55,0.08) 50%, transparent 70%)",
+        animation: "yousefSweep 3s linear infinite",
+      }} />
+
+      {/* Secret badge */}
+      <div className="absolute top-3 right-3 text-[9px] font-black px-2 py-0.5 flex items-center gap-1"
+        style={{ background: "rgba(212,175,55,0.2)", border: "1px solid rgba(212,175,55,0.5)", color: "#D4AF37" }}>
+        👑 LEGEND
+      </div>
+
+      {/* Affordable badge */}
+      {affordable ? (
+        <div className="absolute top-3 left-3 text-[9px] font-black px-1.5 py-0.5"
+          style={{ background: "rgba(16,185,129,0.25)", color: "#34d399" }}>✓ CAN BUY</div>
+      ) : (
+        <div className="absolute top-3 left-3 text-[9px] font-black px-1.5 py-0.5"
+          style={{ background: "rgba(239,68,68,0.25)", color: "#f87171" }}>TOO COSTLY</div>
+      )}
+
+      {/* Portrait — larger */}
+      <div className="flex justify-center mt-4 mb-3">
+        <img
+          src="/images/yousef-pixel.png"
+          alt="Yousef"
+          width={80}
+          height={80}
+          style={{
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            filter: "drop-shadow(0 0 16px rgba(212,175,55,0.9)) drop-shadow(0 0 32px rgba(212,175,55,0.4))",
+            animation: "yousefFloat 2.5s ease-in-out infinite",
+          }}
+        />
+      </div>
+
+      {/* Position */}
+      <div className={`text-[10px] font-black px-1.5 py-0.5 inline-block mb-2 ${positionBg(player.position)}`}>
+        {player.position}
+      </div>
+
+      {/* Name — glowing */}
+      <div className="font-black text-lg leading-tight mb-1 truncate"
+        style={{ color: "#D4AF37", textShadow: "0 0 12px rgba(212,175,55,0.7)" }}>
+        {player.name}
+      </div>
+      <div className="text-xs mb-1" style={{ color: "#9ca3af" }}>
+        {nationalityFlag(player.nationality)} {age}y
+      </div>
+      <div className="text-xs mb-3 truncate" style={{ color: "#6b7280" }}>{player.league}</div>
+
+      {/* Rating */}
+      <div className="text-xs font-black px-2 py-1 inline-block mb-2"
+        style={{ background: "rgba(212,175,55,0.15)", border: "1px solid rgba(212,175,55,0.4)", color: "#D4AF37" }}>
+        {stats.rating} RTG ⭐
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-1 mb-3 text-center p-2"
+        style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(212,175,55,0.1)" }}>
+        <div><div className="font-bold text-sm" style={{ color: "#D4AF37" }}>{stats.games}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>GM</div></div>
+        <div><div className="font-bold text-sm" style={{ color: "#D4AF37" }}>{stats.goals}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>G</div></div>
+        <div><div className="font-bold text-sm" style={{ color: "#D4AF37" }}>{stats.assists}</div><div className="text-[9px]" style={{ color: "#6b7280" }}>A</div></div>
+      </div>
+
+      {/* Value */}
+      <div className="font-black text-2xl mt-1" style={{
+        color: affordable ? "#D4AF37" : "#f87171",
+        textShadow: affordable ? "0 0 12px rgba(212,175,55,0.6)" : "none",
+      }}>
+        €{value}M
+      </div>
+
+      <style>{`
+        @keyframes yousefPulse {
+          0%, 100% { box-shadow: 0 0 30px rgba(212,175,55,0.4), 0 0 60px rgba(212,175,55,0.15), inset 0 0 20px rgba(212,175,55,0.05); }
+          50%       { box-shadow: 0 0 50px rgba(212,175,55,0.7), 0 0 100px rgba(212,175,55,0.3), inset 0 0 30px rgba(212,175,55,0.08); }
+        }
+        @keyframes yousefSweep {
+          0%   { transform: translateX(-100%) rotate(45deg); }
+          100% { transform: translateX(200%) rotate(45deg); }
+        }
+        @keyframes yousefFloat {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50%       { transform: translateY(-6px) scale(1.05); }
+        }
+      `}</style>
+    </button>
+  );
+}
+
 function getCardStyle(player: Player, budget: number, value: number): string {
   const affordable = value <= budget;
   if (player.secret) return "border-yellow-400 shadow-yellow-400/20";
@@ -70,12 +190,31 @@ export default function PlayerSelectionModal({
   slot, options, activePlayer, season, timer, timerSeconds, marketMultiplier, onBuy, onClose
 }: Props) {
   const [selected, setSelected] = useState<Player | null>(null);
+  const [showYousefAnim, setShowYousefAnim] = useState(false);
+  const [pendingYousef, setPendingYousef] = useState<Player | null>(null);
   const timerDanger = timerSeconds !== null && timer <= 5;
   const budget = activePlayer.budget;
+
+  function handleSelectPlayer(player: Player) {
+    if (player.name === "Yousef Alnuwasser") {
+      setPendingYousef(player);
+      setShowYousefAnim(true);
+    } else {
+      setSelected(player);
+    }
+  }
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-40 p-4"
       style={{ background: "rgba(0,0,0,0.88)" }}>
+
+      {/* Yousef special reveal animation */}
+      {showYousefAnim && (
+        <YousefCardAnimation onDone={() => {
+          setShowYousefAnim(false);
+          if (pendingYousef) { setSelected(pendingYousef); setPendingYousef(null); }
+        }} />
+      )}
       <div className="rounded-none w-full max-w-[98vw] overflow-hidden shadow-2xl"
         style={{ background: "#0a0914", border: "2px solid rgba(168,85,247,0.4)" }}>
 
@@ -126,10 +265,24 @@ export default function PlayerSelectionModal({
                   const age = calculateAge(player.startAge, player.availableSeason, season);
                   const affordable = value <= budget;
 
+                  // Yousef gets his own legendary card
+                  if (player.name === "Yousef Alnuwasser") {
+                    return (
+                      <YousefSpecialCard
+                        key={i}
+                        player={player}
+                        budget={budget}
+                        season={season}
+                        marketMultiplier={marketMultiplier}
+                        onClick={() => handleSelectPlayer(player)}
+                      />
+                    );
+                  }
+
                   return (
                     <button
                       key={i}
-                      onClick={() => setSelected(player)}
+                      onClick={() => handleSelectPlayer(player)}
                       className="rounded-none p-10 text-left transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-lg relative overflow-hidden"
                       style={{
                         border: `2px solid`,

@@ -1699,5 +1699,622 @@ export function BobPaisleyAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
+// HOT MARKET — Style: zoom from top, green flash
+// ============================================
+export function HotMarketAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  800);
+    const t2 = setTimeout(() => setPhase("exit"),  2800);
+    const t3 = setTimeout(() => onDone(),          3500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity: phase==="exit"?0:1, transition: phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s ease" }}>
+      <div className="absolute inset-0" style={{ background: phase==="hold"?"radial-gradient(ellipse at center, rgba(0,70,10,0.6) 0%, rgba(0,0,0,0.92) 70%)":"rgba(0,0,0,0.82)", transition:"background 0.8s ease" }} />
+      {phase==="hold" && <div className="absolute inset-0 overflow-hidden">{["📈","💹","📈","💹","📈","💹","📈","💹"].map((em,i)=><span key={i} style={{position:"absolute",left:`${(i*12)%92}%`,top:"-20px",fontSize:`${16+(i%3)*8}px`,animation:`hmFall ${1.2+i*0.15}s linear ${i*0.1}s infinite`}}>{em}</span>)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/hot-market-pixel.png" alt="Hot Market" style={{ width:"clamp(200px,34vw,280px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"hmDrop 0.8s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"hmBob 2s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 24px rgba(0,220,80,0.9)) drop-shadow(0 0 48px rgba(0,180,60,0.4))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.4s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(0,5,0,0.92)", border:"1px solid rgba(0,200,80,0.7)", boxShadow:"0 0 30px rgba(0,180,60,0.25)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(0,200,80,0.6)" }}>🔥 Market Event</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#00e060", textShadow:"0 0 20px rgba(0,220,80,0.9)" }}>Hot Market</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Player values surging</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes hmDrop{0%{opacity:0;transform:translateY(-80px) scale(0.7)}60%{opacity:1;transform:translateY(8px) scale(1.05)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes hmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes hmFall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(360deg);opacity:0}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// ONE SEASON WONDER — Style: spotlight from above, fades fast
+// ============================================
+export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3000);
+    const t3 = setTimeout(() => onDone(),          3700);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at 50% 30%, rgba(255,180,0,0.4) 0%, rgba(0,0,0,0.93) 60%)":"rgba(0,0,0,0.85)", transition:"background 0.8s ease" }} />
+      {phase==="hold" && <div className="absolute" style={{ width:"4px", height:"100vh", top:0, left:"50%", background:"linear-gradient(180deg,rgba(255,220,0,0.8) 0%,transparent 50%)", animation:"oswSpot 2s ease-in-out infinite alternate", transformOrigin:"top center" }} />}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/one-season-wonder-pixel.png" alt="One Season Wonder" style={{ width:"clamp(200px,34vw,280px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"oswIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"oswFloat 2.5s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 24px rgba(255,180,0,0.8))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.4s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(10,8,0,0.92)", border:"1px solid rgba(255,180,0,0.7)", boxShadow:"0 0 30px rgba(255,160,0,0.2)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(255,180,0,0.6)" }}>🎯 Limited Glory</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#ffb400", textShadow:"0 0 20px rgba(255,180,0,0.9)" }}>One Season Wonder</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Shine while it lasts</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes oswIn{0%{opacity:0;transform:scale(1.4) translateY(-30px)}60%{opacity:1;transform:scale(0.97) translateY(4px)}100%{opacity:1;transform:scale(1) translateY(0)}}@keyframes oswFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes oswSpot{0%{transform:rotate(-12deg)}100%{transform:rotate(12deg)}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// CASINO NIGHT — Style: slot machine flash, multicolor
+// ============================================
+export function CasinoNightAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3200);
+    const t3 = setTimeout(() => onDone(),          4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at center, rgba(80,40,0,0.65) 0%, rgba(0,0,0,0.93) 70%)":"rgba(0,0,0,0.85)", transition:"background 0.8s ease" }} />
+      {phase==="hold" && <div className="absolute inset-0 overflow-hidden">{["🎰","🃏","🎲","💰","🎰","🃏","🎲","💰","🎰","🃏"].map((em,i)=><span key={i} style={{position:"absolute",left:`${(i*10)%92}%`,top:`${(i*9+5)%80}%`,fontSize:`${14+(i%3)*8}px`,animation:`cnFloat ${1.5+i*0.2}s ease-in-out ${i*0.1}s infinite alternate`}}>{em}</span>)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/casino-night-pixel.png" alt="Casino Night" style={{ width:"clamp(180px,30vw,250px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"cnIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"cnPulse 1.5s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 28px rgba(255,180,0,0.9)) drop-shadow(0 0 56px rgba(255,100,0,0.4))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.4s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(10,5,0,0.92)", border:"1px solid rgba(255,160,0,0.7)", boxShadow:"0 0 30px rgba(255,130,0,0.25)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(255,160,0,0.6)" }}>🎰 Risky Night</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#ffaa00", textShadow:"0 0 20px rgba(255,160,0,0.9)" }}>Casino Night</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Luck of the draw</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes cnIn{0%{opacity:0;transform:rotate(-10deg) scale(0.4)}60%{opacity:1;transform:rotate(3deg) scale(1.08)}100%{opacity:1;transform:rotate(0) scale(1)}}@keyframes cnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}@keyframes cnFloat{0%{transform:translateY(0) rotate(-5deg)}100%{transform:translateY(-15px) rotate(5deg)}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// MARKET CRASH — Style: drops from top, red screen flash
+// ============================================
+export function MarketCrashAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  800);
+    const t2 = setTimeout(() => setPhase("exit"),  2800);
+    const t3 = setTimeout(() => onDone(),          3500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s ease", animation:phase==="enter"?"mcFlash 0.5s ease-out":"none" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at center, rgba(80,0,0,0.65) 0%, rgba(0,0,0,0.93) 70%)":"rgba(0,0,0,0.85)", transition:"background 0.5s ease" }} />
+      {phase==="hold" && <div className="absolute inset-0 overflow-hidden">{["📉","💸","📉","💸","📉","💸","📉","💸"].map((em,i)=><span key={i} style={{position:"absolute",left:`${(i*12)%92}%`,top:"-20px",fontSize:`${16+(i%3)*8}px`,animation:`mcDrop ${1+i*0.12}s linear ${i*0.08}s infinite`}}>{em}</span>)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/market-crash-pixel.png" alt="Market Crash" style={{ width:"clamp(200px,34vw,280px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"mcFallIn 0.8s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"mcShake 0.5s ease-in-out 3":"none", filter:phase==="hold"?"drop-shadow(0 0 24px rgba(255,0,0,0.9)) drop-shadow(0 0 48px rgba(200,0,0,0.4))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.4s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(10,0,0,0.92)", border:"1px solid rgba(255,0,0,0.7)", boxShadow:"0 0 30px rgba(200,0,0,0.25)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(255,80,80,0.6)" }}>📉 Market Disaster</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#ff3333", textShadow:"0 0 20px rgba(255,50,50,0.9)" }}>Market Crash</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Values collapsing</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes mcFlash{0%,100%{background:transparent}50%{background:rgba(200,0,0,0.3)}}@keyframes mcFallIn{0%{opacity:0;transform:translateY(-60px) scale(0.8)}60%{opacity:1;transform:translateY(6px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes mcShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}@keyframes mcDrop{0%{transform:translateY(0)}100%{transform:translateY(110vh);opacity:0}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// FAILED TRANSFER — Style: slides from right, crosses out
+// ============================================
+export function FailedTransferAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3000);
+    const t3 = setTimeout(() => onDone(),          3700);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at center, rgba(60,0,60,0.6) 0%, rgba(0,0,0,0.92) 70%)":"rgba(0,0,0,0.85)", transition:"background 0.8s ease" }} />
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/failed-transfer-pixel.png" alt="Failed Transfer" style={{ width:"clamp(200px,34vw,280px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"ftSlide 0.9s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"ftHover 2s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 20px rgba(200,0,200,0.7))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.4s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(8,0,8,0.92)", border:"1px solid rgba(180,0,180,0.6)", boxShadow:"0 0 30px rgba(150,0,150,0.2)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(200,0,200,0.6)" }}>❌ Deal Collapsed</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#cc00cc", textShadow:"0 0 20px rgba(180,0,180,0.9)" }}>Failed Transfer</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Negotiations broke down</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes ftSlide{0%{opacity:0;transform:translateX(100px) scale(0.85)}60%{opacity:1;transform:translateX(-6px) scale(1.03)}100%{opacity:1;transform:translateX(0) scale(1)}}@keyframes ftHover{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1deg)}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// BENCH WARMER — Style: slow drooping entry, cold blue
+// ============================================
+export function BenchWarmerAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  1000);
+    const t2 = setTimeout(() => setPhase("exit"),  3200);
+    const t3 = setTimeout(() => onDone(),          4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.4s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at center, rgba(0,20,60,0.65) 0%, rgba(0,0,0,0.93) 70%)":"rgba(0,0,0,0.85)", transition:"background 0.9s ease" }} />
+      {phase==="hold" && <div className="absolute inset-0 overflow-hidden">{["💤","😴","💤","😴","💤","😴"].map((em,i)=><span key={i} style={{position:"absolute",left:`${10+(i*16)}%`,bottom:`${20+(i%3)*15}%`,fontSize:`${16+(i%3)*6}px`,animation:`bwFloat ${2+i*0.3}s ease-in-out ${i*0.2}s infinite alternate`}}>{em}</span>)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/bench-warmer-pixel.png" alt="Bench Warmer" style={{ width:"clamp(220px,36vw,300px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"bwSlump 1s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"bwSad 3s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 20px rgba(50,100,255,0.6)) drop-shadow(0 0 40px rgba(30,80,200,0.3))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.5s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(0,3,12,0.92)", border:"1px solid rgba(50,100,255,0.5)", boxShadow:"0 0 30px rgba(30,80,200,0.2)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(80,130,255,0.6)" }}>🪑 Sidelined</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#5080ff", textShadow:"0 0 20px rgba(60,100,255,0.8)" }}>Bench Warmer</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Not seeing any game time</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes bwSlump{0%{opacity:0;transform:translateY(-40px) scale(0.9)}70%{opacity:1;transform:translateY(6px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes bwSad{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(6px) rotate(-1deg)}}@keyframes bwFloat{0%{transform:translateY(0)}100%{transform:translateY(-12px)}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// BREAKUP SEASON — Style: splits apart from center, pink/grey
+// ============================================
+export function BreakupSeasonAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  1000);
+    const t2 = setTimeout(() => setPhase("exit"),  3400);
+    const t3 = setTimeout(() => onDone(),          4100);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.4s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at center, rgba(60,0,30,0.6) 0%, rgba(0,0,0,0.93) 70%)":"rgba(0,0,0,0.85)", transition:"background 0.9s ease" }} />
+      {/* Falling broken hearts */}
+      {phase==="hold" && <div className="absolute inset-0 overflow-hidden">{["💔","💔","💔","💔","💔","💔","💔","💔"].map((em,i)=><span key={i} style={{position:"absolute",left:`${(i*12)%92}%`,top:"-20px",fontSize:`${14+(i%3)*8}px`,animation:`bsHeartFall ${1.3+i*0.14}s linear ${i*0.09}s infinite`}}>{em}</span>)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/breakup-season-pixel.png" alt="Breakup Season" style={{ width:"clamp(240px,38vw,320px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"bsSplitIn 1s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"bsSad 3s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 20px rgba(200,0,80,0.7)) drop-shadow(0 0 40px rgba(150,0,60,0.3))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.5s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(10,0,5,0.92)", border:"1px solid rgba(200,0,80,0.6)", boxShadow:"0 0 30px rgba(160,0,60,0.2)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(220,0,90,0.6)" }}>💔 Personal Life</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#cc0050", textShadow:"0 0 20px rgba(200,0,80,0.9)" }}>Breakup Season</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Off the pitch troubles</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes bsSplitIn{0%{opacity:0;transform:scale(0.5) translateY(30px)}55%{opacity:1;transform:scale(1.06) translateY(-5px)}100%{opacity:1;transform:scale(1) translateY(0)}}@keyframes bsSad{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(5px) rotate(-0.5deg)}}@keyframes bsHeartFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(180deg);opacity:0}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// FREE TRANSFER — Style: walks off screen, fading grey
+// ============================================
+export function FreeTransferAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  900);
+    const t2 = setTimeout(() => setPhase("exit"),  3200);
+    const t3 = setTimeout(() => onDone(),          3900);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.4s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at 30% 50%, rgba(20,20,40,0.65) 0%, rgba(0,0,0,0.93) 70%)":"rgba(0,0,0,0.85)", transition:"background 0.8s ease" }} />
+      {/* Dotted path trail */}
+      {phase==="hold" && <div className="absolute bottom-1/3 left-0 right-0 flex justify-center gap-3">{[...Array(8)].map((_,i)=><div key={i} className="rounded-full" style={{width:"6px",height:"6px",background:`rgba(150,150,180,${0.5-i*0.05})`,animation:`ftDotPulse 1.5s ease-in-out ${i*0.15}s infinite`}} />)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/free-transfer-pixel.png" alt="Free Transfer" style={{ width:"clamp(200px,32vw,270px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"ftWalkIn 0.9s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"ftWalkHold 2.5s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 16px rgba(120,120,160,0.6)) drop-shadow(0 0 32px rgba(80,80,120,0.3)) grayscale(0.3)":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.5s ease", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(5,5,10,0.92)", border:"1px solid rgba(120,120,180,0.5)", boxShadow:"0 0 30px rgba(80,80,140,0.2)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(140,140,200,0.6)" }}>📋 Contract Expired</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#8888cc", textShadow:"0 0 20px rgba(120,120,180,0.8)" }}>Free Transfer</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Player leaving for nothing</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes ftWalkIn{0%{opacity:0;transform:translateX(-80px) scale(0.85)}60%{opacity:1;transform:translateX(6px) scale(1.03)}100%{opacity:1;transform:translateX(0) scale(1)}}@keyframes ftWalkHold{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}@keyframes ftDotPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.4);opacity:1}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// MAJOR INJURY — Style: screen goes dark, red pulse, drops down
+// ============================================
+export function MajorInjuryAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  800);
+    const t2 = setTimeout(() => setPhase("exit"),  3200);
+    const t3 = setTimeout(() => onDone(),          4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+  return (
+    <div className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.4s ease" }}>
+      <div className="absolute inset-0" style={{ background:phase==="hold"?"radial-gradient(ellipse at center, rgba(70,0,0,0.7) 0%, rgba(0,0,0,0.96) 65%)":"rgba(0,0,0,0.88)", transition:"background 0.6s ease" }} />
+      {/* Heartbeat pulse lines */}
+      {phase==="hold" && <div className="absolute bottom-1/4 left-0 right-0 flex justify-center items-center gap-1 px-8">{[2,1,3,8,1,2,1,4,1,2].map((h,i)=><div key={i} style={{width:"14px",height:`${h*8}px`,background:`rgba(255,${40-h*2},${40-h*2},${0.5+h*0.05})`,animation:`miPulse 1.2s ease-in-out ${i*0.08}s infinite`}} />)}</div>}
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img src="/images/major-injury-pixel.png" alt="Major Injury" style={{ width:"clamp(240px,40vw,320px)", imageRendering:"pixelated", objectFit:"contain", animation:phase==="enter"?"miDropIn 0.8s cubic-bezier(0.22,1,0.36,1) forwards":phase==="hold"?"miBreath 3s ease-in-out infinite":"none", filter:phase==="hold"?"drop-shadow(0 0 24px rgba(255,30,30,0.7)) drop-shadow(0 0 48px rgba(200,0,0,0.3))":"none" }} />
+        <div style={{ opacity:phase==="hold"?1:0, transition:"opacity 0.5s ease 0.1s", textAlign:"center" }}>
+          <div className="px-8 py-4" style={{ background:"rgba(8,0,0,0.92)", border:"1px solid rgba(220,0,0,0.6)", boxShadow:"0 0 30px rgba(180,0,0,0.25)" }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1" style={{ color:"rgba(255,60,60,0.6)" }}>🚑 Emergency</div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#ff2222", textShadow:"0 0 20px rgba(255,40,40,0.9)" }}>Major Injury</div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.3)" }}>Long-term absence expected</div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes miDropIn{0%{opacity:0;transform:translateY(50px) scale(0.85)}55%{opacity:1;transform:translateY(-5px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}@keyframes miBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}@keyframes miPulse{0%,100%{transform:scaleY(1);opacity:0.5}50%{transform:scaleY(1.3);opacity:1}}`}</style>
+    </div>
+  );
+}
+
+// ============================================
+// YOUSEF CARD SELECTION — Epic Developer Reveal
+// trigger: clicking Yousef's card in transfer market
+// ============================================
+
+export function YousefCardAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"black"|"glitch"|"reveal"|"hold"|"exit">("black");
+  const [glitchText, setGlitchText] = useState("LOADING...");
+
+  useEffect(() => {
+    const glitchTexts = ["7GE", "???", "7GE", "LEGEND", "7GE", "DEV", "7GE"];
+    let gi = 0;
+    const glitchInt = setInterval(() => {
+      setGlitchText(glitchTexts[gi % glitchTexts.length]);
+      gi++;
+    }, 120);
+
+    const t1 = setTimeout(() => { clearInterval(glitchInt); setPhase("glitch"); }, 300);
+    const t2 = setTimeout(() => setPhase("reveal"),  1200);
+    const t3 = setTimeout(() => setPhase("hold"),    2400);
+    const t4 = setTimeout(() => setPhase("exit"),    6000);
+    const t5 = setTimeout(() => onDone(),            6700);
+    return () => {
+      clearInterval(glitchInt);
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
+    };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center overflow-hidden pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.7s ease-in" : "none",
+        background: "#000",
+      }}
+    >
+
+      {/* ── BIG 7GE BACKGROUND TEXT ── */}
+      <div
+        className="absolute inset-0 flex items-center justify-center select-none"
+        style={{ zIndex: 0 }}
+      >
+        <span
+          className="font-black"
+          style={{
+            fontSize: "clamp(200px, 40vw, 380px)",
+            color: "transparent",
+            WebkitTextStroke: phase === "hold"
+              ? "1px rgba(212,175,55,0.12)"
+              : "1px rgba(212,175,55,0.04)",
+            letterSpacing: "0.05em",
+            transition: "WebkitTextStroke 1s ease",
+            animation: phase === "hold" ? "bgTextPulse 4s ease-in-out infinite" : "none",
+            lineHeight: 1,
+            userSelect: "none",
+          }}
+        >
+          7GE
+        </span>
+      </div>
+
+      {/* ── SCAN LINES ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
+          zIndex: 1,
+        }}
+      />
+
+      {/* ── GLITCH PHASE ── */}
+      {(phase === "glitch") && (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ zIndex: 3 }}
+        >
+          <span
+            className="font-black tracking-widest"
+            style={{
+              fontSize: "clamp(60px, 12vw, 120px)",
+              color: "#D4AF37",
+              textShadow: "4px 0 #ff0000, -4px 0 #0000ff, 0 0 30px rgba(212,175,55,0.9)",
+              animation: "glitchMove 0.15s steps(1) infinite",
+            }}
+          >
+            {glitchText}
+          </span>
+        </div>
+      )}
+
+      {/* ── GOLD BEAMS ── */}
+      {(phase === "reveal" || phase === "hold") && (
+        <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                width: "1px",
+                height: "100vh",
+                top: 0,
+                left: `${5 + i * 8}%`,
+                background: `linear-gradient(180deg,
+                  transparent 0%,
+                  rgba(212,175,55,${0.06 + (i % 3) * 0.04}) 30%,
+                  rgba(212,175,55,${0.1 + (i % 3) * 0.05}) 50%,
+                  rgba(212,175,55,${0.06 + (i % 3) * 0.04}) 70%,
+                  transparent 100%)`,
+                animation: `beamWave ${3 + i * 0.4}s ease-in-out ${i * 0.15}s infinite alternate`,
+                transformOrigin: "center center",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── FLOATING 7GE PARTICLES ── */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
+          {["7","G","E","7","G","E","7","G","E","7"].map((char, i) => (
+            <span
+              key={i}
+              className="absolute font-black"
+              style={{
+                left: `${(i * 10.5) % 90}%`,
+                bottom: `${(i * 7) % 30}%`,
+                fontSize: `${10 + (i % 4) * 6}px`,
+                color: `rgba(212,175,55,${0.15 + (i % 3) * 0.1})`,
+                animation: `charFloat ${3 + i * 0.35}s ease-in-out ${i * 0.2}s infinite alternate`,
+              }}
+            >
+              {char}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* ── GOLD PARTICLES RISE ── */}
+      {(phase === "reveal" || phase === "hold") && (
+        <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
+          {[...Array(16)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: `${2 + (i % 3)}px`,
+                height: `${2 + (i % 3)}px`,
+                left: `${(i * 6.3) % 94}%`,
+                bottom: "5%",
+                background: "#D4AF37",
+                boxShadow: "0 0 4px rgba(212,175,55,0.8)",
+                animation: `particleRise ${2 + i * 0.2}s ease-out ${i * 0.1}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── RINGS ── */}
+      {phase === "hold" && (
+        <>
+          {[280, 380, 480].map((size, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                border: `1px solid rgba(212,175,55,${0.25 - i * 0.06})`,
+                animation: `ringRotate ${8 + i * 4}s linear infinite ${i % 2 === 0 ? "" : "reverse"}`,
+                zIndex: 2,
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="relative flex flex-col items-center gap-5" style={{ zIndex: 10 }}>
+
+        {/* Portrait */}
+        <div
+          style={{
+            opacity: phase === "black" || phase === "glitch" ? 0 : 1,
+            animation: phase === "reveal"
+              ? "portraitReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "portraitFloat 3.5s ease-in-out infinite"
+              : "none",
+            transition: "opacity 0.4s ease",
+          }}
+        >
+          <img
+            src="/images/yousef-pixel.png"
+            alt="Yousef"
+            style={{
+              width: "clamp(130px, 18vw, 180px)",
+              height: "auto",
+              imageRendering: "pixelated",
+              objectFit: "contain",
+              filter: phase === "hold"
+                ? "drop-shadow(0 0 20px rgba(212,175,55,1)) drop-shadow(0 0 40px rgba(212,175,55,0.6)) drop-shadow(0 0 80px rgba(212,175,55,0.3))"
+                : "drop-shadow(0 0 8px rgba(212,175,55,0.4))",
+              transition: "filter 0.6s ease",
+            }}
+          />
+        </div>
+
+        {/* Badge */}
+        <div
+          style={{
+            opacity: phase === "hold" ? 1 : 0,
+            transform: phase === "hold" ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
+            transition: "all 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s",
+            textAlign: "center",
+          }}
+        >
+          <div
+            className="px-10 py-6"
+            style={{
+              background: "linear-gradient(135deg, rgba(5,3,0,0.97), rgba(15,10,0,0.97))",
+              border: "1px solid rgba(212,175,55,0.7)",
+              boxShadow: "0 0 60px rgba(212,175,55,0.25), 0 0 120px rgba(212,175,55,0.08), inset 0 0 40px rgba(212,175,55,0.04)",
+            }}
+          >
+            {/* Top line */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.5))" }} />
+              <span className="text-[9px] tracking-[0.5em] uppercase" style={{ color: "rgba(212,175,55,0.5)" }}>Creator</span>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(212,175,55,0.5), transparent)" }} />
+            </div>
+
+            {/* Name */}
+            <div
+              className="font-black uppercase tracking-widest mb-1"
+              style={{
+                fontSize: "clamp(1.3rem, 3vw, 2rem)",
+                color: "#D4AF37",
+                textShadow: "0 0 30px rgba(212,175,55,1), 0 0 60px rgba(212,175,55,0.5)",
+              }}
+            >
+              Yousef Alnuwasser
+            </div>
+
+            {/* Tag */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span
+                className="font-black text-sm px-3 py-1 tracking-widest"
+                style={{
+                  background: "rgba(212,175,55,0.12)",
+                  border: "1px solid rgba(212,175,55,0.4)",
+                  color: "#D4AF37",
+                }}
+              >
+                7GE
+              </span>
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+              <span className="text-xs tracking-[0.25em] uppercase" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Independent Developer
+              </span>
+            </div>
+
+            {/* Message */}
+            <div
+              className="text-xs leading-relaxed px-2 py-3 text-center"
+              style={{
+                color: "rgba(255,255,255,0.4)",
+                borderTop: "1px solid rgba(212,175,55,0.1)",
+                borderBottom: "1px solid rgba(212,175,55,0.1)",
+              }}
+            >
+              شطور اشتريت المطور نفسه
+              <span className="mx-2" style={{ color: "rgba(212,175,55,0.3)" }}>·</span>
+              لاتنسى تدعم المشروع 😏
+            </div>
+
+            {/* Bottom line */}
+            <div className="flex items-center gap-3 mt-4">
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.3))" }} />
+              <span className="text-base">⭐</span>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(212,175,55,0.3), transparent)" }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bgTextPulse {
+          0%, 100% { opacity: 0.7; }
+          50%       { opacity: 1; }
+        }
+        @keyframes glitchMove {
+          0%   { transform: translate(0,0) skewX(0deg); }
+          20%  { transform: translate(-4px,2px) skewX(-3deg); }
+          40%  { transform: translate(4px,-2px) skewX(3deg); }
+          60%  { transform: translate(-2px,4px) skewX(-1deg); }
+          80%  { transform: translate(2px,-4px) skewX(2deg); }
+          100% { transform: translate(0,0) skewX(0deg); }
+        }
+        @keyframes beamWave {
+          0%   { transform: scaleY(0.8) translateY(-10%); opacity: 0.4; }
+          100% { transform: scaleY(1.2) translateY(10%);  opacity: 1; }
+        }
+        @keyframes charFloat {
+          0%   { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+          100% { transform: translateY(-40px) rotate(10deg); opacity: 0.35; }
+        }
+        @keyframes particleRise {
+          0%   { transform: translateY(0) scale(1);    opacity: 0.8; }
+          100% { transform: translateY(-90vh) scale(0.3); opacity: 0; }
+        }
+        @keyframes ringRotate {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes portraitReveal {
+          0%   { opacity: 0; transform: scale(0.2) translateY(30px); filter: brightness(5) blur(8px); }
+          50%  { opacity: 1; transform: scale(1.1) translateY(-6px); filter: brightness(1.5) blur(0); }
+          75%  { transform: scale(0.97) translateY(2px); filter: brightness(1); }
+          100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+        }
+        @keyframes portraitFloat {
+          0%, 100% { transform: translateY(0) scale(1); }
+          40%       { transform: translateY(-14px) scale(1.03); }
+          70%       { transform: translateY(-5px) scale(1.01); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// أضف أنيميشنات جديدة هنا
+// ============================================
+
+// ============================================
 // أضف أنيميشنات جديدة هنا
 // ============================================

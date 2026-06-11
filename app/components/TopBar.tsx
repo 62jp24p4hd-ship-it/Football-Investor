@@ -56,7 +56,7 @@ export default function TopBar({
 
             {/* Season Card */}
             <button onClick={onSeasonClick}
-              className="flex items-center gap-2.5 px-3 py-2 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2.5 px-3 py-2"
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.1)",

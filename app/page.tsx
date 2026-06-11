@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation } from "./animations/index";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -98,6 +98,15 @@ export default function Home() {
   const [showRecordTransferAnim, setShowRecordTransferAnim] = useState(false);
   const [showWonderkidAnim, setShowWonderkidAnim] = useState(false);
   const [showBobPaisleyAnim, setShowBobPaisleyAnim] = useState(false);
+  const [showHotMarketAnim, setShowHotMarketAnim] = useState(false);
+  const [showOneSeasonWonderAnim, setShowOneSeasonWonderAnim] = useState(false);
+  const [showCasinoNightAnim, setShowCasinoNightAnim] = useState(false);
+  const [showMarketCrashAnim, setShowMarketCrashAnim] = useState(false);
+  const [showFailedTransferAnim, setShowFailedTransferAnim] = useState(false);
+  const [showBenchWarmerAnim, setShowBenchWarmerAnim] = useState(false);
+  const [showBreakupSeasonAnim, setShowBreakupSeasonAnim] = useState(false);
+  const [showFreeTransferAnim, setShowFreeTransferAnim] = useState(false);
+  const [showMajorInjuryAnim, setShowMajorInjuryAnim] = useState(false);
   const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
@@ -679,7 +688,7 @@ export default function Home() {
   function handleSeasonClick() {
     const next = seasonSecretClicks + 1;
     setSeasonSecretClicks(next);
-    if (next >= 20) { setShowDeveloperPanel(true); }
+    if (next >= 20) { setShowDeveloperPanel(true); setSeasonSecretClicks(0); }
   }
 
   function handleDevEvent(eventId: DevEventId) {
@@ -709,18 +718,21 @@ export default function Home() {
       const result = triggerBreakupSeason(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowBreakupSeasonAnim(true);
       return;
     }
     if (eventId === "casinoNight") {
       const result = triggerCasinoNight(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowCasinoNightAnim(true);
       return;
     }
     if (eventId === "oneSeasonWonder") {
       const result = triggerOneSeasonWonder(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowOneSeasonWonderAnim(true);
       return;
     }
     if (eventId === "youTubeViral") {
@@ -770,6 +782,8 @@ export default function Home() {
         })));
       }
       addNewsItems(result.newsItems);
+      if (eventId === "hotMarket")   setShowHotMarketAnim(true);
+      if (eventId === "marketCrash") setShowMarketCrashAnim(true);
       return;
     }
     const positive = ["ballonDor", "goldenBoy", "goldenBoot", "wonderkid", "saudiOffer", "recordTransfer"].includes(eventId);
@@ -785,6 +799,10 @@ export default function Home() {
     if (eventId === "wonderkid")      setShowWonderkidAnim(true);
     if ((eventId as string) === "fastFoodAddiction") setShowFastFoodAnim(true);
     if ((eventId as string) === "youTubeViral") setShowYouTubeAnim(true);
+    if (eventId === "failedTransfer") setShowFailedTransferAnim(true);
+    if (eventId === "benchWarmer")    setShowBenchWarmerAnim(true);
+    if (eventId === "freeTransfer")   setShowFreeTransferAnim(true);
+    if (eventId === "majorInjury")    setShowMajorInjuryAnim(true);
   }
 
   // ============================================
@@ -899,6 +917,33 @@ export default function Home() {
         }
         if (singleResult.newsItems.some(n => n.title.includes("Bob Paisley") || n.title.includes("Paisley"))) {
           setTimeout(() => setShowBobPaisleyAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Hot Market") || n.title.includes("Hot Transfer"))) {
+          setTimeout(() => setShowHotMarketAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Market Crash"))) {
+          setTimeout(() => setShowMarketCrashAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("One Season Wonder"))) {
+          setTimeout(() => setShowOneSeasonWonderAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Casino"))) {
+          setTimeout(() => setShowCasinoNightAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Failed Transfer"))) {
+          setTimeout(() => setShowFailedTransferAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Bench Warmer"))) {
+          setTimeout(() => setShowBenchWarmerAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Breakup"))) {
+          setTimeout(() => setShowBreakupSeasonAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Free Transfer"))) {
+          setTimeout(() => setShowFreeTransferAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Major Injury"))) {
+          setTimeout(() => setShowMajorInjuryAnim(true), 400);
         }
         if (singleResult.newsItems.some(n => n.title.includes("Fast Food") || n.title.includes("Food"))) {
           setTimeout(() => setShowFastFoodAnim(true), 400);
@@ -1265,6 +1310,42 @@ export default function Home() {
 
       {showBobPaisleyAnim && (
         <BobPaisleyAnimation onDone={() => setShowBobPaisleyAnim(false)} />
+      )}
+
+      {showHotMarketAnim && (
+        <HotMarketAnimation onDone={() => setShowHotMarketAnim(false)} />
+      )}
+
+      {showOneSeasonWonderAnim && (
+        <OneSeasonWonderAnimation onDone={() => setShowOneSeasonWonderAnim(false)} />
+      )}
+
+      {showCasinoNightAnim && (
+        <CasinoNightAnimation onDone={() => setShowCasinoNightAnim(false)} />
+      )}
+
+      {showMarketCrashAnim && (
+        <MarketCrashAnimation onDone={() => setShowMarketCrashAnim(false)} />
+      )}
+
+      {showFailedTransferAnim && (
+        <FailedTransferAnimation onDone={() => setShowFailedTransferAnim(false)} />
+      )}
+
+      {showBenchWarmerAnim && (
+        <BenchWarmerAnimation onDone={() => setShowBenchWarmerAnim(false)} />
+      )}
+
+      {showBreakupSeasonAnim && (
+        <BreakupSeasonAnimation onDone={() => setShowBreakupSeasonAnim(false)} />
+      )}
+
+      {showFreeTransferAnim && (
+        <FreeTransferAnimation onDone={() => setShowFreeTransferAnim(false)} />
+      )}
+
+      {showMajorInjuryAnim && (
+        <MajorInjuryAnimation onDone={() => setShowMajorInjuryAnim(false)} />
       )}
 
       {showFastFoodAnim && (

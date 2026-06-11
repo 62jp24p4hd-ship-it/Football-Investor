@@ -34,18 +34,37 @@ export function createAuctionState(
     gamePlayers.flatMap((gp) => gp.owned.map((item) => item.player.name))
   );
 
-  const available = shuffle(
+  // First try: players available this season
+  let candidates = shuffle(
     playerPool.filter(
-      (p) =>
-        p.availableSeason === currentSeason &&
-        !ownedNames.has(p.name)
+      (p) => p.availableSeason === currentSeason && !ownedNames.has(p.name)
     )
   ).slice(0, 3);
 
-  if (available.length === 0) return null;
+  // Fallback: any unowned player within ±3 seasons, sorted by value desc
+  if (candidates.length === 0) {
+    candidates = shuffle(
+      playerPool
+        .filter(
+          (p) =>
+            !ownedNames.has(p.name) &&
+            Math.abs((p.availableSeason ?? currentSeason) - currentSeason) <= 3
+        )
+        .sort((a, b) => getCurrentValue(b, currentSeason) - getCurrentValue(a, currentSeason))
+    ).slice(0, 3);
+  }
+
+  // Last resort: any unowned player
+  if (candidates.length === 0) {
+    candidates = shuffle(
+      playerPool.filter((p) => !ownedNames.has(p.name))
+    ).slice(0, 3);
+  }
+
+  if (candidates.length === 0) return null;
 
   return {
-    candidates: available,
+    candidates,
     selectedPlayer: null,
     phase: "preview",
     timer: AUCTION_PREVIEW_SECONDS,

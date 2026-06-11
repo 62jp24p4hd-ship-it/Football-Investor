@@ -9,6 +9,11 @@ type Props = {
 };
 
 // Pixel art images for events that have animations
+// Non-DevEventId entries handled separately
+const SPECIAL_PIXEL_IMAGES: Record<string, string> = {
+  yousefCard: "/images/yousef-pixel.png",
+};
+
 const EVENT_PIXEL_IMAGES: Partial<Record<DevEventId, string>> = {
   florentinoPerez: "/images/florentino-pixel.png",
   aclInjury:       "/images/acl-injury-pixel.png",
@@ -18,12 +23,21 @@ const EVENT_PIXEL_IMAGES: Partial<Record<DevEventId, string>> = {
   goldenBoy:           "/images/golden-boy-pixel.png",
   recordTransfer:      "/images/record-transfer-pixel.png",
   wonderkid:           "/images/wonderkid-pixel.png",
+  hotMarket:           "/images/hot-market-pixel.png",
+  oneSeasonWonder:     "/images/one-season-wonder-pixel.png",
+  casinoNight:         "/images/casino-night-pixel.png",
+  marketCrash:         "/images/market-crash-pixel.png",
+  failedTransfer:      "/images/failed-transfer-pixel.png",
+  benchWarmer:         "/images/bench-warmer-pixel.png",
+  breakupSeason:       "/images/breakup-season-pixel.png",
+  freeTransfer:        "/images/free-transfer-pixel.png",
+  majorInjury:         "/images/major-injury-pixel.png",
   bobPaisleyDisaster:  "/images/bob-paisley-pixel.png",
   fastFoodAddiction:   "/images/fastfood-pixel.png",
   youTubeViral:        "/images/youtube-viral-pixel.png",
 };
 
-const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative" | "special" }[] = [
+const DEV_EVENTS: { id: DevEventId | string; label: string; type: "positive" | "negative" | "special" }[] = [
   { id: "hotMarket",         label: "🔥 Hot Market",            type: "positive" },
   { id: "ballonDor",         label: "🏆 Ballon d'Or",           type: "positive" },
   { id: "goldenBoy",         label: "🌟 Golden Boy",            type: "positive" },
@@ -50,6 +64,7 @@ const DEV_EVENTS: { id: DevEventId; label: string; type: "positive" | "negative"
   { id: "bobPaisleyDisaster",label: "✈️ Bob Paisley Disaster",  type: "special"  },
   { id: "dreamSeason",       label: "🔥 Dream Season",          type: "special"  },
   { id: "lockerRoomDrama",   label: "🗣️ Locker Room Drama",    type: "special"  },
+  { id: "yousefCard",        label: "Yousef Alnuwasser",          type: "special"  },
 ];
 
 export default function DeveloperPanel({ onTrigger, onClose }: Props) {
@@ -127,7 +142,7 @@ export default function DeveloperPanel({ onTrigger, onClose }: Props) {
               {DEV_EVENTS.filter((e) => e.type === type).map((event) => (
                 <button
                   key={event.id}
-                  onClick={() => onTrigger(event.id)}
+                  onClick={() => onTrigger(event.id as DevEventId)}
                   className={`text-left px-3 py-2.5 text-sm transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 ${
                     type === "positive"
                       ? "bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/20"
@@ -136,9 +151,9 @@ export default function DeveloperPanel({ onTrigger, onClose }: Props) {
                       : "bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 border border-purple-500/20"
                   }`}
                 >
-                  {EVENT_PIXEL_IMAGES[event.id] ? (
+                  {(EVENT_PIXEL_IMAGES[event.id as DevEventId] || SPECIAL_PIXEL_IMAGES[event.id]) ? (
                     <img
-                      src={EVENT_PIXEL_IMAGES[event.id]}
+                      src={EVENT_PIXEL_IMAGES[event.id as DevEventId] || SPECIAL_PIXEL_IMAGES[event.id]}
                       alt=""
                       width={22}
                       height={22}
