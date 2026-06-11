@@ -2316,5 +2316,513 @@ export function YousefCardAnimation({ onDone }: AnimProps) {
 // ============================================
 
 // ============================================
+// ERIKSEN HEART ATTACK
+// ============================================
+// ============================================
+// ERIKSEN HEART ATTACK
+// Concept: ECG flatline — screen goes white then red crash
+// ============================================
+export function EriksenAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"black"|"flash"|"crash"|"hold"|"exit">("black");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("flash"),  200);
+    const t2 = setTimeout(() => setPhase("crash"),  700);
+    const t3 = setTimeout(() => setPhase("hold"),   1400);
+    const t4 = setTimeout(() => setPhase("exit"),   4500);
+    const t5 = setTimeout(() => onDone(),           5200);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
+  }, [onDone]);
+
+  // ECG values — normal then flatline
+  const ecgNormal = [0,5,2,8,30,-20,10,2,0,3,1,0,4,2,0,6,25,-18,8,0];
+  const ecgFlat   = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  const ecg = phase === "hold" ? ecgFlat : ecgNormal;
+  const maxV = 35;
+  const pts = ecg.map((v,i) => `${(i/(ecg.length-1))*260},${40 - (v/maxV)*35}`).join(" ");
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-none overflow-hidden"
+      style={{
+        background: phase==="flash" ? "#ffffff"
+          : phase==="crash" ? "#cc0000"
+          : phase==="hold" || phase==="exit" ? "#000" : "#000",
+        transition: phase==="flash" ? "background 0.2s" : phase==="crash" ? "background 0.5s" : "background 0.8s ease",
+        opacity: phase==="exit" ? 0 : 1,
+      }}>
+
+      {/* Screen shake on crash */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center"
+        style={{ animation: phase==="crash" ? "ekgScreenShake 0.5s ease-out" : "none" }}>
+
+        {/* Dark overlay after crash */}
+        {(phase==="hold" || phase==="exit") && (
+          <div className="absolute inset-0" style={{ background:"radial-gradient(ellipse at center, rgba(60,0,0,0.7) 0%, rgba(0,0,0,0.98) 70%)" }} />
+        )}
+
+        {/* ECG monitor frame */}
+        {(phase==="crash" || phase==="hold") && (
+          <div className="absolute top-8 left-0 right-0 flex justify-center" style={{ zIndex:3 }}>
+            <div style={{ background:"rgba(0,0,0,0.9)", border:`1px solid ${phase==="hold"?"rgba(255,0,0,0.5)":"rgba(0,255,80,0.5)"}`, padding:"8px 16px", minWidth:"300px" }}>
+              <div className="text-[9px] tracking-widest uppercase mb-1" style={{ color: phase==="hold" ? "#ff4444" : "#00ff50" }}>
+                {phase==="hold" ? "⚠️ CARDIAC ARREST — FLATLINE" : "ECG MONITOR"}
+              </div>
+              <svg width="260" height="50" style={{ display:"block" }}>
+                <polyline points={pts} fill="none"
+                  stroke={phase==="hold" ? "#ff2222" : "#00ff50"}
+                  strokeWidth="2"
+                  style={{ filter: `drop-shadow(0 0 4px ${phase==="hold" ? "#ff2222" : "#00ff50"})` }}
+                />
+                {phase==="hold" && (
+                  <circle cx="260" cy="40" r="3" fill="#ff2222"
+                    style={{ animation:"ekgDot 0.8s ease-in-out infinite" }} />
+                )}
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Portrait */}
+        <div className="relative z-10 flex flex-col items-center gap-5 mt-16">
+          <img src="/images/eriksen-pixel.png" alt="Heart Attack"
+            style={{
+              width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+              animation: phase==="crash" ? "ekgFall 0.7s cubic-bezier(0.22,1,0.36,1) forwards"
+                : phase==="hold" ? "ekgLieDown 3s ease-in-out infinite" : "none",
+              filter: phase==="hold" ? "grayscale(0.6) drop-shadow(0 0 20px rgba(255,0,0,0.6))"
+                : phase==="crash" ? "brightness(2)" : "none",
+              transition:"filter 0.5s ease",
+              transform: phase==="hold" ? "rotate(90deg) translateX(20px)" : "none",
+            }}
+          />
+          {phase==="hold" && (
+            <div style={{ textAlign:"center", opacity:1 }}>
+              <div className="px-10 py-5" style={{ background:"rgba(5,0,0,0.97)", border:"1px solid rgba(255,0,0,0.8)", boxShadow:"0 0 50px rgba(255,0,0,0.4), inset 0 0 30px rgba(255,0,0,0.05)" }}>
+                <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{ color:"rgba(255,100,100,0.6)" }}>CARDIAC ARREST</div>
+                <div className="font-black text-3xl tracking-widest uppercase" style={{ color:"#ff1111", textShadow:"0 0 30px rgba(255,0,0,1), 0 0 60px rgba(255,0,0,0.5)" }}>Heart Attack</div>
+                <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{ color:"rgba(255,255,255,0.25)" }}>Player collapsed on the pitch</div>
+                <div className="text-xs mt-1" style={{ color:"rgba(255,100,100,0.5)" }}>Value −65% · Out full season</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes ekgScreenShake{0%,100%{transform:translate(0)}15%{transform:translate(-12px,8px)}30%{transform:translate(12px,-8px)}45%{transform:translate(-8px,4px)}60%{transform:translate(8px,-4px)}75%{transform:translate(-4px,2px)}}
+        @keyframes ekgFall{0%{opacity:0;transform:scale(0.5) translateY(-60px) rotate(0deg)}60%{opacity:1;transform:scale(1.05) translateY(6px) rotate(45deg)}100%{opacity:1;transform:rotate(90deg) translateX(20px)}}
+        @keyframes ekgLieDown{0%,100%{transform:rotate(90deg) translateX(20px) scale(1)}50%{transform:rotate(90deg) translateX(20px) scale(1.02)}}
+        @keyframes ekgDot{0%,100%{opacity:1}50%{opacity:0}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// DOPING BAN
+// Concept: newspaper headlines flash + mugshot style
+// ============================================
+export function DopingBanAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"flash"|"hold"|"exit">("enter");
+  const [headline, setHeadline] = useState(0);
+  const headlines = ["BANNED!", "DOPING!", "SCANDAL!", "SUSPENDED!", "BUSTED!"];
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("flash"), 300);
+    const t2 = setTimeout(() => setPhase("hold"),  1200);
+    const t3 = setTimeout(() => setPhase("exit"),  4200);
+    const t4 = setTimeout(() => onDone(),          5000);
+    const hi = setInterval(() => setHeadline(h => (h+1)%headlines.length), 200);
+    setTimeout(() => clearInterval(hi), 1200);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearInterval(hi); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-none overflow-hidden flex items-center justify-center"
+      style={{ opacity: phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s":"none",
+        background: phase==="flash" ? "#f5f0e0" : phase==="hold" ? "#0a0a0a" : "#000" }}>
+
+      {/* Newspaper flash */}
+      {phase==="flash" && (
+        <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex:5 }}>
+          <div style={{ fontFamily:"serif", fontSize:"clamp(60px,12vw,100px)", fontWeight:900, color:"#1a1a1a",
+            textAlign:"center", lineHeight:1, animation:"dopFlash 0.15s steps(1) infinite",
+            textShadow:"4px 4px 0 rgba(0,0,0,0.2)" }}>
+            {headlines[headline]}
+          </div>
+        </div>
+      )}
+
+      {phase==="hold" && (
+        <>
+          {/* Mugshot grid lines */}
+          <div className="absolute inset-0" style={{ backgroundImage:"linear-gradient(rgba(0,80,150,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,80,150,0.04) 1px,transparent 1px)", backgroundSize:"30px 30px" }} />
+
+          {/* Red BANNED stamp */}
+          <div className="absolute" style={{ top:"12%", right:"8%", zIndex:5,
+            border:"4px solid rgba(255,0,0,0.85)", padding:"6px 16px",
+            transform:"rotate(-15deg)",
+            color:"rgba(255,0,0,0.85)", fontWeight:900, fontSize:"clamp(20px,4vw,36px)",
+            letterSpacing:"0.15em", animation:"dopStamp 0.4s cubic-bezier(0.22,1,0.36,1) forwards",
+            textShadow:"0 0 10px rgba(255,0,0,0.5)" }}>
+            BANNED
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            {/* Mugshot frame */}
+            <div style={{ position:"relative", border:"3px solid #444", padding:"8px", background:"#111" }}>
+              <img src="/images/doping-ban-pixel.png" alt="Doping Ban"
+                style={{ width:"clamp(150px,24vw,200px)", imageRendering:"pixelated", objectFit:"contain",
+                  filter:"grayscale(0.8) contrast(1.2)" }} />
+              {/* Mugshot number bar */}
+              <div style={{ background:"#222", borderTop:"1px solid #444", padding:"4px 8px",
+                display:"flex", justifyContent:"space-between", marginTop:"4px" }}>
+                {["0","0","7","4","2"].map((n,i) => (
+                  <span key={i} style={{ color:"#888", fontSize:"14px", fontFamily:"monospace", fontWeight:700 }}>{n}</span>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ textAlign:"center" }}>
+              <div className="px-8 py-4" style={{ background:"rgba(0,5,15,0.98)", border:"1px solid rgba(0,100,255,0.5)", boxShadow:"0 0 40px rgba(0,80,200,0.2)" }}>
+                <div className="text-[9px] tracking-[0.5em] uppercase mb-1" style={{ color:"rgba(80,120,255,0.6)" }}>WADA SUSPENSION</div>
+                <div className="font-black text-2xl tracking-widest uppercase" style={{ color:"#4466ff", textShadow:"0 0 20px rgba(60,100,255,0.9)" }}>Doping Ban</div>
+                <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.25)" }}>Cannot sell or renew during suspension</div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <style>{`
+        @keyframes dopFlash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}}
+        @keyframes dopStamp{0%{transform:rotate(-15deg) scale(3);opacity:0}60%{transform:rotate(-15deg) scale(0.9);opacity:1}100%{transform:rotate(-15deg) scale(1);opacity:1}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// GIRLS MAGNET
+// Concept: paparazzi camera flashes + spotlight
+// ============================================
+export function GirlsMagnetAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  800);
+    const t2 = setTimeout(() => setPhase("exit"),  4000);
+    const t3 = setTimeout(() => onDone(),          4700);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-none overflow-hidden flex items-center justify-center"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.3s",
+        background:"#000" }}>
+
+      {/* Camera flashes */}
+      {phase==="hold" && (
+        <div className="absolute inset-0">
+          {[...Array(8)].map((_,i) => (
+            <div key={i} className="absolute inset-0" style={{
+              background:"rgba(255,255,255,0.9)",
+              animation:`gmFlash 2s steps(1) ${i*0.25}s infinite`,
+              opacity:0,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Spotlight beam from top */}
+      {phase==="hold" && (
+        <div className="absolute" style={{
+          top:0, left:"50%", transform:"translateX(-50%)",
+          width:"200px", height:"100vh",
+          background:"linear-gradient(180deg, rgba(255,200,255,0.15) 0%, transparent 70%)",
+          animation:"gmSpot 2s ease-in-out infinite alternate",
+          clipPath:"polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)",
+        }} />
+      )}
+
+      {/* Floating hearts */}
+      {phase==="hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["💋","❤️","💕","💖","💗","💓"].map((em,i) => (
+            <span key={i} style={{
+              position:"absolute",
+              left:`${15+(i*14)}%`, bottom:"-20px",
+              fontSize:`${20+(i%3)*12}px`,
+              animation:`gmHeart ${1.5+i*0.3}s ease-out ${i*0.15}s infinite`,
+            }}>{em}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center gap-5"
+        style={{ animation: phase==="enter" ? "gmReveal 0.8s cubic-bezier(0.22,1,0.36,1) forwards" : "none" }}>
+
+        <img src="/images/girls-magnet-pixel.png" alt="Girls Magnet"
+          style={{
+            width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+            animation: phase==="hold" ? "gmPose 3s ease-in-out infinite" : "none",
+            filter: phase==="hold" ? "drop-shadow(0 0 30px rgba(255,150,200,0.9)) drop-shadow(0 0 60px rgba(255,80,180,0.4)) saturate(1.3)" : "none",
+          }}
+        />
+
+        {phase==="hold" && (
+          <div style={{ textAlign:"center" }}>
+            <div className="px-10 py-5" style={{
+              background:"linear-gradient(135deg,rgba(10,0,8,0.97),rgba(30,0,20,0.97))",
+              border:"1px solid rgba(255,100,180,0.8)",
+              boxShadow:"0 0 50px rgba(255,80,160,0.35), inset 0 0 30px rgba(255,80,160,0.05)" }}>
+              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{ color:"rgba(255,150,200,0.6)" }}>CELEBRITY STATUS</div>
+              <div className="font-black text-3xl tracking-widest uppercase" style={{ color:"#ff3080", textShadow:"0 0 30px rgba(255,60,140,1), 0 0 60px rgba(255,60,140,0.4)" }}>Girls Magnet</div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-2" style={{ color:"rgba(255,255,255,0.25)" }}>Marketing value +25% · Salary demands +30%</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes gmFlash{0%,90%,100%{opacity:0}92%{opacity:0.6}95%{opacity:0}}
+        @keyframes gmSpot{0%{transform:translateX(-50%) rotate(-5deg)}100%{transform:translateX(-50%) rotate(5deg)}}
+        @keyframes gmHeart{0%{transform:translateY(0) scale(0.5);opacity:1}100%{transform:translateY(-100vh) scale(1.5);opacity:0}}
+        @keyframes gmReveal{0%{opacity:0;transform:scale(0.5)}60%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+        @keyframes gmPose{0%,100%{transform:scale(1) rotate(0deg)}25%{transform:scale(1.04) rotate(-2deg)}75%{transform:scale(1.04) rotate(2deg)}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// RACIST ATTACK
+// Concept: screen cracks + color drains + fist rises
+// ============================================
+export function RacistAttackAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter"|"crack"|"hold"|"fist"|"exit">("enter");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("crack"),  400);
+    const t2 = setTimeout(() => setPhase("hold"),   1000);
+    const t3 = setTimeout(() => setPhase("fist"),   3000);
+    const t4 = setTimeout(() => setPhase("exit"),   4500);
+    const t5 = setTimeout(() => onDone(),           5200);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-none overflow-hidden flex items-center justify-center"
+      style={{
+        opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"none",
+        background: phase==="crack" ? "#1a0800"
+          : phase==="hold" || phase==="fist" ? "#050200" : "#000",
+      }}>
+
+      {/* Crack overlay */}
+      {(phase==="crack" || phase==="hold") && (
+        <div className="absolute inset-0" style={{ zIndex:2,
+          backgroundImage:"radial-gradient(ellipse at 40% 40%, transparent 40%, rgba(0,0,0,0.8) 80%)",
+          animation:"raCrack 0.6s ease-out forwards" }} />
+      )}
+
+      {/* Noise texture */}
+      {phase==="hold" && (
+        <div className="absolute inset-0" style={{ zIndex:1,
+          backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 4px)",
+          animation:"raNoise 0.1s steps(1) infinite" }} />
+      )}
+
+      {/* Crying tears */}
+      {(phase==="hold" || phase==="fist") && (
+        <div className="absolute inset-0 overflow-hidden" style={{ zIndex:3 }}>
+          {[...Array(6)].map((_,i) => (
+            <div key={i} className="absolute rounded-full" style={{
+              width:`${4+(i%3)*3}px`, height:`${4+(i%3)*3}px`,
+              left:`${20+(i*12)}%`, top:"30%",
+              background:"rgba(100,160,255,0.7)",
+              animation:`raTear ${1+i*0.2}s ease-in ${i*0.1}s infinite`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-col items-center gap-5"
+        style={{ animation:phase==="crack"?"raShake 0.5s ease-out":"none" }}>
+
+        <img src="/images/racism-attack-pixel.png" alt="Racist Attack"
+          style={{
+            width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+            filter: phase==="hold" ? "grayscale(0.7) brightness(0.8) drop-shadow(0 0 15px rgba(100,60,30,0.5))"
+              : phase==="fist" ? "grayscale(0) brightness(1.2) drop-shadow(0 0 20px rgba(255,160,60,0.6))" : "none",
+            animation: phase==="crack" ? "raSlump 0.6s ease-out forwards"
+              : phase==="fist" ? "raRise 0.8s cubic-bezier(0.22,1,0.36,1) forwards" : "none",
+            transition:"filter 0.8s ease",
+          }}
+        />
+
+        {(phase==="hold" || phase==="fist") && (
+          <div style={{ textAlign:"center", opacity:1 }}>
+            <div className="px-8 py-5" style={{
+              background:"rgba(5,2,0,0.97)",
+              border:`1px solid ${phase==="fist" ? "rgba(255,160,60,0.7)" : "rgba(100,60,30,0.5)"}`,
+              boxShadow:`0 0 40px ${phase==="fist" ? "rgba(255,140,40,0.25)" : "rgba(80,40,10,0.2)"}`,
+              transition:"all 0.8s ease" }}>
+              <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{ color: phase==="fist" ? "rgba(255,180,60,0.7)" : "rgba(180,100,50,0.5)" }}>
+                {phase==="fist" ? "NO SURRENDER" : "RACIAL ABUSE"}
+              </div>
+              <div className="font-black text-2xl tracking-widest uppercase" style={{
+                color: phase==="fist" ? "#ff9020" : "#8a4020",
+                textShadow: phase==="fist" ? "0 0 24px rgba(255,140,40,0.9)" : "0 0 15px rgba(150,70,30,0.5)" }}>
+                {phase==="fist" ? "Stand Strong" : "Racist Attack"}
+              </div>
+              <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color:"rgba(255,255,255,0.2)" }}>
+                {phase==="fist" ? "Bounce back coming — stronger than ever" : "Value −20% · Performance affected 2 seasons"}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes raCrack{0%{opacity:0}100%{opacity:1}}
+        @keyframes raShake{0%,100%{transform:translate(0)}20%{transform:translate(-10px,5px)}40%{transform:translate(10px,-5px)}60%{transform:translate(-6px,3px)}80%{transform:translate(6px,-3px)}}
+        @keyframes raSlump{0%{transform:translateY(-20px)}100%{transform:translateY(5px) rotate(-2deg)}}
+        @keyframes raRise{0%{transform:rotate(-2deg) translateY(5px)}60%{transform:rotate(2deg) translateY(-8px) scale(1.05)}100%{transform:rotate(0) translateY(0) scale(1)}}
+        @keyframes raTear{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(60vh);opacity:0}}
+        @keyframes raNoise{0%{opacity:0.3}50%{opacity:0.6}100%{opacity:0.3}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// CLUB LEGEND
+// Concept: stadium statue reveal, crowd roar effect
+// ============================================
+export function ClubLegendAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"dark"|"spotlight"|"unveil"|"hold"|"exit">("dark");
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("spotlight"), 300);
+    const t2 = setTimeout(() => setPhase("unveil"),    1000);
+    const t3 = setTimeout(() => setPhase("hold"),      2000);
+    const t4 = setTimeout(() => setPhase("exit"),      5500);
+    const t5 = setTimeout(() => onDone(),              6200);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-none overflow-hidden flex items-center justify-center"
+      style={{ opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 1s ease-in":"none",
+        background:"#000" }}>
+
+      {/* Stadium crowd silhouette */}
+      {(phase==="hold" || phase==="unveil") && (
+        <div className="absolute bottom-0 left-0 right-0" style={{ height:"25%", zIndex:1,
+          background:"linear-gradient(180deg, transparent 0%, rgba(10,8,0,0.9) 100%)",
+          backgroundImage:"repeating-linear-gradient(90deg, rgba(255,200,0,0.03) 0, rgba(255,200,0,0.03) 2px, transparent 2px, transparent 8px)" }} />
+      )}
+
+      {/* Confetti */}
+      {phase==="hold" && (
+        <div className="absolute inset-0 overflow-hidden" style={{ zIndex:2 }}>
+          {[...Array(20)].map((_,i) => (
+            <div key={i} className="absolute" style={{
+              width:`${4+(i%3)*3}px`, height:`${8+(i%4)*4}px`,
+              left:`${(i*5.3)%96}%`, top:"-20px",
+              background:`hsl(${(i*37)%360},80%,60%)`,
+              animation:`clConfetti ${2+i*0.15}s linear ${i*0.08}s infinite`,
+              borderRadius:"1px",
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Spotlight */}
+      {(phase==="spotlight" || phase==="unveil" || phase==="hold") && (
+        <div className="absolute" style={{
+          top:0, left:"50%", transform:"translateX(-50%)",
+          width:"300px", height:"100vh", zIndex:1,
+          background:"linear-gradient(180deg, rgba(255,220,100,0.25) 0%, rgba(255,200,50,0.05) 50%, transparent 80%)",
+          clipPath:"polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%)",
+          animation:"clSpot 3s ease-in-out infinite alternate",
+        }} />
+      )}
+
+      {/* Three concentric gold rings expanding */}
+      {phase==="hold" && (
+        <>
+          {[200,320,440].map((size,i) => (
+            <div key={i} className="absolute rounded-full" style={{
+              width:`${size}px`, height:`${size}px`,
+              border:`${2-i*0.5}px solid rgba(212,175,55,${0.6-i*0.15})`,
+              animation:`clExpand 2.5s ease-out ${i*0.3}s infinite`,
+              zIndex:2,
+            }} />
+          ))}
+        </>
+      )}
+
+      {/* Portrait */}
+      <div className="relative z-10 flex flex-col items-center gap-6">
+        <div style={{
+          position:"relative",
+          animation: phase==="spotlight" ? "clSpotReveal 0.7s ease-out forwards"
+            : phase==="unveil" ? "clUnveil 1s cubic-bezier(0.22,1,0.36,1) forwards"
+            : phase==="hold" ? "clLegendFloat 4s ease-in-out infinite" : "none",
+        }}>
+          {/* Gold pedestal */}
+          {(phase==="unveil" || phase==="hold") && (
+            <div style={{ position:"absolute", bottom:"-16px", left:"50%", transform:"translateX(-50%)",
+              width:"80%", height:"16px",
+              background:"linear-gradient(90deg,#8B6914,#D4AF37,#8B6914)",
+              boxShadow:"0 4px 20px rgba(212,175,55,0.5)" }} />
+          )}
+          <img src="/images/club-legend-pixel.png" alt="Club Legend"
+            style={{
+              width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+              filter: phase==="hold"
+                ? "drop-shadow(0 0 30px rgba(212,175,55,1)) drop-shadow(0 0 60px rgba(212,175,55,0.6)) drop-shadow(0 0 100px rgba(255,220,80,0.3))"
+                : "none",
+              transition:"filter 0.8s ease",
+            }}
+          />
+        </div>
+
+        {phase==="hold" && (
+          <div style={{ textAlign:"center" }}>
+            <div className="px-10 py-6" style={{
+              background:"linear-gradient(135deg,rgba(0,0,0,0.97),rgba(15,10,0,0.97))",
+              border:"1px solid rgba(212,175,55,0.9)",
+              boxShadow:"0 0 60px rgba(212,175,55,0.4), 0 0 120px rgba(212,175,55,0.15), inset 0 0 40px rgba(212,175,55,0.05)" }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div style={{ flex:1, height:"1px", background:"linear-gradient(90deg,transparent,rgba(212,175,55,0.6))" }} />
+                <span className="text-[9px] tracking-[0.5em] uppercase" style={{ color:"rgba(212,175,55,0.5)" }}>Eternal</span>
+                <div style={{ flex:1, height:"1px", background:"linear-gradient(90deg,rgba(212,175,55,0.6),transparent)" }} />
+              </div>
+              <div className="font-black tracking-widest uppercase" style={{
+                fontSize:"clamp(1.5rem,4vw,2.5rem)",
+                color:"#D4AF37",
+                textShadow:"0 0 30px rgba(212,175,55,1), 0 0 60px rgba(212,175,55,0.6), 0 0 100px rgba(255,220,80,0.3)" }}>
+                Club Legend
+              </div>
+              <div className="text-xs tracking-[0.25em] uppercase mt-2" style={{ color:"rgba(255,255,255,0.25)" }}>
+                Forever loyal · Accepts any contract
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes clSpotReveal{0%{opacity:0;transform:scale(0.3)}100%{opacity:1;transform:scale(1)}}
+        @keyframes clUnveil{0%{opacity:0;transform:scale(0.5) translateY(40px)}60%{opacity:1;transform:scale(1.1) translateY(-8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes clLegendFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-16px) scale(1.03)}}
+        @keyframes clExpand{0%{transform:scale(0.3);opacity:0.8}100%{transform:scale(2);opacity:0}}
+        @keyframes clSpot{0%{transform:translateX(-50%) rotate(-4deg)}100%{transform:translateX(-50%) rotate(4deg)}}
+        @keyframes clConfetti{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
 // أضف أنيميشنات جديدة هنا
 // ============================================

@@ -282,7 +282,7 @@ export function createMarketEvent(
 
 // ذاكرة الإيفنتات الأخيرة — anti-repetition
 const recentEvents: string[] = [];
-const MAX_RECENT = 3;
+const MAX_RECENT = 6; // كان 3 — الحين يتذكر آخر 6 إيفنتات
 
 function recordEvent(id: string) {
   recentEvents.push(id);
@@ -291,6 +291,19 @@ function recordEvent(id: string) {
 
 function wasRecent(id: string): boolean {
   return recentEvents.includes(id);
+}
+
+// عدد مرات تكرار الإيفنت في الذاكرة الأخيرة
+function recentCount(id: string): number {
+  return recentEvents.filter(e => e === id).length;
+}
+
+// وزن ديناميكي — كلما طلع أكثر كلما خفّ وزنه أكثر
+function dynamicWeight(id: string, baseWeight: number): number {
+  const count = recentCount(id);
+  if (count === 0) return baseWeight;
+  if (count === 1) return Math.round(baseWeight * 0.3);
+  return Math.round(baseWeight * 0.1); // إذا طلع مرتين في آخر 6 مواسم يصير نادر جداً
 }
 
 export function createRandomSeasonEvent(
@@ -310,9 +323,9 @@ export function createRandomSeasonEvent(
   type EventEntry = { id: string; weight: number; fn: () => SeasonEventResult };
 
   const pool: EventEntry[] = [
-    // Quiet — 12%
+    // Quiet — خفّضناه من 12% إلى 5%
     {
-      id: "quiet", weight: wasRecent("quiet") ? 4 : 12,
+      id: "quiet", weight: dynamicWeight("quiet", 5),
       fn: () => ({
         event: null, updatedPlayers,
         newsItems: [{
@@ -326,9 +339,9 @@ export function createRandomSeasonEvent(
       }),
     },
 
-    // Hot Market — 10% (مخفّض من 20%)
+    // Hot Market — 9%
     {
-      id: "hotMarket", weight: wasRecent("hotMarket") ? 2 : 10,
+      id: "hotMarket", weight: dynamicWeight("hotMarket", 9),
       fn: () => {
         const { event, newsItem } = createMarketEvent(season, true);
         const min = 10, max = 25;
@@ -353,9 +366,9 @@ export function createRandomSeasonEvent(
       },
     },
 
-    // Market Crash — 10% (مخفّض من 20%)
+    // Market Crash — 9%
     {
-      id: "marketCrash", weight: wasRecent("marketCrash") ? 2 : 10,
+      id: "marketCrash", weight: dynamicWeight("marketCrash", 9),
       fn: () => {
         const { event, newsItem } = createMarketEvent(season, false);
         const min = -25, max = -10;
@@ -380,9 +393,9 @@ export function createRandomSeasonEvent(
       },
     },
 
-    // Player positive event — 18%
+    // Player positive event — 14% (خفّضناه من 18%)
     {
-      id: "playerPositive", weight: 18,
+      id: "playerPositive", weight: dynamicWeight("playerPositive", 14),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         const result = applyEventToRandomOwnedPlayer(updatedPlayers, ownerIndex, season, true);
@@ -390,9 +403,9 @@ export function createRandomSeasonEvent(
       },
     },
 
-    // Player negative event — 16%
+    // Player negative event — 12% (خفّضناه من 16%)
     {
-      id: "playerNegative", weight: 16,
+      id: "playerNegative", weight: dynamicWeight("playerNegative", 12),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         const result = applyEventToRandomOwnedPlayer(updatedPlayers, ownerIndex, season, false);
@@ -400,9 +413,9 @@ export function createRandomSeasonEvent(
       },
     },
 
-    // Both players get events — 14%
+    // Both players get events — 10% (خفّضناه من 14%)
     {
-      id: "bothEvents", weight: wasRecent("bothEvents") ? 5 : 14,
+      id: "bothEvents", weight: dynamicWeight("bothEvents", 10),
       fn: () => {
         let up = [...updatedPlayers];
         const ni: NewsItem[] = [];
@@ -415,76 +428,116 @@ export function createRandomSeasonEvent(
       },
     },
 
-    // Dream Season — 5%
+    // Dream Season — رفعناه من 5% إلى 8%
     {
-      id: "dreamSeason", weight: wasRecent("dreamSeason") ? 1 : 5,
+      id: "dreamSeason", weight: dynamicWeight("dreamSeason", 8),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerDreamSeason(updatedPlayers, ownerIndex, season);
       },
     },
 
-    // Locker Room Drama — 5%
+    // Locker Room Drama — رفعناه من 5% إلى 7%
     {
-      id: "lockerRoom", weight: wasRecent("lockerRoom") ? 1 : 5,
+      id: "lockerRoom", weight: dynamicWeight("lockerRoom", 7),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerLockerRoomDrama(updatedPlayers, ownerIndex, season);
       },
     },
 
-    // Free Transfer — 4%
+    // Free Transfer — رفعناه من 4% إلى 6%
     {
-      id: "freeTransfer", weight: wasRecent("freeTransfer") ? 1 : 4,
+      id: "freeTransfer", weight: dynamicWeight("freeTransfer", 6),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return forcedSpecificEvent("freeTransfer", season, updatedPlayers, ownerIndex);
       },
     },
 
-    // Florentino Perez — 3%
+    // Florentino Perez — رفعناه من 3% إلى 5%
     {
-      id: "florentinoPerez", weight: wasRecent("florentinoPerez") ? 1 : 3,
+      id: "florentinoPerez", weight: dynamicWeight("florentinoPerez", 5),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerFlorentinoPerezEvent(updatedPlayers, ownerIndex, season);
       },
     },
 
-    // Temporary effects — 6% مجتمعة
+    // الإيفنتات الفردية — رفعنا كل واحد من 2% إلى 4%
     {
-      id: "fastFood", weight: wasRecent("fastFood") ? 1 : 2,
+      id: "fastFood", weight: dynamicWeight("fastFood", 4),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerFastFoodAddiction(updatedPlayers, ownerIndex, season);
       },
     },
     {
-      id: "breakup", weight: wasRecent("breakup") ? 1 : 2,
+      id: "breakup", weight: dynamicWeight("breakup", 4),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerBreakupSeason(updatedPlayers, ownerIndex, season);
       },
     },
     {
-      id: "casinoNight", weight: wasRecent("casinoNight") ? 1 : 2,
+      id: "casinoNight", weight: dynamicWeight("casinoNight", 4),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerCasinoNight(updatedPlayers, ownerIndex, season);
       },
     },
     {
-      id: "oneSeason", weight: wasRecent("oneSeason") ? 1 : 2,
+      id: "oneSeason", weight: dynamicWeight("oneSeason", 4),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerOneSeasonWonder(updatedPlayers, ownerIndex, season);
       },
     },
     {
-      id: "youtube", weight: wasRecent("youtube") ? 1 : 2,
+      id: "youtube", weight: dynamicWeight("youtube", 4),
       fn: () => {
         const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
         return triggerYouTubeViral(updatedPlayers, ownerIndex, season);
+      },
+    },
+    // Eriksen Heart Attack — 3%
+    {
+      id: "eriksenHeartAttack", weight: dynamicWeight("eriksenHeartAttack", 3),
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerEriksenHeartAttack(updatedPlayers, ownerIndex, season);
+      },
+    },
+    // Doping Ban — 4%
+    {
+      id: "dopingBan", weight: dynamicWeight("dopingBan", 4),
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerDopingBan(updatedPlayers, ownerIndex, season);
+      },
+    },
+    // Girls Magnet — 4%
+    {
+      id: "girlsMagnet", weight: dynamicWeight("girlsMagnet", 4),
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerGirlsMagnet(updatedPlayers, ownerIndex, season);
+      },
+    },
+    // Racist Attack — 3%
+    {
+      id: "racistAttack", weight: dynamicWeight("racistAttack", 3),
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerRacistAttack(updatedPlayers, ownerIndex, season);
+      },
+    },
+    // Club Legend — 3%
+    {
+      id: "clubLegend", weight: dynamicWeight("clubLegend", 3),
+      fn: () => {
+        const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
+        return triggerClubLegend(updatedPlayers, ownerIndex, season);
       },
     },
   ];
@@ -1348,6 +1401,272 @@ function applyMarketEventForPlayer(
       title: positive ? "🔥 Hot Market — Values Updated" : "📉 Market Crash — Values Updated",
       description: changes.join(" | ") || "No players affected.",
       tone: positive ? "good" as const : "bad" as const,
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// ERIKSEN HEART ATTACK
+// ============================================
+export function triggerEriksenHeartAttack(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(gp.owned);
+  const oldVal = target.currentValue || target.buyPrice;
+  const newVal = Math.max(1, Math.round(oldVal * 0.35)); // ينهار 65%
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item => {
+        if (item.player.name !== target.player.name) return item;
+        return {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []).filter(e => e.id !== "eriksenHeartAttack"),
+            {
+              id: "eriksenHeartAttack",
+              name: "Heart Attack Recovery",
+              emoji: "💔",
+              expiresAfterSeason: season + 1,
+              ratingChange: -15,
+              valueChangePct: -0.65,
+            },
+          ],
+        };
+      }),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `💔 Heart Attack — ${target.player.name}`,
+      description: `${target.player.name} collapses on the pitch with a cardiac arrest. Airlifted to hospital. Out for the full season. Value crashes from €${oldVal}M to €${newVal}M.`,
+      tone: "bad",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// DOPING BAN — 1-5 seasons
+// ============================================
+export function triggerDopingBan(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(gp.owned);
+  const banLength = Math.floor(Math.random() * 5) + 1; // 1-5 مواسم
+  const bannedUntil = season + banLength;
+  const oldVal = target.currentValue || target.buyPrice;
+  const newVal = Math.max(1, Math.round(oldVal * 0.45));
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item => {
+        if (item.player.name !== target.player.name) return item;
+        return {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []).filter(e => e.id !== "dopingBan"),
+            {
+              id: "dopingBan",
+              name: `Doping Ban (${banLength} seasons)`,
+              emoji: "🚫",
+              expiresAfterSeason: bannedUntil,
+              bannedUntilSeason: bannedUntil,
+              ratingChange: -20,
+              valueChangePct: -0.55,
+            },
+          ],
+        };
+      }),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `🚫 Doping Ban — ${target.player.name}`,
+      description: `${target.player.name} tests positive for banned substances. Suspended for ${banLength} season${banLength > 1 ? "s" : ""}. Value drops from €${oldVal}M to €${newVal}M. Cannot be sold or renewed during ban.`,
+      tone: "bad",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// GIRLS MAGNET — 2 seasons boost
+// ============================================
+export function triggerGirlsMagnet(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(gp.owned);
+  const oldVal = target.currentValue || target.buyPrice;
+  const newVal = Math.round(oldVal * 1.25); // +25% قيمة تسويقية
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item => {
+        if (item.player.name !== target.player.name) return item;
+        return {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []).filter(e => e.id !== "girlsMagnet"),
+            {
+              id: "girlsMagnet",
+              name: "Girls Magnet",
+              emoji: "💋",
+              expiresAfterSeason: season + 2,
+              girlsMagnet: true,
+              valueChangePct: 0.25,
+              salaryDemandMultiplier: 1.3,
+            },
+          ],
+        };
+      }),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `💋 Girls Magnet — ${target.player.name}`,
+      description: `${target.player.name} becomes a social media sensation. Marketing value soars. Value up from €${oldVal}M to €${newVal}M — but salary demands rise 30%.`,
+      tone: "good",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// RACIST ATTACK — 2 seasons debuff, bounce back 3rd
+// ============================================
+export function triggerRacistAttack(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(gp.owned);
+  const oldVal = target.currentValue || target.buyPrice;
+  const newVal = Math.max(1, Math.round(oldVal * 0.80));
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item => {
+        if (item.player.name !== target.player.name) return item;
+        return {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []).filter(e => e.id !== "racistAttack"),
+            {
+              id: "racistAttack",
+              name: "Racist Attack Trauma",
+              emoji: "✊",
+              expiresAfterSeason: season + 2,
+              racismDebuff: true,
+              ratingChange: -8,
+              valueChangePct: -0.20,
+            },
+          ],
+        };
+      }),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `✊ Racist Attack — ${target.player.name}`,
+      description: `${target.player.name} faces racial abuse from the stands. Mentally affected for 2 seasons. Value drops from €${oldVal}M to €${newVal}M. After 2 seasons, expect a powerful bounce back.`,
+      tone: "bad",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// CLUB LEGEND — accepts any renewal offer
+// ============================================
+export function triggerClubLegend(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  // يختار اللاعب الأطول وقتاً في الفريق
+  const longestOwned = [...gp.owned].sort(
+    (a, b) => a.buySeason - b.buySeason
+  )[0];
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item => {
+        if (item.player.name !== longestOwned.player.name) return item;
+        return {
+          ...item,
+          isClubLegend: true,
+          currentValue: Math.round((item.currentValue || item.buyPrice) * 1.15),
+        };
+      }),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `👑 Club Legend — ${longestOwned.player.name}`,
+      description: `${longestOwned.player.name} is declared a club legend after years of service. He will accept ANY contract renewal offer — no matter how low the salary. Value up +15%.`,
+      tone: "special",
       journalist: pickRandom(JOURNALISTS),
       source: pickRandom(NEWS_SOURCES),
     }],

@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, createVersusSeasonEvents, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama } from "./game/eventEngine";
+import { createRandomSeasonEvent, createVersusSeasonEvents, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama, triggerEriksenHeartAttack, triggerDopingBan, triggerGirlsMagnet, triggerRacistAttack, triggerClubLegend } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation } from "./animations/index";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation, EriksenAnimation, DopingBanAnimation, GirlsMagnetAnimation, RacistAttackAnimation, ClubLegendAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -107,6 +107,11 @@ export default function Home() {
   const [showBreakupSeasonAnim, setShowBreakupSeasonAnim] = useState(false);
   const [showFreeTransferAnim, setShowFreeTransferAnim] = useState(false);
   const [showMajorInjuryAnim, setShowMajorInjuryAnim] = useState(false);
+  const [showEriksenAnim, setShowEriksenAnim] = useState(false);
+  const [showDopingBanAnim, setShowDopingBanAnim] = useState(false);
+  const [showGirlsMagnetAnim, setShowGirlsMagnetAnim] = useState(false);
+  const [showRacistAttackAnim, setShowRacistAttackAnim] = useState(false);
+  const [showClubLegendAnim, setShowClubLegendAnim] = useState(false);
   const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
@@ -560,6 +565,13 @@ export default function Home() {
       renewal.playerCounterMessage = `🎰 I was at the casino last night... I need €${boostedSalary}M/yr now.`;
     }
 
+    // Club Legend — يقبل أي عرض
+    if (item.isClubLegend) {
+      renewal.requiredSalary = 1;
+      renewal.satisfaction = 100;
+      renewal.playerCounterMessage = `👑 It is an honor to stay. I accept any offer you give.`;
+    }
+
     setNegotiation(renewal);
     setSelectedOwned(null);
   }
@@ -802,7 +814,12 @@ export default function Home() {
     if (eventId === "failedTransfer") setShowFailedTransferAnim(true);
     if (eventId === "benchWarmer")    setShowBenchWarmerAnim(true);
     if (eventId === "freeTransfer")   setShowFreeTransferAnim(true);
-    if (eventId === "majorInjury")    setShowMajorInjuryAnim(true);
+    if (eventId === "majorInjury")         setShowMajorInjuryAnim(true);
+    if (eventId === "eriksenHeartAttack") { const r = triggerEriksenHeartAttack(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowEriksenAnim(true); return; }
+    if (eventId === "dopingBan")          { const r = triggerDopingBan(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowDopingBanAnim(true); return; }
+    if (eventId === "girlsMagnet")        { const r = triggerGirlsMagnet(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowGirlsMagnetAnim(true); return; }
+    if (eventId === "racistAttack")       { const r = triggerRacistAttack(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowRacistAttackAnim(true); return; }
+    if (eventId === "clubLegend")         { const r = triggerClubLegend(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowClubLegendAnim(true); return; }
   }
 
   // ============================================
@@ -944,6 +961,21 @@ export default function Home() {
         }
         if (singleResult.newsItems.some(n => n.title.includes("Major Injury"))) {
           setTimeout(() => setShowMajorInjuryAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Heart Attack"))) {
+          setTimeout(() => setShowEriksenAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Doping Ban"))) {
+          setTimeout(() => setShowDopingBanAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Girls Magnet"))) {
+          setTimeout(() => setShowGirlsMagnetAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Racist Attack"))) {
+          setTimeout(() => setShowRacistAttackAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Club Legend"))) {
+          setTimeout(() => setShowClubLegendAnim(true), 400);
         }
         if (singleResult.newsItems.some(n => n.title.includes("Fast Food") || n.title.includes("Food"))) {
           setTimeout(() => setShowFastFoodAnim(true), 400);
@@ -1347,6 +1379,11 @@ export default function Home() {
       {showMajorInjuryAnim && (
         <MajorInjuryAnimation onDone={() => setShowMajorInjuryAnim(false)} />
       )}
+      {showEriksenAnim && <EriksenAnimation onDone={() => setShowEriksenAnim(false)} />}
+      {showDopingBanAnim && <DopingBanAnimation onDone={() => setShowDopingBanAnim(false)} />}
+      {showGirlsMagnetAnim && <GirlsMagnetAnimation onDone={() => setShowGirlsMagnetAnim(false)} />}
+      {showRacistAttackAnim && <RacistAttackAnimation onDone={() => setShowRacistAttackAnim(false)} />}
+      {showClubLegendAnim && <ClubLegendAnimation onDone={() => setShowClubLegendAnim(false)} />}
 
       {showFastFoodAnim && (
         <FastFoodAnimation onDone={() => setShowFastFoodAnim(false)} />

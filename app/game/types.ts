@@ -167,7 +167,10 @@ export type ActiveEffect = {
   expiresAfterSeason: number;
   valueChangePct?: number;
   ratingChange?: number;
-  salaryDemandMultiplier?: number; // Casino Night — يرفع متطلبات الراتب
+  salaryDemandMultiplier?: number;
+  bannedUntilSeason?: number;   // Doping ban — لاعب موقوف
+  girlsMagnet?: boolean;        // Girls Magnet — يرفع القيمة التسويقية
+  racismDebuff?: boolean;       // Racist Attack — يخفض الأداء مؤقتاً
 };
 
 export type OwnedPlayer = {
@@ -175,11 +178,12 @@ export type OwnedPlayer = {
   slot: string;
   buySeason: number;
   buyPrice: number;
-  currentValue: number;    // يتغير كل موسم حسب price tier
-  budgetAtBuy: number;     // ميزانية المستثمر وقت الشراء
+  currentValue: number;
+  budgetAtBuy: number;
   contract: Contract;
   sponsorships: Sponsorship[];
   refusesRenewal?: boolean;
+  isClubLegend?: boolean;       // Club Legend — يقبل أي عرض تجديد
   activeEffects?: ActiveEffect[];
 };
 
@@ -368,7 +372,12 @@ export type DevEventId =
   | "oneSeasonWonder"
   | "youTubeViral"
   | "dreamSeason"
-  | "lockerRoomDrama";
+  | "lockerRoomDrama"
+  | "eriksenHeartAttack"
+  | "dopingBan"
+  | "girlsMagnet"
+  | "racistAttack"
+  | "clubLegend";
 
 // ============================================
 // PLAYER EVENT EFFECT
