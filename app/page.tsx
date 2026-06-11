@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation } from "./animations/index";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -96,6 +96,8 @@ export default function Home() {
   const [showYouTubeAnim, setShowYouTubeAnim] = useState(false);
   const [showGoldenBoyAnim, setShowGoldenBoyAnim] = useState(false);
   const [showRecordTransferAnim, setShowRecordTransferAnim] = useState(false);
+  const [showWonderkidAnim, setShowWonderkidAnim] = useState(false);
+  const [showBobPaisleyAnim, setShowBobPaisleyAnim] = useState(false);
   const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
@@ -693,6 +695,7 @@ export default function Home() {
       const result = triggerBobPaisleyDisaster(gamePlayers, activePlayerIndex, season);
       setGamePlayers(result.updatedPlayers);
       addNewsItems(result.newsItems);
+      setShowBobPaisleyAnim(true);
       return;
     }
     if (eventId === "fastFoodAddiction") {
@@ -779,6 +782,7 @@ export default function Home() {
     if (eventId === "ballonDor")   setShowBallonDorAnim(true);
     if (eventId === "goldenBoy")   setShowGoldenBoyAnim(true);
     if (eventId === "recordTransfer") setShowRecordTransferAnim(true);
+    if (eventId === "wonderkid")      setShowWonderkidAnim(true);
     if ((eventId as string) === "fastFoodAddiction") setShowFastFoodAnim(true);
     if ((eventId as string) === "youTubeViral") setShowYouTubeAnim(true);
   }
@@ -889,6 +893,12 @@ export default function Home() {
         }
         if (singleResult.newsItems.some(n => n.title.includes("Record Transfer"))) {
           setTimeout(() => setShowRecordTransferAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Wonderkid"))) {
+          setTimeout(() => setShowWonderkidAnim(true), 400);
+        }
+        if (singleResult.newsItems.some(n => n.title.includes("Bob Paisley") || n.title.includes("Paisley"))) {
+          setTimeout(() => setShowBobPaisleyAnim(true), 400);
         }
         if (singleResult.newsItems.some(n => n.title.includes("Fast Food") || n.title.includes("Food"))) {
           setTimeout(() => setShowFastFoodAnim(true), 400);
@@ -1247,6 +1257,14 @@ export default function Home() {
 
       {showRecordTransferAnim && (
         <RecordTransferAnimation onDone={() => setShowRecordTransferAnim(false)} />
+      )}
+
+      {showWonderkidAnim && (
+        <WonderkidAnimation onDone={() => setShowWonderkidAnim(false)} />
+      )}
+
+      {showBobPaisleyAnim && (
+        <BobPaisleyAnimation onDone={() => setShowBobPaisleyAnim(false)} />
       )}
 
       {showFastFoodAnim && (

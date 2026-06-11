@@ -11,6 +11,8 @@ const PIXEL_PORTRAITS: Record<string, string> = {
   "Hussain Alrezk":    "/images/hussain-alrezk.png",
   "ABDULLAH ALMUSAWI": "/images/abdullah-almusawi.png",
   "Ali Alsaif":        "/images/ali-alsaif.png",
+  "Abdulaziz Alghariri": "/images/abdulaziz-alghariri.png",
+  "Ali Albrahim":        "/images/ali-albrahim.png",
 };
 
 function PixelPortrait({ name }: { name: string }) {

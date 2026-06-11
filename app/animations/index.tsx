@@ -364,11 +364,11 @@ const GOAT_PORTRAITS: Record<string, string> = {
   "Hussain Alrezk":     "/images/hussain-alrezk.png",
   "ABDULLAH ALMUSAWI":  "/images/abdullah-almusawi.png",
   "Ali Alsaif":         "/images/ali-alsaif.png",
+  "Abdulaziz Alghariri":"/images/abdulaziz-alghariri.png",
   "Ali AlGhanim":       "/images/ali-alghanim.png",
   "Reda Alrezk":        "/images/reda-alrezk.png",
   "Qousi":              "/images/qousi.png",
   "Ali Albrahim":       "/images/ali-albrahim.png",
-  "Abdulaziz Alghariri":"/images/abdulaziz-alghariri.png",
   "Mohammed Al Abullah":"/images/mohammed-al-abullah.png",
 };
 
@@ -1387,6 +1387,311 @@ export function RecordTransferAnimation({ onDone }: AnimProps) {
         @keyframes rtFloat {
           0%   { transform: translateY(0) rotate(-5deg); }
           100% { transform: translateY(-20px) rotate(5deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// WONDERKID — Rising star
+// trigger: wonderkid event
+// Style: splits from center, electric blue/cyan, glitch effect
+// ============================================
+
+export function WonderkidAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("hold"),  1000);
+    const t2 = setTimeout(() => setPhase("exit"),  3400);
+    const t3 = setTimeout(() => onDone(),          4100);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.7s ease-in" : "opacity 0.3s ease",
+      }}
+    >
+      {/* Electric blue backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold"
+          ? "radial-gradient(ellipse at center, rgba(0,40,100,0.65) 0%, rgba(0,0,0,0.93) 70%)"
+          : "rgba(0,0,0,0.85)",
+        transition: "background 0.8s ease",
+      }} />
+
+      {/* Glitch lines */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="absolute w-full" style={{
+              height: "1px",
+              top: `${15 + i * 17}%`,
+              background: `rgba(0,180,255,${0.12 + i * 0.04})`,
+              animation: `wkGlitch ${0.8 + i * 0.2}s steps(1) ${i * 0.15}s infinite`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Rising particles */}
+      {phase === "hold" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="absolute rounded-full" style={{
+              width: `${3 + (i % 3) * 3}px`,
+              height: `${3 + (i % 3) * 3}px`,
+              left: `${(i * 8.5) % 92}%`,
+              bottom: "0",
+              background: i % 2 === 0 ? "rgba(0,180,255,0.8)" : "rgba(0,255,200,0.6)",
+              animation: `wkRise ${1.5 + i * 0.2}s ease-out ${i * 0.1}s infinite`,
+              boxShadow: "0 0 6px rgba(0,180,255,0.8)",
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Cyan glow ring */}
+      {phase === "hold" && (
+        <div className="absolute rounded-full" style={{
+          width: "clamp(250px, 40vw, 390px)", height: "clamp(250px, 40vw, 390px)",
+          border: "2px solid rgba(0,200,255,0.5)",
+          animation: "wkRing 1.5s ease-in-out infinite",
+          boxShadow: "0 0 20px rgba(0,200,255,0.2)",
+        }} />
+      )}
+
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <img
+          src="/images/wonderkid-pixel.png"
+          alt="Wonderkid"
+          style={{
+            width: "clamp(150px, 26vw, 220px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "enter"
+              ? "wkSplitIn 1s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "hold"
+              ? "wkGlow 1.8s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 20px rgba(0,200,255,0.9)) drop-shadow(0 0 40px rgba(0,150,255,0.5))"
+              : "none",
+            transition: "filter 0.4s ease",
+          }}
+        />
+
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.4s ease 0.2s",
+          textAlign: "center",
+        }}>
+          <div className="px-8 py-4" style={{
+            background: "rgba(0,5,20,0.92)",
+            border: "1px solid rgba(0,200,255,0.6)",
+            boxShadow: "0 0 30px rgba(0,180,255,0.25), inset 0 0 15px rgba(0,180,255,0.04)",
+          }}>
+            <div className="text-[9px] tracking-[0.5em] uppercase mb-1.5" style={{ color: "rgba(0,200,255,0.55)" }}>
+              🚀 Rising Star
+            </div>
+            <div className="font-black text-2xl tracking-widest uppercase" style={{
+              color: "#00c8ff",
+              textShadow: "0 0 20px rgba(0,200,255,1), 0 0 40px rgba(0,150,255,0.5)",
+            }}>
+              Wonderkid
+            </div>
+            <div className="text-xs tracking-[0.25em] uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              The next big thing
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes wkSplitIn {
+          0%   { opacity: 0; transform: scaleX(0.1) scaleY(1.4); }
+          50%  { opacity: 1; transform: scaleX(1.08) scaleY(0.95); }
+          75%  { transform: scaleX(0.97) scaleY(1.02); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes wkGlow {
+          0%, 100% { filter: drop-shadow(0 0 20px rgba(0,200,255,0.9)) drop-shadow(0 0 40px rgba(0,150,255,0.5)); }
+          50%       { filter: drop-shadow(0 0 30px rgba(0,220,255,1)) drop-shadow(0 0 60px rgba(0,180,255,0.7)); }
+        }
+        @keyframes wkRise {
+          0%   { transform: translateY(0) scale(1); opacity: 0.8; }
+          100% { transform: translateY(-100vh) scale(0.3); opacity: 0; }
+        }
+        @keyframes wkRing {
+          0%, 100% { transform: scale(1);    opacity: 0.5; }
+          50%       { transform: scale(1.08); opacity: 1; }
+        }
+        @keyframes wkGlitch {
+          0%, 90%, 100% { opacity: 0; transform: translateX(0); }
+          92%            { opacity: 1; transform: translateX(-8px); }
+          95%            { opacity: 1; transform: translateX(8px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// BOB PAISLEY DISASTER — Plane crash event
+// trigger: bobPaisleyDisaster event
+// Style: flies in from right → explosion → shake screen
+// ============================================
+
+export function BobPaisleyAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"fly" | "explode" | "hold" | "exit">("fly");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("explode"), 1000);
+    const t2 = setTimeout(() => setPhase("hold"),    1600);
+    const t3 = setTimeout(() => setPhase("exit"),    3600);
+    const t4 = setTimeout(() => onDone(),            4300);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [onDone]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center pointer-events-none"
+      style={{
+        opacity: phase === "exit" ? 0 : 1,
+        transition: phase === "exit" ? "opacity 0.7s ease-in" : "opacity 0.3s ease",
+        animation: phase === "explode" ? "bpScreenShake 0.5s ease-out" : "none",
+      }}
+    >
+      {/* Dark smoke backdrop */}
+      <div className="absolute inset-0" style={{
+        background: phase === "hold" || phase === "explode"
+          ? "radial-gradient(ellipse at center, rgba(60,20,0,0.7) 0%, rgba(5,0,0,0.95) 70%)"
+          : "rgba(0,0,0,0.5)",
+        transition: "background 0.4s ease",
+      }} />
+
+      {/* Smoke particles */}
+      {(phase === "hold") && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute rounded-full" style={{
+              width: `${30 + i * 15}px`,
+              height: `${30 + i * 15}px`,
+              left: `${30 + (i * 7) % 40}%`,
+              top: `${20 + (i * 8) % 40}%`,
+              background: `rgba(${40 + i * 5},${20 + i * 3},${10 + i * 2},0.4)`,
+              filter: "blur(12px)",
+              animation: `bpSmoke ${2 + i * 0.3}s ease-out ${i * 0.1}s infinite`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Fire sparks */}
+      {phase === "explode" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {["🔥","💥","🔥","💥","🔥","💥","🔥","💥"].map((em, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              left: `${30 + (i * 6) % 40}%`,
+              top: `${25 + (i * 7) % 35}%`,
+              fontSize: `${20 + (i % 3) * 14}px`,
+              animation: `bpSpark 0.6s ease-out ${i * 0.05}s forwards`,
+            }}>{em}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        {/* Plane image */}
+        <img
+          src="/images/bob-paisley-pixel.png"
+          alt="Bob Paisley Disaster"
+          style={{
+            width: "clamp(220px, 38vw, 320px)",
+            height: "auto",
+            imageRendering: "pixelated",
+            objectFit: "contain",
+            animation: phase === "fly"
+              ? "bpFlyIn 1s cubic-bezier(0.22,1,0.36,1) forwards"
+              : phase === "explode"
+              ? "bpExplode 0.5s ease-out forwards"
+              : phase === "hold"
+              ? "bpHover 2.5s ease-in-out infinite"
+              : "none",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 20px rgba(255,80,0,0.8)) drop-shadow(0 0 40px rgba(255,40,0,0.4))"
+              : phase === "explode"
+              ? "drop-shadow(0 0 40px rgba(255,200,0,1)) brightness(1.5)"
+              : "none",
+            transition: "filter 0.3s ease",
+          }}
+        />
+
+        {/* Badge */}
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transition: "opacity 0.5s ease",
+          textAlign: "center",
+        }}>
+          <div className="px-8 py-4" style={{
+            background: "rgba(5,0,0,0.92)",
+            border: "1px solid rgba(255,80,0,0.7)",
+            boxShadow: "0 0 30px rgba(255,60,0,0.3)",
+          }}>
+            <div className="text-[9px] tracking-[0.45em] uppercase mb-1.5" style={{ color: "rgba(255,120,0,0.65)" }}>
+              ✈️ Disaster
+            </div>
+            <div className="font-black text-2xl tracking-wide uppercase" style={{
+              color: "#ff5000",
+              textShadow: "0 0 20px rgba(255,80,0,0.9)",
+            }}>
+              Bob Paisley
+            </div>
+            <div className="text-xs tracking-[0.2em] uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              A catastrophic turn of events
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bpFlyIn {
+          0%   { opacity: 0; transform: translateX(120vw) rotate(-15deg) scale(0.6); }
+          70%  { opacity: 1; transform: translateX(-10px) rotate(3deg) scale(1.05); }
+          100% { opacity: 1; transform: translateX(0) rotate(0deg) scale(1); }
+        }
+        @keyframes bpExplode {
+          0%   { transform: scale(1) rotate(0deg); }
+          30%  { transform: scale(1.3) rotate(-5deg); filter: brightness(2); }
+          60%  { transform: scale(0.85) rotate(3deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes bpHover {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          40%       { transform: translateY(-8px) rotate(-2deg); }
+          70%       { transform: translateY(4px) rotate(1deg); }
+        }
+        @keyframes bpSmoke {
+          0%   { transform: translateY(0) scale(1); opacity: 0.4; }
+          100% { transform: translateY(-60px) scale(1.8); opacity: 0; }
+        }
+        @keyframes bpSpark {
+          0%   { opacity: 1; transform: scale(0.5) translate(0,0); }
+          100% { opacity: 0; transform: scale(1.5) translate(${Math.random() > 0.5 ? '' : '-'}30px,-40px); }
+        }
+        @keyframes bpScreenShake {
+          0%, 100% { transform: translate(0,0); }
+          20%       { transform: translate(-8px, 4px); }
+          40%       { transform: translate(8px,-4px); }
+          60%       { transform: translate(-5px, 3px); }
+          80%       { transform: translate(5px,-2px); }
         }
       `}</style>
     </div>
