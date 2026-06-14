@@ -377,7 +377,10 @@ export type DevEventId =
   | "dopingBan"
   | "girlsMagnet"
   | "racistAttack"
-  | "clubLegend";
+  | "clubLegend"
+  | "worldCup"
+  | "euro"
+  | "championsLeague";
 
 // ============================================
 // PLAYER EVENT EFFECT

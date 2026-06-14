@@ -1672,3 +1672,247 @@ export function triggerClubLegend(
     }],
   };
 }
+// ============================================
+// TOURNAMENT CONSTANTS
+// ============================================
+
+const WORLD_CUP_SEASONS = [2010, 2014, 2018, 2022, 2026];
+const EURO_SEASONS      = [2008, 2012, 2016, 2020, 2024];
+
+const EUROPEAN_NATIONALITIES = new Set([
+  "France", "Spain", "Germany", "Italy", "Portugal", "Netherlands",
+  "Belgium", "England", "Croatia", "Denmark", "Sweden", "Norway",
+  "Switzerland", "Austria", "Poland", "Czech Republic", "Slovakia",
+  "Serbia", "Scotland", "Wales", "Ireland", "Russia", "Turkey",
+  "Greece", "Hungary", "Romania", "Ukraine", "Finland", "Slovenia", "Albania",
+]);
+
+function isEuropean(nationality: string): boolean {
+  return EUROPEAN_NATIONALITIES.has(nationality);
+}
+
+// ============================================
+// WORLD CUP EVENT
+// ============================================
+
+export function triggerWorldCup(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  // فقط اللاعبين اللي بلدانهم فازت (نطلب كل اللاعبين عشان الإيفنت ما يطلع الا لو الشرط تحقق)
+  const candidates = gp.owned.filter(item => !item.player.secret);
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(candidates);
+  const oldVal = target.currentValue || target.buyPrice;
+  const bonus = Math.round(oldVal * 0.30);
+  const newVal = oldVal + bonus;
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item =>
+        item.player.name !== target.player.name ? item : {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []),
+            {
+              id: "worldCup",
+              name: "World Cup Winner",
+              emoji: "🏆",
+              expiresAfterSeason: season + 1,
+              valueChangePct: 0.30,
+            },
+          ],
+        }
+      ),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `🏆 World Cup Winner — ${target.player.name}`,
+      description: `${target.player.name} wins the FIFA World Cup with ${target.player.nationality}! Value rockets from €${oldVal}M to €${newVal}M (+30%).`,
+      tone: "good",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// EURO EVENT — أوروبيين فقط
+// ============================================
+
+export function triggerEuro(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  // فقط اللاعبين الأوروبيين
+  const candidates = gp.owned.filter(item =>
+    !item.player.secret && isEuropean(item.player.nationality)
+  );
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(candidates);
+  const oldVal = target.currentValue || target.buyPrice;
+  const bonus = Math.round(oldVal * 0.20);
+  const newVal = oldVal + bonus;
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item =>
+        item.player.name !== target.player.name ? item : {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []),
+            {
+              id: "euro",
+              name: "Euro Champion",
+              emoji: "⭐",
+              expiresAfterSeason: season + 1,
+              valueChangePct: 0.20,
+            },
+          ],
+        }
+      ),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `⭐ Euro Champion — ${target.player.name}`,
+      description: `${target.player.name} lifts the UEFA European Championship with ${target.player.nationality}! Value rises from €${oldVal}M to €${newVal}M (+20%).`,
+      tone: "good",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// CHAMPIONS LEAGUE EVENT — كل موسم
+// ============================================
+
+export function triggerChampionsLeague(
+  gamePlayers: GamePlayer[],
+  ownerIndex: number,
+  season: number
+): SeasonEventResult {
+  const gp = gamePlayers[ownerIndex];
+  if (!gp || gp.owned.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const candidates = gp.owned.filter(item => !item.player.secret);
+  if (candidates.length === 0) return { event: null, updatedPlayers: gamePlayers, newsItems: [] };
+
+  const target = pickRandom(candidates);
+  const oldVal = target.currentValue || target.buyPrice;
+  const bonus = Math.round(oldVal * 0.25);
+  const newVal = oldVal + bonus;
+
+  const updatedPlayers = gamePlayers.map((p, i) => {
+    if (i !== ownerIndex) return p;
+    return {
+      ...p,
+      owned: p.owned.map(item =>
+        item.player.name !== target.player.name ? item : {
+          ...item,
+          currentValue: newVal,
+          activeEffects: [
+            ...(item.activeEffects || []),
+            {
+              id: "championsLeague",
+              name: "Champions League Winner",
+              emoji: "🏆",
+              expiresAfterSeason: season + 1,
+              valueChangePct: 0.25,
+            },
+          ],
+        }
+      ),
+    };
+  });
+
+  return {
+    event: null,
+    updatedPlayers,
+    newsItems: [{
+      id: randomId(), season,
+      title: `🏆 Champions League Winner — ${target.player.name}`,
+      description: `${target.player.name} wins the UEFA Champions League! Crowned King of Europe. Value soars from €${oldVal}M to €${newVal}M (+25%).`,
+      tone: "good",
+      journalist: pickRandom(JOURNALISTS),
+      source: pickRandom(NEWS_SOURCES),
+    }],
+  };
+}
+
+// ============================================
+// TOURNAMENT CHECKER — يستدعى من setupNewSeason
+// يتحقق من المواسم ويطلق الإيفنت المناسب
+// ============================================
+
+export function checkTournamentEvents(
+  gamePlayers: GamePlayer[],
+  season: number
+): { updatedPlayers: GamePlayer[]; newsItems: NewsItem[] } {
+  let players = [...gamePlayers];
+  const allNews: NewsItem[] = [];
+
+  // Champions League — كل موسم، فرصة 30%
+  if (Math.random() < 0.30) {
+    for (let i = 0; i < players.length; i++) {
+      const result = triggerChampionsLeague(players, i, season);
+      if (result.newsItems.length > 0) {
+        players = result.updatedPlayers;
+        allNews.push(...result.newsItems);
+        break; // لاعب واحد فقط يفوز
+      }
+    }
+  }
+
+  // World Cup — فقط في مواسم البطولة
+  if (WORLD_CUP_SEASONS.includes(season) && Math.random() < 0.70) {
+    for (let i = 0; i < players.length; i++) {
+      const result = triggerWorldCup(players, i, season);
+      if (result.newsItems.length > 0) {
+        players = result.updatedPlayers;
+        allNews.push(...result.newsItems);
+        break;
+      }
+    }
+  }
+
+  // Euro — فقط في مواسم البطولة + لاعب أوروبي
+  if (EURO_SEASONS.includes(season) && Math.random() < 0.70) {
+    for (let i = 0; i < players.length; i++) {
+      const result = triggerEuro(players, i, season);
+      if (result.newsItems.length > 0) {
+        players = result.updatedPlayers;
+        allNews.push(...result.newsItems);
+        break;
+      }
+    }
+  }
+
+  return { updatedPlayers: players, newsItems: allNews };
+}

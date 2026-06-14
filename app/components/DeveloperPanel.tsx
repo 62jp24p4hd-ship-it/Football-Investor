@@ -38,6 +38,9 @@ const EVENT_PIXEL_IMAGES: Partial<Record<DevEventId, string>> = {
   fastFoodAddiction:   "/images/fastfood-pixel.png",
   youTubeViral:        "/images/youtube-viral-pixel.png",
   bobPaisleyDisaster:  "/images/bob-paisley-pixel.png",
+  worldCup:            "/images/world-cup-pixel.png",
+  euro:                "/images/euro-pixel.png",
+  championsLeague:     "/images/champions-league-pixel.png",
 };
 
 const DEV_EVENTS: { id: DevEventId | string; label: string; type: "positive" | "negative" | "special" }[] = [
@@ -52,6 +55,9 @@ const DEV_EVENTS: { id: DevEventId | string; label: string; type: "positive" | "
   { id: "saudiOffer",         label: "Saudi Offer",          type: "positive" },
   { id: "recordTransfer",     label: "Record Transfer",      type: "positive" },
   { id: "girlsMagnet",        label: "Girls Magnet",         type: "positive" },
+  { id: "worldCup",           label: "World Cup",            type: "positive" },
+  { id: "euro",               label: "Euro",                 type: "positive" },
+  { id: "championsLeague",    label: "Champions League",     type: "positive" },
 
   // ── NEGATIVE ──────────────────────────────
   { id: "aclInjury",          label: "ACL Injury",           type: "negative" },

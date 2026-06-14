@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   GamePlayer, Player, GameMode, BudgetMode, EventType,
   AuctionState, InvestorOfferState, RewardChoice, StealChallenge,
@@ -15,7 +15,7 @@ import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
-import { createRandomSeasonEvent, createVersusSeasonEvents, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama, triggerEriksenHeartAttack, triggerDopingBan, triggerGirlsMagnet, triggerRacistAttack, triggerClubLegend } from "./game/eventEngine";
+import { createRandomSeasonEvent, createVersusSeasonEvents, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama, triggerEriksenHeartAttack, triggerDopingBan, triggerGirlsMagnet, triggerRacistAttack, triggerClubLegend, checkTournamentEvents, triggerWorldCup, triggerEuro, triggerChampionsLeague } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
 import { createAuctionState, startBiddingPhase, placeBid as placeBidEngine, surrenderAuction, shouldAuctionEnd, finishAuction, tickAuctionTimer, getAuctionStartNews } from "./game/auctionEngine";
 import { autoSellAllPlayers, calculateNetWorth, resetSeasonChances } from "./game/economyEngine";
@@ -46,7 +46,7 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
-import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation, EriksenAnimation, DopingBanAnimation, GirlsMagnetAnimation, RacistAttackAnimation, ClubLegendAnimation } from "./animations/index";
+import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation, EriksenAnimation, DopingBanAnimation, GirlsMagnetAnimation, RacistAttackAnimation, ClubLegendAnimation, KonamiCodeAnimation, WorldCupAnimation, EuroAnimation, ChampionsLeagueAnimation } from "./animations/index";
 
 // ============================================
 // MAIN GAME PAGE
@@ -113,8 +113,18 @@ export default function Home() {
   const [showRacistAttackAnim, setShowRacistAttackAnim] = useState(false);
   const [showClubLegendAnim, setShowClubLegendAnim] = useState(false);
   const [goatSignedPlayer, setGoatSignedPlayer] = useState<string | null>(null);
+  const [showWorldCupAnim, setShowWorldCupAnim] = useState(false);
+  const [showEuroAnim, setShowEuroAnim] = useState(false);
+  const [showChampionsLeagueAnim, setShowChampionsLeagueAnim] = useState(false);
+  const [tournamentNationality, setTournamentNationality] = useState<string>("");
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
+
+  // ── Konami Code ───────────────────────────
+  const [showKonamiAnim, setShowKonamiAnim] = useState(false);
+  const [konamiUsed, setKonamiUsed] = useState(false);
+  const konamiSequence = useRef<string[]>([]);
+  const KONAMI_CODE = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight"];
 
   // ── Modals ────────────────────────────────
   const [negotiation, setNegotiation] = useState<ContractNegotiation | null>(null);
@@ -236,6 +246,25 @@ export default function Home() {
     }, 1000);
     return () => clearTimeout(t);
   }, [negotiation?.timer]);
+
+  // ── Konami Code Listener ─────────────────────
+  useEffect(() => {
+    if (!started || mode !== "single" || konamiUsed) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      const arrowKeys = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+      if (!arrowKeys.includes(e.key)) return;
+      konamiSequence.current = [...konamiSequence.current, e.key].slice(-8);
+      if (konamiSequence.current.join(",") === KONAMI_CODE.join(",")) {
+        konamiSequence.current = [];
+        e.preventDefault();
+        setShowKonamiAnim(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [started, mode, konamiUsed]);
 
   // ============================================
   // HELPERS
@@ -820,6 +849,31 @@ export default function Home() {
     if (eventId === "girlsMagnet")        { const r = triggerGirlsMagnet(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowGirlsMagnetAnim(true); return; }
     if (eventId === "racistAttack")       { const r = triggerRacistAttack(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowRacistAttackAnim(true); return; }
     if (eventId === "clubLegend")         { const r = triggerClubLegend(gamePlayers, activePlayerIndex, season); setGamePlayers(r.updatedPlayers); addNewsItems(r.newsItems); setShowClubLegendAnim(true); return; }
+    if (eventId === "worldCup") {
+      const r = triggerWorldCup(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(r.updatedPlayers);
+      if (r.newsItems.length > 0) addNewsItems(r.newsItems);
+      const nat = r.newsItems[0]?.description.match(/with (.+?)!/)?.[1] ?? "";
+      setTournamentNationality(nat);
+      setShowWorldCupAnim(true);
+      return;
+    }
+    if (eventId === "euro") {
+      const r = triggerEuro(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(r.updatedPlayers);
+      if (r.newsItems.length > 0) addNewsItems(r.newsItems);
+      const nat = r.newsItems[0]?.description.match(/with (.+?)!/)?.[1] ?? "";
+      setTournamentNationality(nat);
+      setShowEuroAnim(true);
+      return;
+    }
+    if (eventId === "championsLeague") {
+      const r = triggerChampionsLeague(gamePlayers, activePlayerIndex, season);
+      setGamePlayers(r.updatedPlayers);
+      if (r.newsItems.length > 0) addNewsItems(r.newsItems);
+      setShowChampionsLeagueAnim(true);
+      return;
+    }
   }
 
   // ============================================
@@ -984,6 +1038,29 @@ export default function Home() {
           setTimeout(() => setShowYouTubeAnim(true), 400);
         }
       }
+    }
+
+    // Tournament events check
+    const tournamentResult = checkTournamentEvents(eventPlayers, newSeason);
+    eventPlayers = tournamentResult.updatedPlayers;
+    if (tournamentResult.newsItems.length > 0) {
+      eventNewsItems = [...eventNewsItems, ...tournamentResult.newsItems];
+      // Trigger animations based on tournament news
+      tournamentResult.newsItems.forEach(n => {
+        if (n.title.includes("World Cup")) {
+          const nat = n.description.match(/with (.+?)!/)?.[1] ?? "";
+          setTournamentNationality(nat);
+          setTimeout(() => setShowWorldCupAnim(true), 600);
+        }
+        if (n.title.includes("Euro Champion")) {
+          const nat = n.description.match(/with (.+?)!/)?.[1] ?? "";
+          setTournamentNationality(nat);
+          setTimeout(() => setShowEuroAnim(true), 600);
+        }
+        if (n.title.includes("Champions League Winner")) {
+          setTimeout(() => setShowChampionsLeagueAnim(true), 600);
+        }
+      });
     }
 
     setSeason(newSeason);
@@ -1456,6 +1533,39 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {showWorldCupAnim && (
+        <WorldCupAnimation
+          nationality={tournamentNationality}
+          onDone={() => setShowWorldCupAnim(false)}
+        />
+      )}
+
+      {showEuroAnim && (
+        <EuroAnimation
+          nationality={tournamentNationality}
+          onDone={() => setShowEuroAnim(false)}
+        />
+      )}
+
+      {showChampionsLeagueAnim && (
+        <ChampionsLeagueAnimation
+          onDone={() => setShowChampionsLeagueAnim(false)}
+        />
+      )}
+
+      {showKonamiAnim && (
+        <KonamiCodeAnimation
+          onDone={() => {
+            setShowKonamiAnim(false);
+            setKonamiUsed(true);
+            setGamePlayers(prev =>
+              prev.map(gp => ({ ...gp, budget: 99999 }))
+            );
+            notify("∞ Budget Unlocked!");
+          }}
+        />
       )}
 
     </main>

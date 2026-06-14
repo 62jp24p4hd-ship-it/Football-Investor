@@ -12,6 +12,25 @@ type AnimProps = {
   onDone: () => void;
 };
 
+// ── Click sound (shared) ─────────────────────
+function playClickSound() {
+  try {
+    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = "sine";
+    o.frequency.setValueAtTime(880, now);
+    o.frequency.exponentialRampToValueAtTime(440, now + 0.08);
+    g.gain.setValueAtTime(0.18, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    o.start(now); o.stop(now + 0.12);
+  } catch (_) {}
+}
+
 // ── Skip overlay (shared) ────────────────────
 function SkipHint() {
   return (
@@ -34,7 +53,6 @@ function SkipHint() {
 
 // ============================================
 // FLORENTINO PÉREZ — BOSS ENTRANCE
-// trigger: florentinoPerez event
 // ============================================
 
 export function FlorentinoEntrance({ onDone }: AnimProps) {
@@ -64,7 +82,7 @@ export function FlorentinoEntrance({ onDone }: AnimProps) {
 
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{ cursor:"pointer", opacity: phase==="exit" ? 0 : 1, transition: phase==="exit" ? "opacity 1s ease-in" : "opacity 0.4s ease",
         background: "#000" }}>
 <SkipHint />
@@ -149,7 +167,6 @@ export function FlorentinoEntrance({ onDone }: AnimProps) {
             marginBottom: "8px",
             animation: "florBubble 0.4s cubic-bezier(0.22,1,0.36,1) forwards",
           }}>
-            {/* triangle */}
             <div style={{
               position: "absolute", top: "-8px", left: "50%",
               transform: "translateX(-50%)",
@@ -236,15 +253,12 @@ export function AclInjuryAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none",
         animation:phase==="crack"?"aclShock 0.5s ease-out":"none" }}>
       <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(100,0,0,0.65) 0%,rgba(0,0,0,0.97) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.5s"}} />
-      {/* X-ray scanlines */}
       {phase==="hold" && <div className="absolute inset-0 pointer-events-none" style={{backgroundImage:"repeating-linear-gradient(0deg,rgba(255,0,0,0.03) 0,rgba(255,0,0,0.03) 1px,transparent 1px,transparent 5px)"}} />}
-      {/* Red flash on crack */}
       {phase==="crack" && <div className="absolute inset-0" style={{background:"rgba(255,0,0,0.35)",animation:"aclFlash 0.5s ease-out forwards"}} />}
-      {/* Alert bar */}
       {phase==="hold" && (
         <div className="absolute top-12 left-0 right-0 text-center py-2" style={{background:"rgba(200,0,0,0.9)",animation:"aclBlink 1s steps(1) infinite",zIndex:3}}>
           <span style={{color:"#fff",fontWeight:900,fontSize:"11px",letterSpacing:"0.3em"}}>⚠️ MEDICAL EMERGENCY — SEASON ENDING</span>
@@ -295,7 +309,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
     const t4 = setTimeout(() => setPhase("exit"), 6500);
     const t5 = setTimeout(() => onDone(),         7200);
 
-    // Money counter
     let v = 0; const target = 500;
     const iv = setInterval(() => {
       v += Math.floor(Math.random()*25+15);
@@ -307,10 +320,9 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
   }, [onDone]);
 
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 1s ease-in":"none" }}>
 
-      {/* ── Deep desert night sky ── */}
       <div className="absolute inset-0" style={{
         background: phase==="hold"||phase==="open"
           ? "radial-gradient(ellipse at 50% 30%, rgba(0,60,20,0.5) 0%, rgba(0,20,5,0.8) 50%, #000 100%)"
@@ -318,7 +330,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
         transition:"background 1.5s ease",
       }} />
 
-      {/* ── Stars ── */}
       {(phase==="hold") && [...Array(20)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${1+(i%2)}px`, height:`${1+(i%2)}px`,
@@ -328,7 +339,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
         }} />
       ))}
 
-      {/* ── Private jet flies in ── */}
       {(phase==="jet"||phase==="open") && (
         <div className="absolute" style={{
           top:"20%", fontSize:"clamp(40px,6vw,60px)",
@@ -339,7 +349,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
         }}>✈️</div>
       )}
 
-      {/* ── Gold coins explosion ── */}
       {phase==="hold" && [...Array(14)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${6+(i%3)*4}px`, height:`${6+(i%3)*4}px`,
@@ -350,7 +359,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
         }} />
       ))}
 
-      {/* ── Saudi green shimmer ── */}
       {phase==="hold" && (
         <div className="absolute inset-0 pointer-events-none" style={{
           background:"linear-gradient(45deg, transparent 0%, rgba(0,100,40,0.06) 30%, transparent 50%, rgba(0,80,30,0.04) 70%, transparent 100%)",
@@ -358,10 +366,7 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
         }} />
       )}
 
-      {/* ── Main content ── */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
-
-        {/* Briefcase image */}
         <div style={{
           opacity: phase==="black"||phase==="jet"?0:1,
           transition:"opacity 0.5s ease",
@@ -379,7 +384,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
           />
         </div>
 
-        {/* Amount counter */}
         {(phase==="open"||phase==="hold") && (
           <div style={{textAlign:"center"}}>
             <div className="font-black tabular-nums" style={{
@@ -393,7 +397,6 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
           </div>
         )}
 
-        {/* Badge */}
         {phase==="hold" && (
           <div style={{textAlign:"center", animation:"saudiBadgeIn 0.8s cubic-bezier(0.22,1,0.36,1) both"}}>
             <div style={{
@@ -435,6 +438,7 @@ export function SaudiOfferAnimation({ onDone }: AnimProps) {
     </div>
   );
 }
+
 // ============================================
 // GOAT SIGNING — Easter egg portal opening
 // ============================================
@@ -460,12 +464,11 @@ export function GoatSigningAnimation({ onDone, playerName }: GoatAnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.3s",
         background: phase==="flash"?"#fff":"#000" }}>
       <SkipHint />
       <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(40,30,0,0.7) 0%,rgba(0,0,0,0.95) 70%)":"transparent",transition:"background 0.5s"}} />
-      {/* Portal rings */}
       {(phase==="portal"||phase==="hold") && [...Array(4)].map((_,i)=>(
         <div key={i} className="absolute rounded-full" style={{
           width:`${100+i*80}px`, height:`${100+i*80}px`,
@@ -474,7 +477,6 @@ export function GoatSigningAnimation({ onDone, playerName }: GoatAnimProps) {
           boxShadow:`0 0 ${20+i*10}px rgba(212,175,55,${0.5-i*0.1})`,
         }} />
       ))}
-      {/* Gold particles */}
       {phase==="hold" && [...Array(14)].map((_,i)=>(
         <div key={i} className="absolute rounded-full" style={{
           width:`${2+(i%3)}px`,height:`${2+(i%3)}px`,
@@ -508,7 +510,7 @@ export function GoatSigningAnimation({ onDone, playerName }: GoatAnimProps) {
 }
 
 // ============================================
-// GOLDEN BOOT — الحذاء يطير ويضرب الشاشة
+// GOLDEN BOOT
 // ============================================
 export function GoldenBootAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"fly"|"impact"|"hold"|"exit">("fly");
@@ -521,14 +523,12 @@ export function GoldenBootAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:"#000", animation:phase==="impact"?"bootImpact 0.4s ease-out":"none" }}>
       <SkipHint />
       <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(100,75,0,0.6) 0%,rgba(0,0,0,0.95) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.6s"}} />
-      {/* Impact flash */}
       {phase==="impact" && <div className="absolute inset-0" style={{background:"rgba(255,220,0,0.3)",animation:"bootFlash 0.4s ease-out forwards"}} />}
-      {/* Star burst */}
       {phase==="hold" && [...Array(8)].map((_,i)=>(
         <div key={i} className="absolute" style={{
           width:"2px",height:"clamp(60px,10vw,100px)",
@@ -557,16 +557,13 @@ export function GoldenBootAnimation({ onDone }: AnimProps) {
           </div>
         )}
       </div>
-      <style>{`@keyframes bootFly{0%{opacity:0;transform:translateX(-150px) translateY(80px) rotate(-30deg) scale(0.4)}60%{opacity:1;transform:translateX(5px) translateY(-5px) rotate(5deg) scale(1.08)}100%{opacity:1;transform:translateX(0) translateY(0) rotate(0) scale(1)}}@keyframes bootImpact{0%,100%{transform:translate(0)}20%{transform:translate(-10px,5px)}40%{transform:translate(10px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(5px,-3px)}}@keyframes bootFlash{0%{opacity:0.5}100%{opacity:0}}@keyframes bootSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes bootRay{0%{opacity:0.3;transform:rotate(var(--r)) scaleY(0.6)}100%{opacity:1;transform:rotate(var(--r)) scaleY(1.2)}}`}</style>
+      <style>{`@keyframes bootFly{0%{opacity:0;transform:translateX(-150px) translateY(80px) rotate(-30deg) scale(0.4)}60%{opacity:1;transform:translateX(5px) translateY(-5px) rotate(5deg) scale(1.08)}100%{opacity:1;transform:translateX(0) translateY(0) rotate(0) scale(1)}}@keyframes bootImpact{0%,100%{transform:translate(0)}20%{transform:translate(-10px,5px)}40%{transform:translate(10px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(5px,-3px)}}@keyframes bootFlash{0%{opacity:0.5}100%{opacity:0}}@keyframes bootSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes bootRay{0%{opacity:0.3}100%{opacity:1}}`}</style>
     </div>
   );
 }
 
 // ============================================
-// BALLON D'OR — curtain reveal سينمائي
-// ============================================
-// ============================================
-// FAST FOOD — burger drops + grease drips
+// FAST FOOD
 // ============================================
 export function FastFoodAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"splat"|"hold"|"exit">("enter");
@@ -579,7 +576,7 @@ export function FastFoodAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:phase==="hold"?"rgba(20,10,0,0.97)":"#000" }}>
       <SkipHint />
@@ -635,7 +632,7 @@ export function YouTubeViralAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:phase==="hold"?"rgba(10,0,0,0.97)":"#000" }}>
       <SkipHint />
@@ -684,17 +681,15 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
 
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex flex-col items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity: phase==="exit"?0:1, transition: phase==="exit"?"opacity 1.2s ease-in":"opacity 0.3s",
         background: "#000" }}>
 
       <SkipHint />
 
-      {/* ── Cinematic bars ── */}
       <div className="absolute top-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
       <div className="absolute bottom-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
 
-      {/* ── Deep velvet background ── */}
       <div className="absolute inset-0" style={{
         background: phase==="hold"||phase==="reveal"
           ? "radial-gradient(ellipse at 50% 40%, rgba(40,20,0,0.9) 0%, rgba(10,5,0,1) 60%, #000 100%)"
@@ -702,7 +697,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         transition: "background 1.5s ease",
       }} />
 
-      {/* ── Title card ── */}
       {(phase==="title"||phase==="curtain") && (
         <div className="absolute flex flex-col items-center gap-3 z-10"
           style={{ animation: phase==="curtain"?"bdTitleFade 0.8s ease-in forwards":"bdTitleIn 1.2s ease-out forwards" }}>
@@ -720,7 +714,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         </div>
       )}
 
-      {/* ── Red velvet curtains ── */}
       {(phase==="curtain"||phase==="reveal"||phase==="hold") && (
         <div className="absolute inset-0 flex z-10">
           <div style={{
@@ -744,7 +737,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         </div>
       )}
 
-      {/* ── Spotlight from above ── */}
       {(phase==="reveal"||phase==="hold") && (
         <div className="absolute z-5" style={{
           top: 0, left:"50%", transform:"translateX(-50%)",
@@ -755,7 +747,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         }} />
       )}
 
-      {/* ── Gold dust particles ── */}
       {phase==="hold" && [...Array(20)].map((_,i)=>(
         <div key={i} className="absolute z-8 rounded-full" style={{
           width:`${1+(i%3)}px`, height:`${1+(i%3)}px`,
@@ -766,7 +757,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         }} />
       ))}
 
-      {/* ── Gold confetti ── */}
       {phase==="hold" && [...Array(18)].map((_,i)=>(
         <div key={i} className="absolute z-8" style={{
           width:`${3+(i%3)*2}px`, height:`${7+(i%4)*4}px`,
@@ -777,7 +767,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         }} />
       ))}
 
-      {/* ── Expanding rings ── */}
       {phase==="hold" && [300,420,540].map((size,i)=>(
         <div key={i} className="absolute rounded-full z-5" style={{
           width:`${size}px`, height:`${size}px`,
@@ -786,7 +775,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
         }} />
       ))}
 
-      {/* ── Trophy portrait ── */}
       <div className="relative z-15 flex flex-col items-center gap-5">
         <div style={{
           opacity: phase==="reveal"||phase==="hold" ? 1 : 0,
@@ -809,10 +797,8 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
           />
         </div>
 
-        {/* ── Award card ── */}
         {phase==="hold" && (
-          <div style={{ textAlign:"center",
-            animation:"bdCardReveal 0.8s cubic-bezier(0.22,1,0.36,1) forwards" }}>
+          <div style={{ textAlign:"center", animation:"bdCardReveal 0.8s cubic-bezier(0.22,1,0.36,1) forwards" }}>
             <div style={{
               background:"linear-gradient(135deg,rgba(3,2,0,0.98),rgba(12,8,0,0.98))",
               border:"1px solid rgba(212,175,55,0.9)",
@@ -825,8 +811,7 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
                 <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(212,175,55,0.6),transparent)"}} />
               </div>
               <div className="font-black tracking-widest uppercase"
-                style={{ fontSize:"clamp(1.6rem,4vw,2.6rem)",
-                  color:"#D4AF37",
+                style={{ fontSize:"clamp(1.6rem,4vw,2.6rem)", color:"#D4AF37",
                   textShadow:"0 0 30px rgba(212,175,55,1), 0 0 60px rgba(212,175,55,0.6), 0 0 100px rgba(255,220,80,0.3)",
                   letterSpacing:"0.12em" }}>
                 Ballon d'Or
@@ -862,7 +847,6 @@ export function BallonDorAnimation({ onDone }: AnimProps) {
   );
 }
 
-
 export function GoldenBoyAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"dark"|"rise"|"hold"|"exit">("dark");
   useEffect(() => {
@@ -873,17 +857,15 @@ export function GoldenBoyAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s":"none" }}>
       <div className="absolute inset-0" style={{
         background:phase==="hold"?"radial-gradient(ellipse at 50% 60%,rgba(60,45,0,0.6) 0%,rgba(0,0,0,0.97) 70%)":"rgba(0,0,0,0.9)",
         transition:"background 1.2s",
       }} />
-      {/* Ground crack */}
       {(phase==="rise"||phase==="hold") && (
         <div className="absolute" style={{bottom:"28%",left:0,right:0,height:"2px",background:"linear-gradient(90deg,transparent 10%,rgba(212,175,55,0.5) 50%,transparent 90%)",animation:"gbCrack 0.5s ease-out forwards"}} />
       )}
-      {/* Gold confetti */}
       {phase==="hold" && [...Array(20)].map((_,i) => (
         <div key={i} className="absolute" style={{
           width:`${3+(i%3)*2}px`, height:`${7+(i%4)*4}px`,
@@ -893,7 +875,6 @@ export function GoldenBoyAnimation({ onDone }: AnimProps) {
           animation:`gbConf ${1.8+i*0.12}s linear ${i*0.07}s infinite`,
         }} />
       ))}
-      {/* Sparkles */}
       {phase==="hold" && [...Array(8)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:"4px", height:"4px",
@@ -903,7 +884,6 @@ export function GoldenBoyAnimation({ onDone }: AnimProps) {
         }} />
       ))}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-        {/* Pedestal */}
         {(phase==="rise"||phase==="hold") && (
           <div style={{animation:"gbPedestal 0.8s cubic-bezier(0.22,1,0.36,1) forwards",marginBottom:"-6px"}}>
             <div style={{width:"clamp(80px,12vw,110px)",height:"10px",background:"linear-gradient(180deg,#D4AF37,#8B6914)",margin:"0 auto",boxShadow:"0 4px 20px rgba(212,175,55,0.5)"}} />
@@ -965,10 +945,9 @@ export function RecordTransferAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearInterval(iv); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
       <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(0,50,15,0.65) 0%,rgba(0,0,0,0.97) 70%)":"rgba(0,0,0,0.9)",transition:"background 1s"}} />
-      {/* Breaking news ticker */}
       {(phase==="count"||phase==="hold") && (
         <div className="absolute bottom-16 left-0 right-0 overflow-hidden" style={{borderTop:"2px solid #10B981",borderBottom:"1px solid rgba(16,185,129,0.3)",background:"rgba(0,0,0,0.95)",padding:"6px 0",zIndex:3}}>
           <div style={{whiteSpace:"nowrap",color:"#10B981",fontWeight:900,fontSize:"11px",letterSpacing:"0.15em",animation:"rtTicker 5s linear infinite"}}>
@@ -976,7 +955,6 @@ export function RecordTransferAnimation({ onDone }: AnimProps) {
           </div>
         </div>
       )}
-      {/* Money particles */}
       {phase==="hold" && [...Array(10)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${3+(i%3)}px`,height:`${3+(i%3)}px`,
@@ -994,7 +972,6 @@ export function RecordTransferAnimation({ onDone }: AnimProps) {
           }}
         />
         <div style={{textAlign:"center"}}>
-          {/* Counter */}
           <div className="font-black tabular-nums" style={{
             fontSize:"clamp(3rem,8vw,5rem)",
             color:"#10B981",
@@ -1032,22 +1009,18 @@ export function WonderkidAnimation({ onDone }: AnimProps) {
     const t2 = setTimeout(() => setPhase("hold"),  1700);
     const t3 = setTimeout(() => setPhase("exit"),  5800);
     const t4 = setTimeout(() => onDone(),          6500);
-    // Scan line animation
     let y = 0;
     const iv = setInterval(() => { y += 2; if(y > 100) y = 0; setScanY(y); }, 16);
     setTimeout(() => clearInterval(iv), 900);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearInterval(iv); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"radial-gradient(ellipse at center,rgba(0,15,40,0.9) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
-      {/* Scan line */}
       {phase==="scan" && (
         <div className="absolute w-full" style={{top:`${scanY}%`,height:"3px",background:"rgba(0,200,255,0.9)",boxShadow:"0 0 20px rgba(0,200,255,0.9), 0 0 40px rgba(0,200,255,0.4)",zIndex:3}} />
       )}
-      {/* Grid bg */}
       <div className="absolute inset-0" style={{backgroundImage:"linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px"}} />
-      {/* TARGET LOCKED */}
       {phase==="lock" && (
         <div className="absolute inset-0 flex items-center justify-center" style={{zIndex:5}}>
           <div style={{fontFamily:"monospace",fontSize:"clamp(40px,7vw,60px)",fontWeight:900,color:"rgba(0,200,255,0.9)",textShadow:"0 0 30px rgba(0,200,255,0.9)",animation:"wkLock 0.1s steps(1) infinite",letterSpacing:"0.1em"}}>
@@ -1055,11 +1028,9 @@ export function WonderkidAnimation({ onDone }: AnimProps) {
           </div>
         </div>
       )}
-      {/* Glitch lines */}
       {phase==="hold" && [...Array(5)].map((_,i) => (
         <div key={i} className="absolute w-full" style={{height:"1px",top:`${12+i*18}%`,background:`rgba(0,200,255,${0.06+i*0.02})`,animation:`wkGlitch ${0.8+i*0.2}s steps(1) ${i*0.12}s infinite`}} />
       ))}
-      {/* Rising particles */}
       {phase==="hold" && [...Array(10)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${2+(i%3)}px`,height:`${2+(i%3)}px`,
@@ -1110,19 +1081,16 @@ export function BobPaisleyAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:"#000", animation:phase==="explode"?"bpShake 0.5s ease-out":"none" }}>
       <SkipHint />
       <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(60,20,0,0.65) 0%,rgba(0,0,0,0.97) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.4s"}} />
-      {/* Explosion flash */}
       {phase==="explode" && <div className="absolute inset-0" style={{background:"rgba(255,150,0,0.4)",animation:"bpFlash 0.5s ease-out forwards"}} />}
-      {/* Fire sparks */}
       {phase==="explode" && ["🔥","💥","🔥","💥","🔥","💥"].map((em,i)=>(
         <span key={i} style={{position:"absolute",left:`${25+(i*9)}%`,top:`${25+(i*5)%25}%`,
           fontSize:`${20+(i%3)*14}px`,animation:`bpSpark 0.5s ease-out ${i*0.04}s forwards`}}>{em}</span>
       ))}
-      {/* Smoke */}
       {phase==="hold" && [...Array(6)].map((_,i)=>(
         <div key={i} className="absolute rounded-full" style={{
           width:`${30+i*12}px`,height:`${30+i*12}px`,
@@ -1156,7 +1124,7 @@ export function BobPaisleyAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
-// HOT MARKET — stock exchange chaos
+// HOT MARKET
 // ============================================
 export function HotMarketAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"hold"|"exit">("enter");
@@ -1171,11 +1139,10 @@ export function HotMarketAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:"radial-gradient(ellipse at center,rgba(0,50,10,0.6) 0%,#000 70%)" }}>
       <SkipHint />
-      {/* Chart lines background */}
       {phase==="hold" && (
         <div className="absolute inset-0 overflow-hidden" style={{zIndex:1}}>
           {[...Array(5)].map((_,i)=>(
@@ -1183,7 +1150,6 @@ export function HotMarketAnimation({ onDone }: AnimProps) {
           ))}
         </div>
       )}
-      {/* Green arrows raining */}
       {phase==="hold" && (
         <div className="absolute inset-0 overflow-hidden">
           {["📈","📈","📈","↗","↑","📈","↗","↑"].map((s,i)=>(
@@ -1216,7 +1182,7 @@ export function HotMarketAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
-// ONE SEASON WONDER — spotlight فلاش ثم تلاشي
+// ONE SEASON WONDER
 // ============================================
 export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"dark"|"rise"|"peak"|"fade"|"exit">("dark");
@@ -1229,9 +1195,8 @@ export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.6s":"none" }}>
-      {/* Spotlight cone from top */}
       <div className="absolute" style={{
         top:0, left:"50%", transform:"translateX(-50%)",
         width:"clamp(200px,35vw,360px)", height:"100vh",
@@ -1241,12 +1206,10 @@ export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
         transition:"opacity 1s ease",
         animation:phase==="peak"?"oswSpotSway 3s ease-in-out infinite":"none",
       }} />
-      {/* Dark vignette sides */}
       <div className="absolute inset-0" style={{
         background:"radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.85) 80%)",
         opacity:phase==="peak"?1:0, transition:"opacity 1.2s ease",
       }} />
-      {/* Gold star particles */}
       {phase==="peak" && [...Array(12)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${2+(i%3)}px`, height:`${2+(i%3)}px`,
@@ -1257,7 +1220,6 @@ export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
         }} />
       ))}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-        {/* Player portrait */}
         <div style={{
           animation:phase==="rise"?"oswPlayerRise 1.1s cubic-bezier(0.22,1,0.36,1) forwards"
             :phase==="peak"?"oswPlayerFloat 3s ease-in-out infinite"
@@ -1274,7 +1236,6 @@ export function OneSeasonWonderAnimation({ onDone }: AnimProps) {
             }}
           />
         </div>
-        {/* Badge */}
         {(phase==="peak"||phase==="fade") && (
           <div style={{
             textAlign:"center",
@@ -1324,11 +1285,10 @@ export function CasinoNightAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:"radial-gradient(ellipse at center,rgba(60,30,0,0.7) 0%,#000 70%)" }}>
       <SkipHint />
-      {/* Neon sign flicker */}
       {(phase==="spin"||phase==="hold") && (
         <div className="absolute top-8" style={{fontSize:"clamp(20px,4vw,32px)",fontWeight:900,letterSpacing:"0.2em",
           color:"rgba(255,150,0,0.9)",textShadow:"0 0 20px rgba(255,150,0,0.8), 0 0 40px rgba(255,100,0,0.4)",
@@ -1336,7 +1296,6 @@ export function CasinoNightAnimation({ onDone }: AnimProps) {
           ✦ CASINO ROYALE ✦
         </div>
       )}
-      {/* Slot machine display */}
       <div className="absolute top-20 flex gap-2" style={{zIndex:3}}>
         {slot.map((s,i)=>(
           <div key={i} style={{width:"50px",height:"60px",background:"rgba(0,0,0,0.9)",border:"2px solid rgba(255,150,0,0.6)",
@@ -1371,7 +1330,7 @@ export function CasinoNightAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
-// MARKET CRASH — red flash + numbers crashing
+// MARKET CRASH
 // ============================================
 export function MarketCrashAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"flash"|"crash"|"hold"|"exit">("flash");
@@ -1387,13 +1346,12 @@ export function MarketCrashAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s ease-in":"opacity 0.3s",
         background:"#000", animation:phase==="crash"?"mcShock 0.5s ease-out":"none" }}>
       <SkipHint />
       {phase==="flash" && <div className="absolute inset-0" style={{background:"rgba(255,0,0,0.5)",animation:"mcFlash 0.4s ease-out forwards"}} />}
       <div className="absolute inset-0" style={{background:phase==="hold"?"radial-gradient(ellipse at center,rgba(80,0,0,0.65) 0%,rgba(0,0,0,0.97) 65%)":"rgba(0,0,0,0.9)",transition:"background 0.5s"}} />
-      {/* Falling red numbers */}
       {phase==="hold" && (
         <div className="absolute inset-0 overflow-hidden">
           {["📉","↘","📉","↓","📉","↘","↓"].map((s,i)=>(
@@ -1427,7 +1385,7 @@ export function MarketCrashAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
-// FAILED TRANSFER — deal papers torn apart
+// FAILED TRANSFER
 // ============================================
 export function FailedTransferAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"crack"|"shatter"|"hold"|"exit">("enter");
@@ -1440,9 +1398,8 @@ export function FailedTransferAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"radial-gradient(ellipse at center,rgba(40,0,50,0.7) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
-      {/* Crack overlay on image */}
       {(phase==="crack"||phase==="shatter") && (
         <div className="absolute inset-0 flex items-center justify-center" style={{zIndex:5,pointerEvents:"none"}}>
           <svg width="200" height="200" viewBox="0 0 200 200" style={{position:"absolute",opacity:phase==="shatter"?0:1,transition:"opacity 0.3s"}}>
@@ -1455,7 +1412,6 @@ export function FailedTransferAnimation({ onDone }: AnimProps) {
           </svg>
         </div>
       )}
-      {/* Shatter pieces */}
       {phase==="shatter" && [...Array(8)].map((_,i) => (
         <div key={i} className="absolute" style={{
           width:`${15+(i%3)*10}px`,height:`${12+(i%4)*8}px`,
@@ -1466,7 +1422,6 @@ export function FailedTransferAnimation({ onDone }: AnimProps) {
           transform:`rotate(${i*45}deg)`,
         }} />
       ))}
-      {/* X mark */}
       {phase==="hold" && (
         <div className="absolute" style={{top:"15%",left:"50%",transform:"translateX(-50%)",fontSize:"clamp(30px,6vw,50px)",animation:"ftX 0.6s cubic-bezier(0.22,1,0.36,1) forwards"}}>❌</div>
       )}
@@ -1494,7 +1449,7 @@ export function FailedTransferAnimation({ onDone }: AnimProps) {
       <style>{`
         @keyframes ftEnter{0%{opacity:0;transform:translateX(80px) scale(0.7)}60%{opacity:1;transform:translateX(-5px) scale(1.05)}100%{opacity:1;transform:translateX(0) scale(1)}}
         @keyframes ftShake{0%,100%{transform:translate(0)}25%{transform:translate(-8px,3px)}75%{transform:translate(8px,-3px)}}
-        @keyframes ftShard{0%{opacity:1;transform:translate(0) rotate(var(--r)) scale(1)}100%{opacity:0;transform:translate(calc((var(--i)-4)*50px),calc((var(--i)%3-1)*-60px)) rotate(calc(var(--r)*4)) scale(0.2)}}
+        @keyframes ftShard{0%{opacity:1}100%{opacity:0;transform:translate(calc((var(--i,0) - 4)*50px),calc((var(--i,0)%3 - 1)*-60px)) scale(0.2)}}
         @keyframes ftX{0%{opacity:0;transform:translateX(-50%) scale(3)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
         @keyframes ftSad{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
         @keyframes ftBadgeIn{0%{opacity:0;transform:translateY(15px)}100%{opacity:1;transform:translateY(0)}}
@@ -1512,13 +1467,11 @@ export function BenchWarmerAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"radial-gradient(ellipse at center,rgba(0,8,30,0.8) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.4s" }}>
-      {/* Cold fog */}
       {phase==="hold" && (
         <div className="absolute bottom-0 left-0 right-0" style={{height:"35%",background:"linear-gradient(0deg,rgba(80,120,200,0.1) 0%,transparent 100%)",animation:"bwFog 4s ease-in-out infinite alternate"}} />
       )}
-      {/* Ice crystals */}
       {phase==="hold" && [...Array(8)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${3+(i%3)*2}px`,height:`${3+(i%3)*2}px`,
@@ -1527,7 +1480,6 @@ export function BenchWarmerAnimation({ onDone }: AnimProps) {
           animation:`bwIce ${2+i*0.3}s ease-in-out ${i*0.2}s infinite alternate`,
         }} />
       ))}
-      {/* ZZZ float */}
       {phase==="hold" && ["💤","Zzz","💤","😴","Zzz"].map((s,i) => (
         <span key={i} style={{
           position:"absolute",left:`${8+(i*18)}%`,bottom:`${25+(i%3)*10}%`,
@@ -1576,20 +1528,17 @@ export function BreakupSeasonAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"radial-gradient(ellipse at center,rgba(60,0,30,0.7) 0%,#000 70%)", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
-      {/* Split panels */}
       {(phase==="split") && (
         <>
           <div className="absolute top-0 left-0 bottom-0" style={{width:"50%",background:"rgba(0,0,0,0.85)",animation:"bsSplitL 0.7s cubic-bezier(0.22,1,0.36,1) forwards",zIndex:4}} />
           <div className="absolute top-0 right-0 bottom-0" style={{width:"50%",background:"rgba(0,0,0,0.85)",animation:"bsSplitR 0.7s cubic-bezier(0.22,1,0.36,1) forwards",zIndex:4}} />
         </>
       )}
-      {/* Center crack line */}
       {(phase==="hold") && (
         <div className="absolute top-0 bottom-0" style={{left:"50%",width:"1px",background:"linear-gradient(180deg,transparent,rgba(200,0,80,0.4),transparent)",transform:"translateX(-50%)"}} />
       )}
-      {/* Broken hearts rain */}
       {phase==="hold" && [...Array(10)].map((_,i) => (
         <span key={i} style={{
           position:"absolute",left:`${(i*10.5)%93}%`,top:"-20px",
@@ -1597,7 +1546,6 @@ export function BreakupSeasonAnimation({ onDone }: AnimProps) {
           animation:`bsHeart ${1.3+i*0.13}s linear ${i*0.09}s infinite`,
         }}>💔</span>
       ))}
-      {/* Tear drops */}
       {phase==="hold" && [...Array(5)].map((_,i) => (
         <div key={i} className="absolute rounded-full" style={{
           width:`${4+(i%3)*2}px`,height:`${4+(i%3)*2}px`,
@@ -1650,18 +1598,16 @@ export function FreeTransferAnimation({ onDone }: AnimProps) {
   }, [onDone]);
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"opacity 0.4s",
         background:"radial-gradient(ellipse at 30% 50%,rgba(15,15,30,0.7) 0%,#000 70%)" }}>
       <SkipHint />
-      {/* Fog layers */}
       {phase==="hold" && (
         <>
           <div className="absolute bottom-0 left-0 right-0" style={{height:"40%",background:"linear-gradient(0deg,rgba(80,80,120,0.12) 0%,transparent 100%)",animation:"ftFog 4s ease-in-out infinite alternate"}} />
           <div className="absolute bottom-0 right-0" style={{width:"50%",height:"60%",background:"radial-gradient(ellipse at 80% 100%,rgba(100,100,150,0.1) 0%,transparent 70%)",animation:"ftFog2 3s ease-in-out infinite alternate"}} />
         </>
       )}
-      {/* Footstep dots trail */}
       {phase==="hold" && [...Array(6)].map((_,i)=>(
         <div key={i} className="absolute rounded-full" style={{
           width:"6px",height:"6px",
@@ -1696,7 +1642,7 @@ export function FreeTransferAnimation({ onDone }: AnimProps) {
 }
 
 // ============================================
-// MAJOR INJURY — heartbeat flatline
+// MAJOR INJURY
 // ============================================
 export function MajorInjuryAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"white"|"red"|"hold"|"exit">("white");
@@ -1708,13 +1654,11 @@ export function MajorInjuryAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   const pts = "0,35 20,35 30,10 40,55 50,5 60,60 70,35 80,35 100,35 120,35 140,35 160,35 180,35 200,35 220,35 240,35 260,35 280,35";
-  const flatPts = [...Array(18)].map((_,i)=>`${i*16},35`).join(" ");
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:phase==="white"?"#fff":"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":phase==="red"?"background 0.3s":"none" }}>
       {phase==="red" && <div className="absolute inset-0" style={{background:"radial-gradient(ellipse at center,rgba(150,0,0,0.7) 0%,rgba(0,0,0,0.97) 65%)",animation:"miRedFade 0.5s ease forwards"}} />}
       {(phase==="hold") && <div className="absolute inset-0" style={{background:"radial-gradient(ellipse at center,rgba(80,0,0,0.7) 0%,rgba(0,0,0,0.97) 65%)"}} />}
-      {/* ECG monitor */}
       {(phase==="hold") && (
         <div className="absolute top-12 left-0 right-0 flex justify-center" style={{zIndex:3}}>
           <div style={{background:"rgba(0,0,0,0.95)",border:"1px solid rgba(255,0,0,0.6)",padding:"8px 20px",minWidth:"300px"}}>
@@ -1783,256 +1727,151 @@ export function YousefCardAnimation({ onDone }: AnimProps) {
   return (
     <div
       className="fixed inset-0 z-[999] flex flex-col items-center justify-center overflow-hidden pointer-events-auto"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer",
         opacity: phase === "exit" ? 0 : 1,
         transition: phase === "exit" ? "opacity 0.7s ease-in" : "none",
         background: "#000",
       }}
     >
-
-      {/* ── BIG 7GE BACKGROUND TEXT ── */}
-      <div
-        className="absolute inset-0 flex items-center justify-center select-none"
-        style={{ zIndex: 0 }}
-      >
-        <span
-          className="font-black"
-          style={{
-            fontSize: "clamp(200px, 40vw, 380px)",
-            color: "transparent",
-            WebkitTextStroke: phase === "hold"
-              ? "1px rgba(212,175,55,0.12)"
-              : "1px rgba(212,175,55,0.04)",
-            letterSpacing: "0.05em",
-            transition: "WebkitTextStroke 1s ease",
-            animation: phase === "hold" ? "bgTextPulse 4s ease-in-out infinite" : "none",
-            lineHeight: 1,
-            userSelect: "none",
-          }}
-        >
-          7GE
-        </span>
+      <div className="absolute inset-0 flex items-center justify-center select-none" style={{ zIndex: 0 }}>
+        <span className="font-black" style={{
+          fontSize: "clamp(200px, 40vw, 380px)",
+          color: "transparent",
+          WebkitTextStroke: phase === "hold" ? "1px rgba(212,175,55,0.12)" : "1px rgba(212,175,55,0.04)",
+          letterSpacing: "0.05em",
+          transition: "WebkitTextStroke 1s ease",
+          animation: phase === "hold" ? "bgTextPulse 4s ease-in-out infinite" : "none",
+          lineHeight: 1,
+          userSelect: "none",
+        }}>7GE</span>
       </div>
 
-      {/* ── SCAN LINES ── */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
-          zIndex: 1,
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
+        zIndex: 1,
+      }} />
 
-      {/* ── GLITCH PHASE ── */}
       {(phase === "glitch") && (
-        <div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ zIndex: 3 }}
-        >
-          <span
-            className="font-black tracking-widest"
-            style={{
-              fontSize: "clamp(60px, 12vw, 120px)",
-              color: "#D4AF37",
-              textShadow: "4px 0 #ff0000, -4px 0 #0000ff, 0 0 30px rgba(212,175,55,0.9)",
-              animation: "glitchMove 0.15s steps(1) infinite",
-            }}
-          >
-            {glitchText}
-          </span>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 3 }}>
+          <span className="font-black tracking-widest" style={{
+            fontSize: "clamp(60px, 12vw, 120px)",
+            color: "#D4AF37",
+            textShadow: "4px 0 #ff0000, -4px 0 #0000ff, 0 0 30px rgba(212,175,55,0.9)",
+            animation: "glitchMove 0.15s steps(1) infinite",
+          }}>{glitchText}</span>
         </div>
       )}
 
-      {/* ── GOLD BEAMS ── */}
       {(phase === "reveal" || phase === "hold") && (
         <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
           {[...Array(12)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute"
-              style={{
-                width: "1px",
-                height: "100vh",
-                top: 0,
-                left: `${5 + i * 8}%`,
-                background: `linear-gradient(180deg,
-                  transparent 0%,
-                  rgba(212,175,55,${0.06 + (i % 3) * 0.04}) 30%,
-                  rgba(212,175,55,${0.1 + (i % 3) * 0.05}) 50%,
-                  rgba(212,175,55,${0.06 + (i % 3) * 0.04}) 70%,
-                  transparent 100%)`,
-                animation: `beamWave ${3 + i * 0.4}s ease-in-out ${i * 0.15}s infinite alternate`,
-                transformOrigin: "center center",
-              }}
-            />
+            <div key={i} className="absolute" style={{
+              width: "1px", height: "100vh", top: 0, left: `${5 + i * 8}%`,
+              background: `linear-gradient(180deg, transparent 0%, rgba(212,175,55,${0.06 + (i % 3) * 0.04}) 30%, rgba(212,175,55,${0.1 + (i % 3) * 0.05}) 50%, rgba(212,175,55,${0.06 + (i % 3) * 0.04}) 70%, transparent 100%)`,
+              animation: `beamWave ${3 + i * 0.4}s ease-in-out ${i * 0.15}s infinite alternate`,
+              transformOrigin: "center center",
+            }} />
           ))}
         </div>
       )}
 
-      {/* ── FLOATING 7GE PARTICLES ── */}
       {phase === "hold" && (
         <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
           {["7","G","E","7","G","E","7","G","E","7"].map((char, i) => (
-            <span
-              key={i}
-              className="absolute font-black"
-              style={{
-                left: `${(i * 10.5) % 90}%`,
-                bottom: `${(i * 7) % 30}%`,
-                fontSize: `${10 + (i % 4) * 6}px`,
-                color: `rgba(212,175,55,${0.15 + (i % 3) * 0.1})`,
-                animation: `charFloat ${3 + i * 0.35}s ease-in-out ${i * 0.2}s infinite alternate`,
-              }}
-            >
-              {char}
-            </span>
+            <span key={i} className="absolute font-black" style={{
+              left: `${(i * 10.5) % 90}%`,
+              bottom: `${(i * 7) % 30}%`,
+              fontSize: `${10 + (i % 4) * 6}px`,
+              color: `rgba(212,175,55,${0.15 + (i % 3) * 0.1})`,
+              animation: `charFloat ${3 + i * 0.35}s ease-in-out ${i * 0.2}s infinite alternate`,
+            }}>{char}</span>
           ))}
         </div>
       )}
 
-      {/* ── GOLD PARTICLES RISE ── */}
       {(phase === "reveal" || phase === "hold") && (
         <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
           {[...Array(16)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                width: `${2 + (i % 3)}px`,
-                height: `${2 + (i % 3)}px`,
-                left: `${(i * 6.3) % 94}%`,
-                bottom: "5%",
-                background: "#D4AF37",
-                boxShadow: "0 0 4px rgba(212,175,55,0.8)",
-                animation: `particleRise ${2 + i * 0.2}s ease-out ${i * 0.1}s infinite`,
-              }}
-            />
+            <div key={i} className="absolute rounded-full" style={{
+              width: `${2 + (i % 3)}px`, height: `${2 + (i % 3)}px`,
+              left: `${(i * 6.3) % 94}%`, bottom: "5%",
+              background: "#D4AF37", boxShadow: "0 0 4px rgba(212,175,55,0.8)",
+              animation: `particleRise ${2 + i * 0.2}s ease-out ${i * 0.1}s infinite`,
+            }} />
           ))}
         </div>
       )}
 
-      {/* ── RINGS ── */}
       {phase === "hold" && (
         <>
           {[280, 380, 480].map((size, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                width: `${size}px`,
-                height: `${size}px`,
-                border: `1px solid rgba(212,175,55,${0.25 - i * 0.06})`,
-                animation: `ringRotate ${8 + i * 4}s linear infinite ${i % 2 === 0 ? "" : "reverse"}`,
-                zIndex: 2,
-              }}
-            />
+            <div key={i} className="absolute rounded-full" style={{
+              width: `${size}px`, height: `${size}px`,
+              border: `1px solid rgba(212,175,55,${0.25 - i * 0.06})`,
+              animation: `ringRotate ${8 + i * 4}s linear infinite ${i % 2 === 0 ? "" : "reverse"}`,
+              zIndex: 2,
+            }} />
           ))}
         </>
       )}
 
-      {/* ── MAIN CONTENT ── */}
       <div className="relative flex flex-col items-center gap-5" style={{ zIndex: 10 }}>
-
         <SkipHint />
-
-        {/* Portrait */}
-        <div
-          style={{
-            opacity: phase === "black" || phase === "glitch" ? 0 : 1,
-            animation: phase === "reveal"
-              ? "portraitReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
-              : phase === "hold"
-              ? "portraitFloat 3.5s ease-in-out infinite"
-              : "none",
-            transition: "opacity 0.4s ease",
-          }}
-        >
-          <img
-            src="/images/yousef-pixel.png"
-            alt="Yousef"
-            style={{
-              width: "clamp(130px, 18vw, 180px)",
-              height: "auto",
-              imageRendering: "pixelated",
-              objectFit: "contain",
-              filter: phase === "hold"
-                ? "drop-shadow(0 0 20px rgba(212,175,55,1)) drop-shadow(0 0 40px rgba(212,175,55,0.6)) drop-shadow(0 0 80px rgba(212,175,55,0.3))"
-                : "drop-shadow(0 0 8px rgba(212,175,55,0.4))",
-              transition: "filter 0.6s ease",
-            }}
-          />
+        <div style={{
+          opacity: phase === "black" || phase === "glitch" ? 0 : 1,
+          animation: phase === "reveal"
+            ? "portraitReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
+            : phase === "hold" ? "portraitFloat 3.5s ease-in-out infinite" : "none",
+          transition: "opacity 0.4s ease",
+        }}>
+          <img src="/images/yousef-pixel.png" alt="Yousef" style={{
+            width: "clamp(130px, 18vw, 180px)", height: "auto",
+            imageRendering: "pixelated", objectFit: "contain",
+            filter: phase === "hold"
+              ? "drop-shadow(0 0 20px rgba(212,175,55,1)) drop-shadow(0 0 40px rgba(212,175,55,0.6)) drop-shadow(0 0 80px rgba(212,175,55,0.3))"
+              : "drop-shadow(0 0 8px rgba(212,175,55,0.4))",
+            transition: "filter 0.6s ease",
+          }} />
         </div>
 
-        {/* Badge */}
-        <div
-          style={{
-            opacity: phase === "hold" ? 1 : 0,
-            transform: phase === "hold" ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
-            transition: "all 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s",
-            textAlign: "center",
-          }}
-        >
-          <div
-            className="px-10 py-6"
-            style={{
-              background: "linear-gradient(135deg, rgba(5,3,0,0.97), rgba(15,10,0,0.97))",
-              border: "1px solid rgba(212,175,55,0.7)",
-              boxShadow: "0 0 60px rgba(212,175,55,0.25), 0 0 120px rgba(212,175,55,0.08), inset 0 0 40px rgba(212,175,55,0.04)",
-            }}
-          >
-            {/* Top line */}
+        <div style={{
+          opacity: phase === "hold" ? 1 : 0,
+          transform: phase === "hold" ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
+          transition: "all 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s",
+          textAlign: "center",
+        }}>
+          <div className="px-10 py-6" style={{
+            background: "linear-gradient(135deg, rgba(5,3,0,0.97), rgba(15,10,0,0.97))",
+            border: "1px solid rgba(212,175,55,0.7)",
+            boxShadow: "0 0 60px rgba(212,175,55,0.25), 0 0 120px rgba(212,175,55,0.08), inset 0 0 40px rgba(212,175,55,0.04)",
+          }}>
             <div className="flex items-center gap-3 mb-4">
               <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.5))" }} />
               <span className="text-[9px] tracking-[0.5em] uppercase" style={{ color: "rgba(212,175,55,0.5)" }}>Creator</span>
               <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(212,175,55,0.5), transparent)" }} />
             </div>
-
-            {/* Name */}
-            <div
-              className="font-black uppercase tracking-widest mb-1"
-              style={{
-                fontSize: "clamp(1.3rem, 3vw, 2rem)",
-                color: "#D4AF37",
-                textShadow: "0 0 30px rgba(212,175,55,1), 0 0 60px rgba(212,175,55,0.5)",
-              }}
-            >
-              Yousef Alnuwasser
-            </div>
-
-            {/* Tag */}
+            <div className="font-black uppercase tracking-widest mb-1" style={{
+              fontSize: "clamp(1.3rem, 3vw, 2rem)",
+              color: "#D4AF37",
+              textShadow: "0 0 30px rgba(212,175,55,1), 0 0 60px rgba(212,175,55,0.5)",
+            }}>Yousef Alnuwasser</div>
             <div className="flex items-center justify-center gap-2 mb-4">
-              <span
-                className="font-black text-sm px-3 py-1 tracking-widest"
-                style={{
-                  background: "rgba(212,175,55,0.12)",
-                  border: "1px solid rgba(212,175,55,0.4)",
-                  color: "#D4AF37",
-                }}
-              >
-                7GE
-              </span>
+              <span className="font-black text-sm px-3 py-1 tracking-widest" style={{
+                background: "rgba(212,175,55,0.12)", border: "1px solid rgba(212,175,55,0.4)", color: "#D4AF37",
+              }}>7GE</span>
               <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
-              <span className="text-xs tracking-[0.25em] uppercase" style={{ color: "rgba(255,255,255,0.3)" }}>
-                Independent Developer
-              </span>
+              <span className="text-xs tracking-[0.25em] uppercase" style={{ color: "rgba(255,255,255,0.3)" }}>Independent Developer</span>
             </div>
-
-            {/* Message */}
-            <div
-              className="text-xs leading-relaxed px-2 py-3 text-center"
-              style={{
-                color: "rgba(255,255,255,0.4)",
-                borderTop: "1px solid rgba(212,175,55,0.1)",
-                borderBottom: "1px solid rgba(212,175,55,0.1)",
-              }}
-            >
+            <div className="text-xs leading-relaxed px-2 py-3 text-center" style={{
+              color: "rgba(255,255,255,0.4)",
+              borderTop: "1px solid rgba(212,175,55,0.1)",
+              borderBottom: "1px solid rgba(212,175,55,0.1)",
+            }}>
               شطور اشتريت المطور نفسه
               <span className="mx-2" style={{ color: "rgba(212,175,55,0.3)" }}>·</span>
               لاتنسى تدعم المشروع 😏
             </div>
-
-            {/* Bottom line */}
             <div className="flex items-center gap-3 mt-4">
               <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.3))" }} />
               <span className="text-base">⭐</span>
@@ -2043,60 +1882,21 @@ export function YousefCardAnimation({ onDone }: AnimProps) {
       </div>
 
       <style>{`
-        @keyframes bgTextPulse {
-          0%, 100% { opacity: 0.7; }
-          50%       { opacity: 1; }
-        }
-        @keyframes glitchMove {
-          0%   { transform: translate(0,0) skewX(0deg); }
-          20%  { transform: translate(-4px,2px) skewX(-3deg); }
-          40%  { transform: translate(4px,-2px) skewX(3deg); }
-          60%  { transform: translate(-2px,4px) skewX(-1deg); }
-          80%  { transform: translate(2px,-4px) skewX(2deg); }
-          100% { transform: translate(0,0) skewX(0deg); }
-        }
-        @keyframes beamWave {
-          0%   { transform: scaleY(0.8) translateY(-10%); opacity: 0.4; }
-          100% { transform: scaleY(1.2) translateY(10%);  opacity: 1; }
-        }
-        @keyframes charFloat {
-          0%   { transform: translateY(0) rotate(0deg); opacity: 0.15; }
-          100% { transform: translateY(-40px) rotate(10deg); opacity: 0.35; }
-        }
-        @keyframes particleRise {
-          0%   { transform: translateY(0) scale(1);    opacity: 0.8; }
-          100% { transform: translateY(-90vh) scale(0.3); opacity: 0; }
-        }
-        @keyframes ringRotate {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        @keyframes portraitReveal {
-          0%   { opacity: 0; transform: scale(0.2) translateY(30px); filter: brightness(5) blur(8px); }
-          50%  { opacity: 1; transform: scale(1.1) translateY(-6px); filter: brightness(1.5) blur(0); }
-          75%  { transform: scale(0.97) translateY(2px); filter: brightness(1); }
-          100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
-        }
-        @keyframes portraitFloat {
-          0%, 100% { transform: translateY(0) scale(1); }
-          40%       { transform: translateY(-14px) scale(1.03); }
-          70%       { transform: translateY(-5px) scale(1.01); }
-        }
+        @keyframes bgTextPulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+        @keyframes glitchMove { 0% { transform: translate(0,0) skewX(0deg); } 20% { transform: translate(-4px,2px) skewX(-3deg); } 40% { transform: translate(4px,-2px) skewX(3deg); } 60% { transform: translate(-2px,4px) skewX(-1deg); } 80% { transform: translate(2px,-4px) skewX(2deg); } 100% { transform: translate(0,0) skewX(0deg); } }
+        @keyframes beamWave { 0% { transform: scaleY(0.8) translateY(-10%); opacity: 0.4; } 100% { transform: scaleY(1.2) translateY(10%); opacity: 1; } }
+        @keyframes charFloat { 0% { transform: translateY(0) rotate(0deg); opacity: 0.15; } 100% { transform: translateY(-40px) rotate(10deg); opacity: 0.35; } }
+        @keyframes particleRise { 0% { transform: translateY(0) scale(1); opacity: 0.8; } 100% { transform: translateY(-90vh) scale(0.3); opacity: 0; } }
+        @keyframes ringRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes portraitReveal { 0% { opacity: 0; transform: scale(0.2) translateY(30px); filter: brightness(5) blur(8px); } 50% { opacity: 1; transform: scale(1.1) translateY(-6px); filter: brightness(1.5) blur(0); } 75% { transform: scale(0.97) translateY(2px); filter: brightness(1); } 100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); } }
+        @keyframes portraitFloat { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-14px) scale(1.03); } 70% { transform: translateY(-5px) scale(1.01); } }
       `}</style>
     </div>
   );
 }
 
 // ============================================
-// أضف أنيميشنات جديدة هنا
-// ============================================
-
-// ============================================
 // ERIKSEN HEART ATTACK
-// ============================================
-// ============================================
-// ERIKSEN HEART ATTACK
-// Concept: ECG flatline — screen goes white then red crash
 // ============================================
 export function EriksenAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"black"|"flash"|"crash"|"hold"|"exit">("black");
@@ -2109,7 +1909,6 @@ export function EriksenAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
   }, [onDone]);
 
-  // ECG values — normal then flatline
   const ecgNormal = [0,5,2,8,30,-20,10,2,0,3,1,0,4,2,0,6,25,-18,8,0];
   const ecgFlat   = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
   const ecg = phase === "hold" ? ecgFlat : ecgNormal;
@@ -2118,27 +1917,18 @@ export function EriksenAnimation({ onDone }: AnimProps) {
 
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer",
-        background: phase==="flash" ? "#ffffff"
-          : phase==="crash" ? "#cc0000"
-          : phase==="hold" || phase==="exit" ? "#000" : "#000",
+        background: phase==="flash" ? "#ffffff" : phase==="crash" ? "#cc0000" : "#000",
         transition: phase==="flash" ? "background 0.2s" : phase==="crash" ? "background 0.5s" : "background 0.8s ease",
         opacity: phase==="exit" ? 0 : 1,
       }}>
-
       <SkipHint />
-
-      {/* Screen shake on crash */}
       <div className="absolute inset-0 flex flex-col items-center justify-center"
         style={{ animation: phase==="crash" ? "ekgScreenShake 0.5s ease-out" : "none" }}>
-
-        {/* Dark overlay after crash */}
         {(phase==="hold" || phase==="exit") && (
           <div className="absolute inset-0" style={{ background:"radial-gradient(ellipse at center, rgba(60,0,0,0.7) 0%, rgba(0,0,0,0.98) 70%)" }} />
         )}
-
-        {/* ECG monitor frame */}
         {(phase==="crash" || phase==="hold") && (
           <div className="absolute top-8 left-0 right-0 flex justify-center" style={{ zIndex:3 }}>
             <div style={{ background:"rgba(0,0,0,0.9)", border:`1px solid ${phase==="hold"?"rgba(255,0,0,0.5)":"rgba(0,255,80,0.5)"}`, padding:"8px 16px", minWidth:"300px" }}>
@@ -2159,8 +1949,6 @@ export function EriksenAnimation({ onDone }: AnimProps) {
             </div>
           </div>
         )}
-
-        {/* Portrait */}
         <div className="relative z-10 flex flex-col items-center gap-5 mt-16">
           <img src="/images/eriksen-pixel.png" alt="Heart Attack"
             style={{
@@ -2174,7 +1962,7 @@ export function EriksenAnimation({ onDone }: AnimProps) {
             }}
           />
           {phase==="hold" && (
-            <div style={{ textAlign:"center", opacity:1 }}>
+            <div style={{ textAlign:"center" }}>
               <div className="px-10 py-5" style={{ background:"rgba(5,0,0,0.97)", border:"1px solid rgba(255,0,0,0.8)", boxShadow:"0 0 50px rgba(255,0,0,0.4), inset 0 0 30px rgba(255,0,0,0.05)" }}>
                 <div className="text-[9px] tracking-[0.5em] uppercase mb-2" style={{ color:"rgba(255,100,100,0.6)" }}>CARDIAC ARREST</div>
                 <div className="font-black text-3xl tracking-widest uppercase" style={{ color:"#ff1111", textShadow:"0 0 30px rgba(255,0,0,1), 0 0 60px rgba(255,0,0,0.5)" }}>Heart Attack</div>
@@ -2185,7 +1973,6 @@ export function EriksenAnimation({ onDone }: AnimProps) {
           )}
         </div>
       </div>
-
       <style>{`
         @keyframes ekgScreenShake{0%,100%{transform:translate(0)}15%{transform:translate(-12px,8px)}30%{transform:translate(12px,-8px)}45%{transform:translate(-8px,4px)}60%{transform:translate(8px,-4px)}75%{transform:translate(-4px,2px)}}
         @keyframes ekgFall{0%{opacity:0;transform:scale(0.5) translateY(-60px) rotate(0deg)}60%{opacity:1;transform:scale(1.05) translateY(6px) rotate(45deg)}100%{opacity:1;transform:rotate(90deg) translateX(20px)}}
@@ -2198,7 +1985,6 @@ export function EriksenAnimation({ onDone }: AnimProps) {
 
 // ============================================
 // DOPING BAN
-// Concept: newspaper headlines flash + mugshot style
 // ============================================
 export function DopingBanAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"flash"|"hold"|"exit">("enter");
@@ -2216,13 +2002,10 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
 
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer", opacity: phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s":"none",
         background: phase==="flash" ? "#f5f0e0" : phase==="hold" ? "#0a0a0a" : "#000" }}>
-
       <SkipHint />
-
-      {/* Newspaper flash */}
       {phase==="flash" && (
         <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex:5 }}>
           <div style={{ fontFamily:"serif", fontSize:"clamp(60px,12vw,100px)", fontWeight:900, color:"#1a1a1a",
@@ -2232,13 +2015,9 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
           </div>
         </div>
       )}
-
       {phase==="hold" && (
         <>
-          {/* Mugshot grid lines */}
           <div className="absolute inset-0" style={{ backgroundImage:"linear-gradient(rgba(0,80,150,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,80,150,0.04) 1px,transparent 1px)", backgroundSize:"30px 30px" }} />
-
-          {/* Red BANNED stamp */}
           <div className="absolute" style={{ top:"12%", right:"8%", zIndex:5,
             border:"4px solid rgba(255,0,0,0.85)", padding:"6px 16px",
             transform:"rotate(-15deg)",
@@ -2247,14 +2026,11 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
             textShadow:"0 0 10px rgba(255,0,0,0.5)" }}>
             BANNED
           </div>
-
           <div className="relative z-10 flex flex-col items-center gap-4">
-            {/* Mugshot frame */}
             <div style={{ position:"relative", border:"3px solid #444", padding:"8px", background:"#111" }}>
               <img src="/images/doping-ban-pixel.png" alt="Doping Ban"
                 style={{ width:"clamp(150px,24vw,200px)", imageRendering:"pixelated", objectFit:"contain",
                   filter:"grayscale(0.8) contrast(1.2)" }} />
-              {/* Mugshot number bar */}
               <div style={{ background:"#222", borderTop:"1px solid #444", padding:"4px 8px",
                 display:"flex", justifyContent:"space-between", marginTop:"4px" }}>
                 {["0","0","7","4","2"].map((n,i) => (
@@ -2262,7 +2038,6 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
                 ))}
               </div>
             </div>
-
             <div style={{ textAlign:"center" }}>
               <div className="px-8 py-4" style={{ background:"rgba(0,5,15,0.98)", border:"1px solid rgba(0,100,255,0.5)", boxShadow:"0 0 40px rgba(0,80,200,0.2)" }}>
                 <div className="text-[9px] tracking-[0.5em] uppercase mb-1" style={{ color:"rgba(80,120,255,0.6)" }}>WADA SUSPENSION</div>
@@ -2273,7 +2048,6 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
           </div>
         </>
       )}
-
       <style>{`
         @keyframes dopFlash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}}
         @keyframes dopStamp{0%{transform:rotate(-15deg) scale(3);opacity:0}60%{transform:rotate(-15deg) scale(0.9);opacity:1}100%{transform:rotate(-15deg) scale(1);opacity:1}}
@@ -2284,7 +2058,6 @@ export function DopingBanAnimation({ onDone }: AnimProps) {
 
 // ============================================
 // GIRLS MAGNET
-// Concept: paparazzi camera flashes + spotlight
 // ============================================
 export function GirlsMagnetAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"enter"|"flash"|"hold"|"exit">("enter");
@@ -2296,33 +2069,26 @@ export function GirlsMagnetAnimation({ onDone }: AnimProps) {
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4); };
   }, [onDone]);
   return (
-    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => onDone()}
+    <div className="fixed inset-0 z-[999] overflow-hidden pointer-events-auto" onClick={() => { playClickSound(); onDone(); }}
       style={{ background:"#000", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.7s":"none" }}>
       <div className="absolute inset-0" style={{
         background:phase==="hold"?"radial-gradient(ellipse at center,rgba(80,0,50,0.6) 0%,rgba(0,0,0,0.95) 70%)":"rgba(0,0,0,0.9)",
         transition:"background 1s",
       }} />
-      {/* Paparazzi camera flashes */}
       {phase==="flash" && [...Array(8)].map((_,i) => (
         <div key={i} className="absolute inset-0" style={{
           background:`rgba(255,255,255,${0.3+i*0.05})`,
           animation:`gmFlash 1.2s steps(1) ${i*0.1}s forwards`,
         }} />
       ))}
-      {/* Camera flash dots from edges */}
       {phase==="hold" && [...Array(6)].map((_,i) => (
         <div key={i} className="absolute" style={{
-          width:"8px", height:"8px",
-          borderRadius:"50%",
-          left:i%2===0?`${5+i*8}%`:"auto",
-          right:i%2===1?`${5+i*8}%`:"auto",
-          top:`${15+i*14}%`,
-          background:"rgba(255,255,255,0.9)",
-          boxShadow:"0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,255,255,0.5)",
+          width:"8px", height:"8px", borderRadius:"50%",
+          left:i%2===0?`${5+i*8}%`:"auto", right:i%2===1?`${5+i*8}%`:"auto", top:`${15+i*14}%`,
+          background:"rgba(255,255,255,0.9)", boxShadow:"0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,255,255,0.5)",
           animation:`gmCamFlash ${0.8+i*0.15}s ease-in-out ${i*0.2}s infinite`,
         }} />
       ))}
-      {/* Floating hearts */}
       {phase==="hold" && ["💋","❤️","💕","💖","💗","💓"].map((em,i) => (
         <span key={i} style={{
           position:"absolute", left:`${15+(i*14)}%`, bottom:"-20px",
@@ -2330,7 +2096,6 @@ export function GirlsMagnetAnimation({ onDone }: AnimProps) {
           animation:`gmHeart ${1.5+i*0.3}s ease-out ${i*0.15}s infinite`,
         }}>{em}</span>
       ))}
-      {/* Spotlight */}
       {phase==="hold" && (
         <div className="absolute" style={{
           top:0, left:"50%", transform:"translateX(-50%)",
@@ -2382,33 +2147,24 @@ export function RacistAttackAnimation({ onDone }: AnimProps) {
     const t5 = setTimeout(() => onDone(),           5200);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
   }, [onDone]);
-
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex items-center justify-center"
-      onClick={() => onDone()}
+      onClick={() => { playClickSound(); onDone(); }}
       style={{cursor:"pointer",
         opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 0.8s ease-in":"none",
-        background: phase==="crack" ? "#1a0800"
-          : phase==="hold" || phase==="fist" ? "#050200" : "#000",
+        background: phase==="crack" ? "#1a0800" : phase==="hold" || phase==="fist" ? "#050200" : "#000",
       }}>
-
       <SkipHint />
-
-      {/* Crack overlay */}
       {(phase==="crack" || phase==="hold") && (
         <div className="absolute inset-0" style={{ zIndex:2,
           backgroundImage:"radial-gradient(ellipse at 40% 40%, transparent 40%, rgba(0,0,0,0.8) 80%)",
           animation:"raCrack 0.6s ease-out forwards" }} />
       )}
-
-      {/* Noise texture */}
       {phase==="hold" && (
         <div className="absolute inset-0" style={{ zIndex:1,
           backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,0.02) 0,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 4px)",
           animation:"raNoise 0.1s steps(1) infinite" }} />
       )}
-
-      {/* Crying tears */}
       {(phase==="hold" || phase==="fist") && (
         <div className="absolute inset-0 overflow-hidden" style={{ zIndex:3 }}>
           {[...Array(6)].map((_,i) => (
@@ -2421,10 +2177,8 @@ export function RacistAttackAnimation({ onDone }: AnimProps) {
           ))}
         </div>
       )}
-
       <div className="relative z-10 flex flex-col items-center gap-5"
         style={{ animation:phase==="crack"?"raShake 0.5s ease-out":"none" }}>
-
         <img src="/images/racism-attack-pixel.png" alt="Racist Attack"
           style={{
             width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
@@ -2435,9 +2189,8 @@ export function RacistAttackAnimation({ onDone }: AnimProps) {
             transition:"filter 0.8s ease",
           }}
         />
-
         {(phase==="hold" || phase==="fist") && (
-          <div style={{ textAlign:"center", opacity:1 }}>
+          <div style={{ textAlign:"center" }}>
             <div className="px-8 py-5" style={{
               background:"rgba(5,2,0,0.97)",
               border:`1px solid ${phase==="fist" ? "rgba(255,160,60,0.7)" : "rgba(100,60,30,0.5)"}`,
@@ -2458,7 +2211,6 @@ export function RacistAttackAnimation({ onDone }: AnimProps) {
           </div>
         )}
       </div>
-
       <style>{`
         @keyframes raCrack{0%{opacity:0}100%{opacity:1}}
         @keyframes raShake{0%,100%{transform:translate(0)}20%{transform:translate(-10px,5px)}40%{transform:translate(10px,-5px)}60%{transform:translate(-6px,3px)}80%{transform:translate(6px,-3px)}}
@@ -2473,11 +2225,9 @@ export function RacistAttackAnimation({ onDone }: AnimProps) {
 
 // ============================================
 // CLUB LEGEND
-// Concept: stadium statue reveal, crowd roar effect
 // ============================================
 export function ClubLegendAnimation({ onDone }: AnimProps) {
   const [phase, setPhase] = useState<"dark"|"walk"|"pedestal"|"unveil"|"hold"|"exit">("dark");
-
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("walk"),     500);
     const t2 = setTimeout(() => setPhase("pedestal"), 1500);
@@ -2487,27 +2237,19 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
     const t6 = setTimeout(() => onDone(),             7700);
     return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5);clearTimeout(t6); };
   }, [onDone]);
-
   return (
     <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden"
-      onClick={() => onDone()}
-      style={{ cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 1.2s ease-in":"opacity 0.4s",
-        background:"#000" }}>
-<SkipHint />
-
-      {/* ── Cinematic bars ── */}
+      onClick={() => { playClickSound(); onDone(); }}
+      style={{ cursor:"pointer", opacity:phase==="exit"?0:1, transition:phase==="exit"?"opacity 1.2s ease-in":"opacity 0.4s", background:"#000" }}>
+      <SkipHint />
       <div className="absolute top-0 left-0 right-0 z-20" style={{height:"clamp(45px,7vh,72px)",background:"#000"}} />
       <div className="absolute bottom-0 left-0 right-0 z-20" style={{height:"clamp(45px,7vh,72px)",background:"#000"}} />
-
-      {/* ── Stadium sky ── */}
       <div className="absolute inset-0" style={{
         background: phase==="hold"||phase==="unveil"
           ? "radial-gradient(ellipse at 50% 30%, rgba(30,20,0,0.9) 0%, rgba(5,3,0,1) 60%, #000 100%)"
           : "radial-gradient(ellipse at 50% 30%, rgba(8,5,0,0.9) 0%, #000 70%)",
         transition:"background 2s ease",
       }} />
-
-      {/* ── Stadium crowd silhouette ── */}
       {(phase==="pedestal"||phase==="unveil"||phase==="hold") && (
         <div className="absolute bottom-0 left-0 right-0 z-2" style={{
           height:"30%",
@@ -2515,8 +2257,6 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
           backgroundImage:"repeating-linear-gradient(90deg,rgba(212,175,55,0.015) 0,rgba(212,175,55,0.015) 2px,transparent 2px,transparent 12px)",
         }} />
       )}
-
-      {/* ── Multiple spotlights ── */}
       {(phase==="unveil"||phase==="hold") && ["-30%","50%","130%"].map((left,i)=>(
         <div key={i} className="absolute z-3" style={{
           top:0, left, transform:"translateX(-50%)",
@@ -2526,8 +2266,6 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
           animation:`clSpot${i} ${3+i*0.5}s ease-in-out ${i*0.3}s infinite alternate`,
         }} />
       ))}
-
-      {/* ── Gold confetti ── */}
       {phase==="hold" && [...Array(22)].map((_,i)=>(
         <div key={i} className="absolute z-6" style={{
           width:`${3+(i%3)*2}px`, height:`${8+(i%4)*5}px`,
@@ -2537,19 +2275,14 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
           animation:`clConf ${2+i*0.12}s linear ${i*0.07}s infinite`,
         }} />
       ))}
-
-      {/* ── Ambient gold particles ── */}
       {(phase==="hold") && [...Array(14)].map((_,i)=>(
         <div key={i} className="absolute rounded-full z-5" style={{
           width:`${1+(i%3)}px`, height:`${1+(i%3)}px`,
           left:`${(i*7.2)%92}%`, bottom:"5%",
-          background:"rgba(212,175,55,0.8)",
-          boxShadow:"0 0 4px rgba(212,175,55,0.6)",
+          background:"rgba(212,175,55,0.8)", boxShadow:"0 0 4px rgba(212,175,55,0.6)",
           animation:`clDust ${2.5+i*0.2}s ease-out ${i*0.15}s infinite`,
         }} />
       ))}
-
-      {/* ── Expanding rings ── */}
       {phase==="hold" && [200,330,460,590].map((size,i)=>(
         <div key={i} className="absolute rounded-full z-4" style={{
           width:`${size}px`, height:`${size}px`,
@@ -2558,52 +2291,23 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
           animation:`clRingExpand ${3+i*0.6}s ease-out ${i*0.4}s infinite`,
         }} />
       ))}
-
-      {/* ── Main content ── */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-
-        {/* Pedestal */}
         {(phase==="pedestal"||phase==="unveil"||phase==="hold") && (
-          <div style={{
-            position:"relative",
-            marginBottom:"-4px",
-            animation:"clPedestalRise 0.8s cubic-bezier(0.22,1,0.36,1) forwards",
-          }}>
-            {/* Top slab */}
-            <div style={{
-              width:"clamp(120px,18vw,170px)", height:"12px",
-              background:"linear-gradient(180deg,#D4AF37,#8B6914)",
-              boxShadow:"0 4px 20px rgba(212,175,55,0.5), 0 0 40px rgba(212,175,55,0.2)",
-              margin:"0 auto",
-            }} />
-            {/* Column */}
-            <div style={{
-              width:"clamp(80px,12vw,110px)", height:"clamp(30px,5vw,50px)",
-              background:"linear-gradient(180deg,#b8960a,#6b4f08)",
-              margin:"0 auto",
-              boxShadow:"0 0 20px rgba(180,140,0,0.3)",
-            }} />
-            {/* Base */}
-            <div style={{
-              width:"clamp(130px,20vw,180px)", height:"10px",
-              background:"linear-gradient(180deg,#8B6914,#4a3508)",
-              margin:"0 auto",
-            }} />
+          <div style={{ position:"relative", marginBottom:"-4px", animation:"clPedestalRise 0.8s cubic-bezier(0.22,1,0.36,1) forwards" }}>
+            <div style={{ width:"clamp(120px,18vw,170px)", height:"12px", background:"linear-gradient(180deg,#D4AF37,#8B6914)", boxShadow:"0 4px 20px rgba(212,175,55,0.5), 0 0 40px rgba(212,175,55,0.2)", margin:"0 auto" }} />
+            <div style={{ width:"clamp(80px,12vw,110px)", height:"clamp(30px,5vw,50px)", background:"linear-gradient(180deg,#b8960a,#6b4f08)", margin:"0 auto", boxShadow:"0 0 20px rgba(180,140,0,0.3)" }} />
+            <div style={{ width:"clamp(130px,20vw,180px)", height:"10px", background:"linear-gradient(180deg,#8B6914,#4a3508)", margin:"0 auto" }} />
           </div>
         )}
-
-        {/* Portrait */}
         <div style={{
-          opacity: phase==="dark"||phase==="walk" ? 0 : 1,
-          transition:"opacity 0.5s ease",
+          opacity: phase==="dark"||phase==="walk" ? 0 : 1, transition:"opacity 0.5s ease",
           animation: phase==="pedestal" ? "clStatueRise 0.9s cubic-bezier(0.22,1,0.36,1) forwards"
             : phase==="unveil" ? "clUnveil 0.8s cubic-bezier(0.22,1,0.36,1) forwards"
             : phase==="hold" ? "clFloat 4s ease-in-out infinite" : "none",
         }}>
           <img src="/images/club-legend-pixel.png" alt="Club Legend"
             style={{
-              width:"clamp(160px,26vw,220px)",
-              imageRendering:"pixelated", objectFit:"contain",
+              width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
               filter: phase==="hold"
                 ? "drop-shadow(0 0 30px rgba(212,175,55,1)) drop-shadow(0 0 60px rgba(212,175,55,0.6)) drop-shadow(0 0 100px rgba(255,220,80,0.3)) sepia(0.2) saturate(1.2)"
                 : "drop-shadow(0 0 10px rgba(212,175,55,0.3))",
@@ -2611,23 +2315,13 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
             }}
           />
         </div>
-
-        {/* Walk-in silhouette */}
         {phase==="walk" && (
-          <div className="absolute" style={{
-            animation:"clWalkIn 1s ease-out forwards",
-            bottom:"30%", opacity:0,
-          }}>
+          <div className="absolute" style={{ animation:"clWalkIn 1s ease-out forwards", bottom:"30%", opacity:0 }}>
             <div style={{width:"60px",height:"80px",background:"rgba(212,175,55,0.3)",clipPath:"polygon(30% 0%,70% 0%,100% 100%,0% 100%)",filter:"blur(4px)"}} />
           </div>
         )}
-
-        {/* Award card */}
         {phase==="hold" && (
-          <div style={{
-            textAlign:"center", marginTop:"clamp(12px,2vw,20px)",
-            animation:"clCardIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.3s both",
-          }}>
+          <div style={{ textAlign:"center", marginTop:"clamp(12px,2vw,20px)", animation:"clCardIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.3s both" }}>
             <div style={{
               background:"linear-gradient(135deg,rgba(3,2,0,0.98),rgba(12,8,0,0.98))",
               border:"1px solid rgba(212,175,55,0.9)",
@@ -2657,7 +2351,6 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
           </div>
         )}
       </div>
-
       <style>{`
         @keyframes clWalkIn       {0%{opacity:0;transform:translateX(80px)}100%{opacity:0.6;transform:translateX(0)}}
         @keyframes clPedestalRise {0%{opacity:0;transform:translateY(40px)}100%{opacity:1;transform:translateY(0)}}
@@ -2676,7 +2369,674 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
   );
 }
 
+// ============================================
+// KONAMI CODE ANIMATION
+// Matrix rain → terminal reveal → Infinite Budget
+// ============================================
+export function KonamiCodeAnimation({ onDone }: AnimProps) {
+  const [phase, setPhase] = useState<"matrix" | "terminal" | "done">("matrix");
+  const [matrixLines, setMatrixLines] = useState<string[]>([]);
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
+
+  const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
+
+  useEffect(() => {
+    const matrixInterval = setInterval(() => {
+      const line = Array.from({ length: 28 }, () =>
+        CHARS[Math.floor(Math.random() * CHARS.length)]
+      ).join(" ");
+      setMatrixLines(prev => [...prev.slice(-14), line]);
+    }, 70);
+
+    const toTerminal = setTimeout(() => {
+      clearInterval(matrixInterval);
+      setPhase("terminal");
+    }, 2000);
+
+    return () => { clearInterval(matrixInterval); clearTimeout(toTerminal); };
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "terminal") return;
+
+    const sequence: string[] = [
+      "> KONAMI CODE DETECTED...",
+      "> BYPASSING FINANCIAL LIMITS...",
+      "> INJECTING €99,999M INTO ACCOUNT...",
+      "> ∞ BUDGET UNLOCKED ✓",
+      "> GOOD LUCK, LEGEND.",
+    ];
+
+    setTerminalLines([]);
+    let idx = 0;
+    let finished = false;
+
+    const lineInterval = setInterval(() => {
+      if (finished) return;
+      if (idx < sequence.length) {
+        const line = sequence[idx];
+        if (typeof line === "string") {
+          setTerminalLines(prev => [...prev, line]);
+        }
+        idx++;
+      } else {
+        finished = true;
+        clearInterval(lineInterval);
+        setTimeout(() => { onDone(); }, 1400);
+      }
+    }, 420);
+
+    return () => { finished = true; clearInterval(lineInterval); };
+  }, [phase]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex flex-col items-center justify-center overflow-hidden pointer-events-auto"
+      onClick={() => { playClickSound(); onDone(); }}
+      style={{ background: "#000", cursor: "pointer", fontFamily: "monospace" }}
+    >
+      <div className="absolute top-4 right-4 text-[10px] tracking-widest uppercase"
+        style={{ color: "rgba(0,255,65,0.4)" }}>
+        TAP TO SKIP
+      </div>
+
+      {phase === "matrix" && (
+        <div className="w-full h-full flex flex-col justify-center px-6 overflow-hidden">
+          {matrixLines.map((line, i) => (
+            <div key={i} className="text-[11px] leading-relaxed tracking-widest"
+              style={{
+                color: `hsl(120, 100%, ${18 + (i / matrixLines.length) * 52}%)`,
+                opacity: 0.3 + (i / matrixLines.length) * 0.7,
+                textShadow: i === matrixLines.length - 1 ? "0 0 8px #00ff41" : "none",
+              }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {phase === "terminal" && (
+        <div className="w-full max-w-lg px-8">
+          <div className="text-center mb-8">
+            <div
+              className="font-black tracking-widest mb-1"
+              style={{
+                fontSize: "clamp(2.2rem,6vw,3.5rem)",
+                color: "#00ff41",
+                textShadow: "0 0 20px #00ff41, 0 0 50px #00ff41, 0 0 80px rgba(0,255,65,0.4)",
+                animation: "konamiPulse 0.6s ease-in-out infinite alternate",
+              }}
+            >
+              CHEAT CODE
+            </div>
+            <div
+              className="font-black tracking-[0.4em] text-xl uppercase"
+              style={{
+                color: "#FFD54F",
+                textShadow: "0 0 15px #FFD54F, 0 0 30px rgba(255,213,79,0.5)",
+              }}
+            >
+              ACTIVATED
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {terminalLines.map((line, i) => (
+              <div
+                key={i}
+                className="text-sm font-bold"
+                style={{
+                  color: (line ?? "").includes("\u221e") || (line ?? "").includes("\u2713")
+                    ? "#FFD54F"
+                    : (line ?? "").includes("LEGEND")
+                    ? "#10B981"
+                    : "#00ff41",
+                  textShadow: "0 0 6px currentColor",
+                  animation: "konamiLineIn 0.25s ease-out both",
+                }}
+              >
+                {line ?? ""}
+              </div>
+            ))}
+            {terminalLines.length > 0 && terminalLines.length < 5 && (
+              <span
+                className="inline-block w-2 h-4 ml-1 align-middle"
+                style={{ background: "#00ff41", animation: "konamiBlink 0.7s step-end infinite" }}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes konamiPulse {
+          0%   { opacity: 0.85; transform: scale(1); }
+          100% { opacity: 1;    transform: scale(1.03); }
+        }
+        @keyframes konamiLineIn {
+          from { opacity: 0; transform: translateX(-12px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes konamiBlink {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 // ============================================
-// أضف أنيميشنات جديدة هنا
+// WORLD CUP ANIMATION
 // ============================================
+export function WorldCupAnimation({ onDone, nationality }: AnimProps & { nationality?: string }) {
+  const [phase, setPhase] = useState<"dark"|"stadium"|"reveal"|"hold"|"exit">("dark");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("stadium"), 400);
+    const t2 = setTimeout(() => setPhase("reveal"),  1800);
+    const t3 = setTimeout(() => setPhase("hold"),    2800);
+    const t4 = setTimeout(() => setPhase("exit"),    7000);
+    const t5 = setTimeout(() => onDone(),            7700);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex flex-col items-center justify-center"
+      onClick={() => { playClickSound(); onDone(); }}
+      style={{ cursor:"pointer", background:"#000",
+        opacity: phase==="exit"?0:1, transition: phase==="exit"?"opacity 1.2s ease-in":"opacity 0.4s" }}>
+      <SkipHint />
+
+      {/* Cinematic bars */}
+      <div className="absolute top-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
+      <div className="absolute bottom-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
+
+      {/* Stadium lights bg */}
+      <div className="absolute inset-0" style={{
+        background: phase==="hold"||phase==="reveal"
+          ? "radial-gradient(ellipse at 50% 30%, rgba(20,40,10,0.9) 0%, rgba(0,10,0,1) 60%, #000 100%)"
+          : "radial-gradient(ellipse at 50% 30%, rgba(5,10,0,0.9) 0%, #000 70%)",
+        transition:"background 2s ease",
+      }} />
+
+      {/* Spotlights */}
+      {(phase==="reveal"||phase==="hold") && ["-20%","50%","120%"].map((left,i)=>(
+        <div key={i} className="absolute" style={{
+          top:0, left, transform:"translateX(-50%)",
+          width:"clamp(150px,22vw,260px)", height:"100vh",
+          background:`linear-gradient(180deg, rgba(255,255,200,${0.15+i*0.03}) 0%, rgba(200,255,100,0.03) 50%, transparent 70%)`,
+          clipPath:"polygon(20% 0%,80% 0%,100% 100%,0% 100%)",
+          animation:`wcSpot${i} ${3+i*0.5}s ease-in-out ${i*0.3}s infinite alternate`,
+        }} />
+      ))}
+
+      {/* Confetti */}
+      {phase==="hold" && [...Array(24)].map((_,i)=>(
+        <div key={i} className="absolute" style={{
+          width:`${3+(i%3)*2}px`, height:`${8+(i%4)*5}px`,
+          left:`${(i*4.3)%96}%`, top:"-20px",
+          background:`hsl(${(i*37)%360},80%,${55+i%20}%)`,
+          borderRadius:"1px",
+          animation:`wcConf ${1.8+i*0.12}s linear ${i*0.07}s infinite`,
+        }} />
+      ))}
+
+      {/* Gold particles */}
+      {phase==="hold" && [...Array(16)].map((_,i)=>(
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${1+(i%3)}px`, height:`${1+(i%3)}px`,
+          left:`${(i*6.4)%94}%`, bottom:"5%",
+          background:"rgba(255,215,0,0.9)", boxShadow:"0 0 4px rgba(255,215,0,0.6)",
+          animation:`wcDust ${2.5+i*0.2}s ease-out ${i*0.12}s infinite`,
+        }} />
+      ))}
+
+      {/* Rings */}
+      {phase==="hold" && [200,320,440].map((size,i)=>(
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${size}px`, height:`${size}px`,
+          border:`1px solid rgba(255,215,0,${0.4-i*0.1})`,
+          animation:`wcRing ${3+i*0.7}s ease-out ${i*0.4}s infinite`,
+        }} />
+      ))}
+
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center gap-5">
+
+        {/* Stadium silhouette text */}
+        {phase==="stadium" && (
+          <div className="text-center" style={{ animation:"wcStadiumIn 1.4s ease-out forwards" }}>
+            <div className="font-black uppercase tracking-[0.3em]"
+              style={{ fontSize:"clamp(1rem,3vw,1.6rem)", color:"rgba(255,215,0,0.2)", letterSpacing:"0.4em" }}>
+              FIFA
+            </div>
+            <div className="font-black uppercase"
+              style={{ fontSize:"clamp(2rem,6vw,4rem)", color:"rgba(255,215,0,0.1)", letterSpacing:"0.2em" }}>
+              WORLD CUP
+            </div>
+          </div>
+        )}
+
+        {/* Trophy */}
+        <div style={{
+          opacity: phase==="stadium"||phase==="dark" ? 0 : 1,
+          transition:"opacity 0.6s ease",
+          animation: phase==="reveal"
+            ? "wcTrophyReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
+            : phase==="hold" ? "wcFloat 4s ease-in-out infinite" : "none",
+        }}>
+          <img src="/images/world-cup-pixel.png" alt="World Cup"
+            style={{
+              width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+              filter: phase==="hold"
+                ? "drop-shadow(0 0 30px rgba(255,215,0,1)) drop-shadow(0 0 60px rgba(255,200,0,0.6)) drop-shadow(0 0 100px rgba(255,180,0,0.3)) brightness(1.1)"
+                : "drop-shadow(0 0 10px rgba(255,215,0,0.3))",
+              transition:"filter 0.8s ease",
+            }}
+          />
+        </div>
+
+        {/* Badge */}
+        {phase==="hold" && (
+          <div style={{ textAlign:"center", animation:"wcBadgeIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.2s both" }}>
+            <div style={{
+              background:"linear-gradient(135deg,rgba(3,5,0,0.98),rgba(10,15,0,0.98))",
+              border:"1px solid rgba(255,215,0,0.9)",
+              boxShadow:"0 0 60px rgba(255,215,0,0.4), 0 0 120px rgba(255,200,0,0.15)",
+              padding:"clamp(14px,2vw,22px) clamp(28px,4vw,50px)",
+            }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(255,215,0,0.6))"}} />
+                <span className="text-[9px] tracking-[0.6em] uppercase" style={{color:"rgba(255,215,0,0.5)"}}>🏆 CHAMPIONS</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(255,215,0,0.6),transparent)"}} />
+              </div>
+              <div className="font-black tracking-widest uppercase"
+                style={{ fontSize:"clamp(1.6rem,4vw,2.6rem)", color:"#FFD700",
+                  textShadow:"0 0 30px rgba(255,215,0,1), 0 0 60px rgba(255,200,0,0.6)",
+                  letterSpacing:"0.1em" }}>
+                World Cup
+              </div>
+              {nationality && (
+                <div className="text-sm font-bold tracking-widest uppercase mt-2" style={{ color:"rgba(255,215,0,0.7)" }}>
+                  {nationality} 🎖️
+                </div>
+              )}
+              <div className="flex items-center gap-3 mt-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(255,215,0,0.3))"}} />
+                <span style={{color:"rgba(255,215,0,0.4)",fontSize:"10px"}}>✦</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(255,215,0,0.3),transparent)"}} />
+              </div>
+              <div className="text-xs tracking-[0.25em] uppercase mt-2" style={{color:"rgba(255,255,255,0.2)"}}>
+                Value +30% · Legend status achieved
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes wcStadiumIn{0%{opacity:0;transform:scale(0.8)}100%{opacity:1;transform:scale(1)}}
+        @keyframes wcTrophyReveal{0%{opacity:0;transform:scale(0.3) translateY(40px)}60%{opacity:1;transform:scale(1.1) translateY(-8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes wcFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-16px) scale(1.02)}}
+        @keyframes wcBadgeIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes wcRing{0%{transform:scale(0.4);opacity:0.7}100%{transform:scale(2.8);opacity:0}}
+        @keyframes wcDust{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-90vh);opacity:0}}
+        @keyframes wcConf{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+        @keyframes wcSpot0{0%{transform:translateX(-50%) rotate(-8deg)}100%{transform:translateX(-50%) rotate(-2deg)}}
+        @keyframes wcSpot1{0%{transform:translateX(-50%) rotate(-4deg)}100%{transform:translateX(-50%) rotate(4deg)}}
+        @keyframes wcSpot2{0%{transform:translateX(-50%) rotate(2deg)}100%{transform:translateX(-50%) rotate(8deg)}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// EURO ANIMATION
+// ============================================
+export function EuroAnimation({ onDone, nationality }: AnimProps & { nationality?: string }) {
+  const [phase, setPhase] = useState<"dark"|"stars"|"reveal"|"hold"|"exit">("dark");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("stars"),  400);
+    const t2 = setTimeout(() => setPhase("reveal"), 1600);
+    const t3 = setTimeout(() => setPhase("hold"),   2600);
+    const t4 = setTimeout(() => setPhase("exit"),   6800);
+    const t5 = setTimeout(() => onDone(),           7500);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex flex-col items-center justify-center"
+      onClick={() => { playClickSound(); onDone(); }}
+      style={{ cursor:"pointer", background:"#000",
+        opacity: phase==="exit"?0:1, transition: phase==="exit"?"opacity 1.2s ease-in":"opacity 0.4s" }}>
+      <SkipHint />
+
+      {/* Cinematic bars */}
+      <div className="absolute top-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
+      <div className="absolute bottom-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
+
+      {/* Deep blue background */}
+      <div className="absolute inset-0" style={{
+        background: phase==="hold"||phase==="reveal"
+          ? "radial-gradient(ellipse at 50% 35%, rgba(0,20,80,0.95) 0%, rgba(0,5,30,1) 60%, #000 100%)"
+          : "radial-gradient(ellipse at 50% 35%, rgba(0,5,20,0.9) 0%, #000 70%)",
+        transition:"background 2s ease",
+      }} />
+
+      {/* EU stars circle */}
+      {(phase==="stars"||phase==="reveal"||phase==="hold") && (
+        <div className="absolute" style={{
+          top:"18%", left:"50%", transform:"translateX(-50%)",
+          width:"clamp(160px,25vw,220px)", height:"clamp(160px,25vw,220px)",
+          animation:"euroStarsIn 1.2s ease-out forwards",
+        }}>
+          {[...Array(12)].map((_,i) => {
+            const angle = (i * 30) * (Math.PI / 180);
+            const r = 48;
+            const x = 50 + r * Math.cos(angle - Math.PI/2);
+            const y = 50 + r * Math.sin(angle - Math.PI/2);
+            return (
+              <div key={i} className="absolute" style={{
+                left:`${x}%`, top:`${y}%`,
+                transform:"translate(-50%,-50%)",
+                fontSize:"clamp(12px,2vw,18px)",
+                animation:`euroStar 2s ease-in-out ${i*0.1}s infinite alternate`,
+                filter:"drop-shadow(0 0 4px rgba(255,215,0,0.8))",
+              }}>⭐</div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Blue spotlight */}
+      {(phase==="reveal"||phase==="hold") && (
+        <div className="absolute" style={{
+          top:0, left:"50%", transform:"translateX(-50%)",
+          width:"clamp(180px,28vw,300px)", height:"100vh",
+          background:"linear-gradient(180deg, rgba(0,80,255,0.15) 0%, rgba(0,50,200,0.04) 40%, transparent 70%)",
+          clipPath:"polygon(20% 0%,80% 0%,100% 100%,0% 100%)",
+          animation:"euroSpot 3s ease-in-out infinite alternate",
+        }} />
+      )}
+
+      {/* Confetti in blue/yellow */}
+      {phase==="hold" && [...Array(20)].map((_,i)=>(
+        <div key={i} className="absolute" style={{
+          width:`${3+(i%3)*2}px`, height:`${8+(i%4)*5}px`,
+          left:`${(i*5.1)%96}%`, top:"-20px",
+          background: i%2===0 ? `rgba(0,${80+i*5},255,0.9)` : `rgba(255,${200+i%55},0,0.9)`,
+          borderRadius:"1px",
+          animation:`euroConf ${1.8+i*0.12}s linear ${i*0.08}s infinite`,
+        }} />
+      ))}
+
+      {/* Particles */}
+      {phase==="hold" && [...Array(14)].map((_,i)=>(
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${1+(i%3)}px`, height:`${1+(i%3)}px`,
+          left:`${(i*7.1)%92}%`, bottom:"5%",
+          background:"rgba(0,100,255,0.9)", boxShadow:"0 0 4px rgba(0,80,255,0.6)",
+          animation:`euroDust ${2.5+i*0.2}s ease-out ${i*0.12}s infinite`,
+        }} />
+      ))}
+
+      {/* Rings */}
+      {phase==="hold" && [200,320,440].map((size,i)=>(
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${size}px`, height:`${size}px`,
+          border:`1px solid rgba(0,100,255,${0.4-i*0.1})`,
+          animation:`euroRing ${3+i*0.7}s ease-out ${i*0.4}s infinite`,
+        }} />
+      ))}
+
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center gap-5 mt-16">
+
+        {/* Trophy */}
+        <div style={{
+          opacity: phase==="dark"||phase==="stars" ? 0 : 1,
+          transition:"opacity 0.6s ease",
+          animation: phase==="reveal"
+            ? "euroReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
+            : phase==="hold" ? "euroFloat 4s ease-in-out infinite" : "none",
+        }}>
+          <img src="/images/euro-pixel.png" alt="Euro"
+            style={{
+              width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+              filter: phase==="hold"
+                ? "drop-shadow(0 0 30px rgba(0,100,255,1)) drop-shadow(0 0 60px rgba(0,80,255,0.6)) drop-shadow(0 0 100px rgba(0,60,200,0.3)) brightness(1.1)"
+                : "drop-shadow(0 0 10px rgba(0,80,255,0.3))",
+              transition:"filter 0.8s ease",
+            }}
+          />
+        </div>
+
+        {/* Badge */}
+        {phase==="hold" && (
+          <div style={{ textAlign:"center", animation:"euroBadgeIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.2s both" }}>
+            <div style={{
+              background:"linear-gradient(135deg,rgba(0,2,10,0.98),rgba(0,5,25,0.98))",
+              border:"1px solid rgba(0,100,255,0.9)",
+              boxShadow:"0 0 60px rgba(0,80,255,0.4), 0 0 120px rgba(0,60,200,0.15)",
+              padding:"clamp(14px,2vw,22px) clamp(28px,4vw,50px)",
+            }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(0,100,255,0.6))"}} />
+                <span className="text-[9px] tracking-[0.6em] uppercase" style={{color:"rgba(0,150,255,0.6)"}}>🏆 CHAMPIONS</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(0,100,255,0.6),transparent)"}} />
+              </div>
+              <div className="font-black tracking-widest uppercase"
+                style={{ fontSize:"clamp(1.8rem,4.5vw,3rem)", color:"#4488ff",
+                  textShadow:"0 0 30px rgba(0,100,255,1), 0 0 60px rgba(0,80,255,0.6)",
+                  letterSpacing:"0.1em" }}>
+                UEFA Euro
+              </div>
+              {nationality && (
+                <div className="text-sm font-bold tracking-widest uppercase mt-2" style={{ color:"rgba(100,180,255,0.8)" }}>
+                  {nationality} 🎖️
+                </div>
+              )}
+              <div className="flex items-center gap-3 mt-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(0,100,255,0.3))"}} />
+                <span style={{color:"rgba(0,100,255,0.4)",fontSize:"10px"}}>✦</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(0,100,255,0.3),transparent)"}} />
+              </div>
+              <div className="text-xs tracking-[0.25em] uppercase mt-2" style={{color:"rgba(255,255,255,0.2)"}}>
+                Value +20% · European Champion
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes euroStarsIn{0%{opacity:0;transform:translateX(-50%) scale(0.5) rotate(-30deg)}100%{opacity:1;transform:translateX(-50%) scale(1) rotate(0)}}
+        @keyframes euroStar{0%{transform:translate(-50%,-50%) scale(0.7);opacity:0.5}100%{transform:translate(-50%,-50%) scale(1.2);opacity:1}}
+        @keyframes euroReveal{0%{opacity:0;transform:scale(0.3) translateY(40px)}60%{opacity:1;transform:scale(1.1) translateY(-8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes euroFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-16px) scale(1.02)}}
+        @keyframes euroBadgeIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes euroRing{0%{transform:scale(0.4);opacity:0.7}100%{transform:scale(2.8);opacity:0}}
+        @keyframes euroDust{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-90vh);opacity:0}}
+        @keyframes euroConf{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+        @keyframes euroSpot{0%{transform:translateX(-50%) rotate(-5deg)}100%{transform:translateX(-50%) rotate(5deg)}}
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================
+// CHAMPIONS LEAGUE ANIMATION
+// ============================================
+export function ChampionsLeagueAnimation({ onDone, nationality }: AnimProps & { nationality?: string }) {
+  const [phase, setPhase] = useState<"dark"|"anthem"|"reveal"|"hold"|"exit">("dark");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("anthem"), 400);
+    const t2 = setTimeout(() => setPhase("reveal"), 1800);
+    const t3 = setTimeout(() => setPhase("hold"),   2800);
+    const t4 = setTimeout(() => setPhase("exit"),   7000);
+    const t5 = setTimeout(() => onDone(),           7700);
+    return () => { clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);clearTimeout(t4);clearTimeout(t5); };
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[999] pointer-events-auto overflow-hidden flex flex-col items-center justify-center"
+      onClick={() => { playClickSound(); onDone(); }}
+      style={{ cursor:"pointer", background:"#000",
+        opacity: phase==="exit"?0:1, transition: phase==="exit"?"opacity 1.2s ease-in":"opacity 0.4s" }}>
+      <SkipHint />
+
+      {/* Cinematic bars */}
+      <div className="absolute top-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
+      <div className="absolute bottom-0 left-0 right-0 z-20" style={{ height:"clamp(45px,7vh,72px)", background:"#000" }} />
+
+      {/* Dark purple/navy bg */}
+      <div className="absolute inset-0" style={{
+        background: phase==="hold"||phase==="reveal"
+          ? "radial-gradient(ellipse at 50% 35%, rgba(10,0,40,0.95) 0%, rgba(3,0,15,1) 60%, #000 100%)"
+          : "radial-gradient(ellipse at 50% 35%, rgba(3,0,10,0.9) 0%, #000 70%)",
+        transition:"background 2s ease",
+      }} />
+
+      {/* UCL star pattern bg */}
+      {(phase==="anthem"||phase==="reveal"||phase==="hold") && (
+        <div className="absolute inset-0" style={{
+          backgroundImage:"radial-gradient(circle, rgba(100,80,255,0.06) 1px, transparent 1px)",
+          backgroundSize:"30px 30px",
+          animation:"uclGrid 8s linear infinite",
+        }} />
+      )}
+
+      {/* Purple spotlights */}
+      {(phase==="reveal"||phase==="hold") && ["-15%","50%","115%"].map((left,i)=>(
+        <div key={i} className="absolute" style={{
+          top:0, left, transform:"translateX(-50%)",
+          width:"clamp(150px,22vw,250px)", height:"100vh",
+          background:`linear-gradient(180deg, rgba(80,40,255,${0.18+i*0.03}) 0%, rgba(60,20,200,0.04) 45%, transparent 70%)`,
+          clipPath:"polygon(20% 0%,80% 0%,100% 100%,0% 100%)",
+          animation:`uclSpot${i} ${3+i*0.5}s ease-in-out ${i*0.3}s infinite alternate`,
+        }} />
+      ))}
+
+      {/* Silver/gold confetti */}
+      {phase==="hold" && [...Array(22)].map((_,i)=>(
+        <div key={i} className="absolute" style={{
+          width:`${3+(i%3)*2}px`, height:`${8+(i%4)*5}px`,
+          left:`${(i*4.6)%96}%`, top:"-20px",
+          background: i%3===0 ? "rgba(192,192,255,0.9)" : i%3===1 ? "rgba(255,215,0,0.9)" : "rgba(255,255,255,0.8)",
+          borderRadius:"1px",
+          animation:`uclConf ${1.8+i*0.12}s linear ${i*0.07}s infinite`,
+        }} />
+      ))}
+
+      {/* Purple particles */}
+      {phase==="hold" && [...Array(16)].map((_,i)=>(
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${1+(i%3)}px`, height:`${1+(i%3)}px`,
+          left:`${(i*6.3)%94}%`, bottom:"5%",
+          background:`rgba(${120+i*5},80,255,0.9)`, boxShadow:`0 0 4px rgba(100,60,255,0.6)`,
+          animation:`uclDust ${2.5+i*0.2}s ease-out ${i*0.12}s infinite`,
+        }} />
+      ))}
+
+      {/* Expanding rings */}
+      {phase==="hold" && [180,300,420,540].map((size,i)=>(
+        <div key={i} className="absolute rounded-full" style={{
+          width:`${size}px`, height:`${size}px`,
+          border:`1px solid rgba(100,80,255,${0.5-i*0.1})`,
+          animation:`uclRing ${3+i*0.6}s ease-out ${i*0.35}s infinite`,
+        }} />
+      ))}
+
+      {/* ANTHEM text */}
+      {phase==="anthem" && (
+        <div className="absolute flex flex-col items-center gap-2" style={{ animation:"uclAnthemIn 1.4s ease-out forwards" }}>
+          <div className="font-black uppercase tracking-[0.5em]"
+            style={{ fontSize:"clamp(0.7rem,2vw,1rem)", color:"rgba(150,120,255,0.4)" }}>
+            UEFA
+          </div>
+          <div className="font-black uppercase"
+            style={{ fontSize:"clamp(1.5rem,4vw,2.8rem)", color:"rgba(120,100,255,0.15)", letterSpacing:"0.15em" }}>
+            CHAMPIONS LEAGUE
+          </div>
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center gap-5">
+
+        {/* Trophy */}
+        <div style={{
+          opacity: phase==="dark"||phase==="anthem" ? 0 : 1,
+          transition:"opacity 0.6s ease",
+          animation: phase==="reveal"
+            ? "uclReveal 1.2s cubic-bezier(0.22,1,0.36,1) forwards"
+            : phase==="hold" ? "uclFloat 4s ease-in-out infinite" : "none",
+        }}>
+          <img src="/images/champions-league-pixel.png" alt="Champions League"
+            style={{
+              width:"clamp(160px,26vw,220px)", imageRendering:"pixelated", objectFit:"contain",
+              filter: phase==="hold"
+                ? "drop-shadow(0 0 30px rgba(100,80,255,1)) drop-shadow(0 0 60px rgba(80,60,255,0.7)) drop-shadow(0 0 100px rgba(60,40,200,0.4)) brightness(1.15)"
+                : "drop-shadow(0 0 10px rgba(80,60,255,0.3))",
+              transition:"filter 0.8s ease",
+            }}
+          />
+        </div>
+
+        {/* Badge */}
+        {phase==="hold" && (
+          <div style={{ textAlign:"center", animation:"uclBadgeIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.2s both" }}>
+            <div style={{
+              background:"linear-gradient(135deg,rgba(2,0,8,0.98),rgba(5,0,20,0.98))",
+              border:"1px solid rgba(100,80,255,0.9)",
+              boxShadow:"0 0 60px rgba(80,60,255,0.45), 0 0 120px rgba(60,40,200,0.2), inset 0 0 40px rgba(80,60,255,0.05)",
+              padding:"clamp(14px,2vw,22px) clamp(28px,4vw,50px)",
+            }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(100,80,255,0.6))"}} />
+                <span className="text-[9px] tracking-[0.6em] uppercase" style={{color:"rgba(130,110,255,0.6)"}}>⭐ CHAMPIONS</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(100,80,255,0.6),transparent)"}} />
+              </div>
+              <div className="font-black tracking-widest uppercase"
+                style={{ fontSize:"clamp(1.3rem,3.5vw,2.2rem)", color:"#8866ff",
+                  textShadow:"0 0 30px rgba(100,80,255,1), 0 0 60px rgba(80,60,255,0.7), 0 0 100px rgba(60,40,200,0.4)",
+                  letterSpacing:"0.08em" }}>
+                Champions League
+              </div>
+              {nationality && (
+                <div className="text-sm font-bold tracking-widest uppercase mt-2" style={{ color:"rgba(150,130,255,0.8)" }}>
+                  {nationality} 🎖️
+                </div>
+              )}
+              <div className="flex items-center gap-3 mt-3">
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,transparent,rgba(100,80,255,0.3))"}} />
+                <span style={{color:"rgba(100,80,255,0.4)",fontSize:"10px"}}>✦</span>
+                <div style={{flex:1,height:"1px",background:"linear-gradient(90deg,rgba(100,80,255,0.3),transparent)"}} />
+              </div>
+              <div className="text-xs tracking-[0.25em] uppercase mt-2" style={{color:"rgba(255,255,255,0.2)"}}>
+                Value +25% · King of Europe
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes uclAnthemIn{0%{opacity:0;transform:scale(0.8)}100%{opacity:1;transform:scale(1)}}
+        @keyframes uclReveal{0%{opacity:0;transform:scale(0.3) translateY(40px)}60%{opacity:1;transform:scale(1.12) translateY(-8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes uclFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-16px) scale(1.02)}}
+        @keyframes uclBadgeIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes uclRing{0%{transform:scale(0.3);opacity:0.7}100%{transform:scale(3);opacity:0}}
+        @keyframes uclDust{0%{transform:translateY(0);opacity:0.8}100%{transform:translateY(-90vh);opacity:0}}
+        @keyframes uclConf{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+        @keyframes uclGrid{0%{backgroundPosition:0 0}100%{backgroundPosition:30px 30px}}
+        @keyframes uclSpot0{0%{transform:translateX(-50%) rotate(-8deg)}100%{transform:translateX(-50%) rotate(-2deg)}}
+        @keyframes uclSpot1{0%{transform:translateX(-50%) rotate(-4deg)}100%{transform:translateX(-50%) rotate(4deg)}}
+        @keyframes uclSpot2{0%{transform:translateX(-50%) rotate(2deg)}100%{transform:translateX(-50%) rotate(8deg)}}
+      `}</style>
+    </div>
+  );
+}
