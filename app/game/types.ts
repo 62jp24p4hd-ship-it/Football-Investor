@@ -87,6 +87,7 @@ export type SeasonStats = {
   rating: number;
   value: number;
   form?: "excellent" | "good" | "average" | "bad" | "disaster";
+  ratingPrecise?: number; // internal decimal-precision rating used during league play for gradual growth
 };
 
 // ============================================
@@ -409,3 +410,9 @@ export type GamePhase =
   | "menu"
   | "playing"
   | "finished";
+
+// ============================================
+// LEAGUE SYSTEM (18-Team Domestic League)
+// ============================================
+
+export type LeagueSeasonPhase = "transfer" | "playing" | "finished";

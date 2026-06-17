@@ -6,6 +6,7 @@ import { getSaveInfo, deleteSave } from "../game/saveSystem";
 
 type StartConfig = {
   mode: GameMode;
+  singlePlayerStyle?: "investor" | "clubOwner";
   budgetMode: BudgetMode;
   team1Name: string;
   team2Name: string;
@@ -97,6 +98,7 @@ const HOW_TO_PLAY = [
 
 export default function StartScreen({ onStart, onContinue }: Props) {
   const [mode, setMode] = useState<GameMode | null>(null);
+  const [singlePlayerStyle, setSinglePlayerStyle] = useState<"investor" | "clubOwner" | null>(null);
   const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
   const [team1Name, setTeam1Name] = useState("Team 1");
   const [team2Name, setTeam2Name] = useState("Team 2");
@@ -125,7 +127,13 @@ export default function StartScreen({ onStart, onContinue }: Props) {
 
   function handleStart() {
     if (!mode) return;
-    onStart({ mode, budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2", eventsEnabled, eventType, timerSeconds, gameLengthMode, negativeBudgetEndsGame, easterUnlocked });
+    if (mode === "single" && !singlePlayerStyle) return;
+    onStart({
+      mode,
+      singlePlayerStyle: mode === "single" ? singlePlayerStyle! : undefined,
+      budgetMode, team1Name: team1Name.trim() || "Team 1", team2Name: team2Name.trim() || "Team 2",
+      eventsEnabled, eventType, timerSeconds, gameLengthMode, negativeBudgetEndsGame, easterUnlocked,
+    });
   }
 
   return (
@@ -408,7 +416,7 @@ export default function StartScreen({ onStart, onContinue }: Props) {
               { key:"single", emoji:"👤", en:"Single Player", ar:"لاعب واحد", color:"#FFD54F" },
               { key:"versus", emoji:"👥", en:"Versus Friend", ar:"ضد صديق", color:"#FFD54F" },
             ] as const).map(m => (
-              <Btn key={m.key} selected={mode===m.key} color={m.color} onClick={() => setMode(m.key)} className="py-4 text-center">
+              <Btn key={m.key} selected={mode===m.key} color={m.color} onClick={() => { setMode(m.key); if (m.key !== "single") setSinglePlayerStyle(null); }} className="py-4 text-center">
                 <div className="text-2xl mb-1.5">{m.emoji}</div>
                 <div className="text-sm leading-none">{m.en}</div>
                 <div className="text-[10px] font-normal mt-1 opacity-60">{m.ar}</div>
@@ -416,6 +424,25 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             ))}
           </div>
         </Section>
+
+        {/* ── SINGLE PLAYER STYLE ── */}
+        {mode === "single" && (
+          <Section label="Play Style — طريقة اللعب" accent="#FFD54F">
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key:"investor", emoji:"💼", en:"Investor", ar:"مستثمر", desc:"Buy & sell players for profit" },
+                { key:"clubOwner", emoji:"🏟️", en:"Club Owner", ar:"مالك نادي", desc:"Run a club, compete in an 18-team league" },
+              ] as const).map(s => (
+                <Btn key={s.key} selected={singlePlayerStyle===s.key} color="#FFD54F" onClick={() => setSinglePlayerStyle(s.key)} className="py-4 text-center">
+                  <div className="text-2xl mb-1.5">{s.emoji}</div>
+                  <div className="text-sm leading-none">{s.en}</div>
+                  <div className="text-[10px] font-normal mt-1 opacity-60">{s.ar}</div>
+                  <div className="text-[9px] font-normal mt-1 opacity-50">{s.desc}</div>
+                </Btn>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* ── TEAM NAMES ── */}
         {mode && (
@@ -438,22 +465,32 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         )}
 
         {/* ── STARTING BUDGET ── */}
-        <Section label="Starting Budget — الميزانية" accent="#FFD54F">
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              { key:"lucky",       emoji:"🍀", label:"Lucky",       amount:"€10M",  color:"#10B981" },
-              { key:"balanced",    emoji:"⚖️", label:"Balanced",    amount:"€30M",  color:"#FFD54F" },
-              { key:"rich",        emoji:"💰", label:"Rich",        amount:"€100M", color:"#FFD54F" },
-              { key:"billionaire", emoji:"💎", label:"Billionaire", amount:"€200M", color:"#10B981" },
-            ] as const).map(b => (
-              <Btn key={b.key} selected={budgetMode===b.key} color={b.color} onClick={() => setBudgetMode(b.key)} className="py-3.5 text-center">
-                <div className="text-xl mb-1">{b.emoji}</div>
-                <div className="text-base font-black leading-none" style={budgetMode===b.key ? { color: b.color } : {}}>{b.amount}</div>
-                <div className="text-[10px] font-normal mt-0.5 opacity-60">{b.label}</div>
-              </Btn>
-            ))}
-          </div>
-        </Section>
+        {singlePlayerStyle === "clubOwner" ? (
+          <Section label="Starting Budget — الميزانية" accent="#FFD54F">
+            <div className="rounded-xl py-4 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,213,79,0.3)" }}>
+              <div className="text-xl mb-1">🏟️</div>
+              <div className="text-base font-black leading-none" style={{ color: "#FFD54F" }}>€150M</div>
+              <div className="text-[10px] font-normal mt-1 opacity-60">Fixed for Club Owner mode — ميزانية ثابتة لمالك النادي</div>
+            </div>
+          </Section>
+        ) : (
+          <Section label="Starting Budget — الميزانية" accent="#FFD54F">
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key:"lucky",       emoji:"🍀", label:"Lucky",       amount:"€10M",  color:"#10B981" },
+                { key:"balanced",    emoji:"⚖️", label:"Balanced",    amount:"€30M",  color:"#FFD54F" },
+                { key:"rich",        emoji:"💰", label:"Rich",        amount:"€100M", color:"#FFD54F" },
+                { key:"billionaire", emoji:"💎", label:"Billionaire", amount:"€200M", color:"#10B981" },
+              ] as const).map(b => (
+                <Btn key={b.key} selected={budgetMode===b.key} color={b.color} onClick={() => setBudgetMode(b.key)} className="py-3.5 text-center">
+                  <div className="text-xl mb-1">{b.emoji}</div>
+                  <div className="text-base font-black leading-none" style={budgetMode===b.key ? { color: b.color } : {}}>{b.amount}</div>
+                  <div className="text-[10px] font-normal mt-0.5 opacity-60">{b.label}</div>
+                </Btn>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* ── GAME LENGTH ── */}
         <Section label="Game Length — طول اللعبة" accent="#FFD54F">
@@ -538,9 +575,9 @@ export default function StartScreen({ onStart, onContinue }: Props) {
 
         {/* ── START ── */}
         <div style={{ position:"relative", marginBottom:"16px" }}>
-          <button onClick={handleStart} disabled={!mode}
+          <button onClick={handleStart} disabled={!mode || (mode === "single" && !singlePlayerStyle)}
             className="w-full py-5 font-black text-base uppercase tracking-[0.2em] transition-all duration-200 relative overflow-hidden"
-            style={mode ? {
+            style={(mode && !(mode === "single" && !singlePlayerStyle)) ? {
               background: "linear-gradient(135deg, #b8960a 0%, #FFD54F 40%, #f0c030 60%, #b8960a 100%)",
               color: "#111827",
               borderRadius: "12px",
@@ -568,7 +605,11 @@ export default function StartScreen({ onStart, onContinue }: Props) {
               }} />
             )}
             <span style={{ position:"relative", zIndex:1 }}>
-              {mode ? "▶  Start Game" : "Select a Mode to Continue"}
+              {!mode
+                ? "Select a Mode to Continue"
+                : (mode === "single" && !singlePlayerStyle)
+                  ? "Select a Play Style to Continue"
+                  : "▶  Start Game"}
             </span>
           </button>
           <style>{`

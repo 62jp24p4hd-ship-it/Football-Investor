@@ -42,3 +42,14 @@ export function getSingleSeasonChances(gp: GamePlayer, newSeason: number): {
 export function isSingleTurnOver(gp: GamePlayer): boolean {
   return gp.purchaseChances <= 0;
 }
+
+// ── League-aware transfer gating ───────────
+// During an active league season, buying/selling is only allowed:
+//   - Before "Start Season" is pressed (currentRound === 0)
+//   - During the in-season transfer window (rounds 18-21)
+//   - After the league season finishes
+// At all other times (rounds 1-17, 22-36), the market is closed.
+export function isSingleTransferAllowed(leagueActive: boolean, leagueMarketOpen: boolean): boolean {
+  if (!leagueActive) return true; // no league feature engaged — normal rules apply
+  return leagueMarketOpen;
+}

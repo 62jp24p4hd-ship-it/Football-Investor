@@ -387,6 +387,92 @@ export function calculatePerformanceGrowth(
 }
 
 // ============================================
+// CLUB OWNER LEAGUE PRICING — rating-based tiers
+// Designed for a fixed €150M budget building an 11-player squad.
+// Price is driven primarily by rating, with light randomness for variety,
+// so a balanced squad of good players is actually buildable.
+// ============================================
+
+export function calculateLeaguePlayerPrice(rating: number): number {
+  let min: number;
+  let max: number;
+
+  if (rating >= 90) { min = 35; max = 50; }
+  else if (rating >= 80) { min = 20; max = 35; }
+  else if (rating >= 70) { min = 8; max = 15; }
+  else if (rating >= 60) { min = 3; max = 8; }
+  else { min = 0.5; max = 3; }
+
+  const price = randBetween(min, max);
+  return Math.max(0.5, Math.round(price * 10) / 10); // one decimal of precision (e.g. 12.3M)
+}
+
+// ============================================
+// AFFORDABLE PLAYER GUARANTEE (LEAGUE MODE)
+// Same selection-card purpose as guaranteeAffordablePlayer, but uses
+// calculateLeaguePlayerPrice instead of scaling off the full budget,
+// so prices stay realistic regardless of how much budget remains.
+// ============================================
+
+export function applyLeaguePricing(
+  players: import("./types").Player[],
+  season: number
+): import("./types").Player[] {
+  return players.map(p => {
+    const origRating = p.statsBySeason?.[season]?.rating ?? p.rating ?? 70;
+    const price = calculateLeaguePlayerPrice(origRating);
+
+    return {
+      ...p,
+      statsBySeason: p.statsBySeason ? {
+        ...p.statsBySeason,
+        [season]: p.statsBySeason[season]
+          ? { ...p.statsBySeason[season], value: price, rating: origRating }
+          : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating: origRating, value: price }
+      } : p.statsBySeason,
+      values: { ...(p.values ?? {}), [season]: price },
+    };
+  });
+}
+
+// ============================================
+// RE-PRICE OWNED SQUAD (LEAGUE MODE, SEASON TRANSITION)
+// The normal season-growth system regenerates statsBySeason[season].value
+// using the standard game economy (€30-200M tiers), which makes a squad
+// bought for €150M total suddenly "worth" €800M+ on paper. This re-applies
+// the same rating-based league pricing to a player's CURRENT contract value
+// so the displayed squad worth stays realistic for the fixed €150M economy.
+// ============================================
+
+export function reapplyLeaguePricingToOwnedSquad(
+  gp: import("./types").GamePlayer,
+  season: number
+): import("./types").GamePlayer {
+  const updatedOwned = gp.owned.map(item => {
+    const rating = item.player.statsBySeason?.[season]?.rating ?? item.player.rating ?? 70;
+    const price = calculateLeaguePlayerPrice(rating);
+
+    const updatedStatsBySeason = item.player.statsBySeason ? {
+      ...item.player.statsBySeason,
+      [season]: item.player.statsBySeason[season]
+        ? { ...item.player.statsBySeason[season], value: price }
+        : { season, games: 0, goals: 0, assists: 0, cleanSheets: 0, yellowCards: 0, redCards: 0, rating, value: price }
+    } : item.player.statsBySeason;
+
+    return {
+      ...item,
+      player: {
+        ...item.player,
+        statsBySeason: updatedStatsBySeason,
+        values: { ...(item.player.values ?? {}), [season]: price },
+      },
+    };
+  });
+
+  return { ...gp, owned: updatedOwned };
+}
+
+// ============================================
 // AFFORDABLE PLAYER GUARANTEE
 // ============================================
 

@@ -18,12 +18,16 @@ type Props = {
   onSecretClick?: () => void;
   onSave?: () => void;
   canNextSeason: boolean;
+  nextSeasonButtonLabel?: string;
+  leagueRound?: number;
+  leagueTotalRounds?: number;
 };
 
 export default function TopBar({
   season, mode, gameLengthMode, activePlayerIndex, gamePlayers,
   timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick,
-  onFinishGame, onSecretClick, onSave, canNextSeason
+  onFinishGame, onSecretClick, onSave, canNextSeason, nextSeasonButtonLabel,
+  leagueRound, leagueTotalRounds
 }: Props) {
   const isTimerActive = pendingSlot !== null && timerSeconds !== null;
   const timerDanger = timer <= 5;
@@ -80,6 +84,15 @@ export default function TopBar({
               {gameLengthMode === "infinite" && (
                 <span className="text-xs font-black text-purple-400 px-1.5 py-0.5 rounded-none"
                   style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)" }}>♾️</span>
+              )}
+              {typeof leagueRound === "number" && leagueRound > 0 && (
+                <div className="hidden lg:flex flex-col items-center justify-center px-2 py-1 rounded-none"
+                  style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                  <span className="text-[9px] text-emerald-400 leading-none">Round</span>
+                  <span className="text-xs font-black text-emerald-300 leading-none">
+                    {leagueRound}/{leagueTotalRounds ?? 36}
+                  </span>
+                </div>
               )}
             </button>
 
@@ -213,7 +226,7 @@ export default function TopBar({
                   style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1), transparent)" }} />
               )}
               <span className="relative flex items-center gap-2 tracking-wide uppercase text-xs">
-                <span>Next Season</span>
+                <span>{nextSeasonButtonLabel ?? "Next Season"}</span>
                 <span className="text-base">→</span>
               </span>
             </button>

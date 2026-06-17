@@ -11,7 +11,7 @@ import type {
 // Game engines
 import { buildAllBasePlayers, getSecretPlayers } from "./game/playerDatabase";
 import { generateSeasonPlayerPool } from "./game/playerGenerator";
-import { getCurrentValue, guaranteeAffordablePlayer } from "./game/valueEngine";
+import { getCurrentValue, guaranteeAffordablePlayer, applyLeaguePricing, reapplyLeaguePricingToOwnedSquad } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
 import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
@@ -28,6 +28,16 @@ import type { SaveData } from "./game/saveSystem";
 import { singleCanNextSeason } from "./game/singleMode";
 import { versusCanNextSeason } from "./game/versusMode";
 import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, BUDGET_SETTINGS, ALL_POSITIONS } from "./game/constants";
+import {
+  initializeLeagueSeason, playRound, isTransferMarketOpen, getUserNextFixture,
+  isInTransferWindow, getTransferWindowChances, TOTAL_ROUNDS, getMatchPreview,
+  getTopScorers, getTopAssists, getTopCleanSheets, getBestPlayerOfSeason, calculateUserStrength,
+} from "./game/leagueEngine";
+import type { LeagueState, MatchEvent, MatchPreview, LeaguePlayerStat } from "./game/leagueEngine";
+
+const LEAGUE_MAX_PURCHASE_CHANCES = 14; // hard cap, club owner mode only — any bonus chances beyond this are ignored
+const LEAGUE_REQUIRED_SQUAD_SIZE = 11;
+const LEAGUE_FIXED_STARTING_BUDGET = 150; // stored in millions, matching BUDGET_SETTINGS scale (e.g. 30 = €30M)
 
 // Components
 import StartScreen from "./components/StartScreen";
@@ -46,6 +56,11 @@ import StatisticsModal from "./components/StatisticsModal";
 import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
+import LeagueStandings from "./components/LeagueStandings";
+import MatchSummaryModal from "./components/MatchSummaryModal";
+import MatchPreviewModal from "./components/MatchPreviewModal";
+import LeagueStatsModal from "./components/LeagueStatsModal";
+import LeagueChampionAnimation from "./components/LeagueChampionAnimation";
 import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation, EriksenAnimation, DopingBanAnimation, GirlsMagnetAnimation, RacistAttackAnimation, ClubLegendAnimation, KonamiCodeAnimation, WorldCupAnimation, EuroAnimation, ChampionsLeagueAnimation } from "./animations/index";
 
 // ============================================
@@ -119,6 +134,30 @@ export default function Home() {
   const [tournamentNationality, setTournamentNationality] = useState<string>("");
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
+  const [singlePlayerStyle, setSinglePlayerStyle] = useState<"investor" | "clubOwner">("investor");
+
+  // ── 18-Team Domestic League (Single Mode Beta) ──
+  const [leagueState, setLeagueState] = useState<LeagueState | null>(null);
+  const [leagueEnabled, setLeagueEnabled] = useState(false); // toggled true once user starts a league season
+  const [matchSummary, setMatchSummary] = useState<{
+    round: number;
+    userTeamName: string;
+    opponentName: string;
+    userIsHome: boolean;
+    homeGoals: number;
+    awayGoals: number;
+    events: MatchEvent[];
+  } | null>(null);
+  const [matchPreview, setMatchPreview] = useState<MatchPreview | null>(null);
+  const [showLeagueStats, setShowLeagueStats] = useState(false);
+  const [leagueChampionAnim, setLeagueChampionAnim] = useState<{
+    championName: string;
+    isUserChampion: boolean;
+    bestPlayerName: string | null;
+    bestPlayerTeam: string | null;
+    bestPlayerGoals: number;
+    bestPlayerAssists: number;
+  } | null>(null);
 
   // ── Konami Code ───────────────────────────
   const [showKonamiAnim, setShowKonamiAnim] = useState(false);
@@ -172,7 +211,10 @@ export default function Home() {
     );
     const picked = shuffle(normalPool).slice(0, goatForSeason ? 4 : 5);
     const budget = gamePlayers[activePlayerIndex]?.budget ?? 0;
-    const withGuarantee = guaranteeAffordablePlayer(picked, budget, season);
+    const withGuarantee =
+      mode === "single" && singlePlayerStyle === "clubOwner"
+        ? applyLeaguePricing(picked, season)
+        : guaranteeAffordablePlayer(picked, budget, season);
 
     // أضف GOAT في المنتصف (index 2) فقط لو موجود
     if (goatForSeason) {
@@ -182,7 +224,7 @@ export default function Home() {
     }
 
     return withGuarantee;
-  }, [selectedSlot, season, gamePlayers, allPlayers, activePlayerIndex, easterUnlocked]);
+  }, [selectedSlot, season, gamePlayers, allPlayers, activePlayerIndex, easterUnlocked, mode, singlePlayerStyle]);
 
   // ── Init base players ─────────────────────
   useEffect(() => {
@@ -337,11 +379,12 @@ export default function Home() {
   // ============================================
 
   function startGame(config: {
-    mode: GameMode; budgetMode: BudgetMode; team1Name: string; team2Name: string;
+    mode: GameMode; singlePlayerStyle?: "investor" | "clubOwner"; budgetMode: BudgetMode; team1Name: string; team2Name: string;
     eventsEnabled: boolean; eventType: EventType; timerSeconds: number | null;
     gameLengthMode: "classic" | "infinite"; negativeBudgetEndsGame: boolean; easterUnlocked: boolean;
   }) {
     setMode(config.mode);
+    setSinglePlayerStyle(config.singlePlayerStyle ?? "investor");
     setBudgetMode(config.budgetMode);
     setGameLengthMode(config.gameLengthMode);
     setEventsEnabled(config.eventsEnabled);
@@ -355,7 +398,17 @@ export default function Home() {
       config.budgetMode, config.team1Name, config.team2Name, config.mode
     );
 
-    setGamePlayers(gps);
+    // Club Owner mode always starts with a fixed budget and the full purchase-chance cap
+    const finalGps =
+      config.mode === "single" && config.singlePlayerStyle === "clubOwner"
+        ? gps.map(gp => ({
+            ...gp,
+            budget: LEAGUE_FIXED_STARTING_BUDGET,
+            purchaseChances: LEAGUE_MAX_PURCHASE_CHANCES,
+          }))
+        : gps;
+
+    setGamePlayers(finalGps);
     setNews(startNews);
     setSeason(GAME_START_SEASON);
     setTurnIndex(getFirstTurn(config.mode));
@@ -369,6 +422,9 @@ export default function Home() {
 
   function handleSlotClick(slot: string) {
     if (isFrozen) return notify("🧊 You are frozen this season");
+    if (mode === "single" && leagueEnabled && leagueState && !isTransferMarketOpen(leagueState)) {
+      return notify("🔒 Transfer market is closed during the league season (opens Rounds 18-21)");
+    }
     if (!activePlayer || activePlayer.purchaseChances <= 0) return notify("No purchase chances remaining");
     if (pendingSlot && pendingSlot !== slot) return notify("Finish current selection first");
     if (activePlayer.owned.find((o) => o.slot === slot)) return;
@@ -532,6 +588,9 @@ export default function Home() {
 
   function handleSellPlayer() {
     if (!selectedOwned) return;
+    if (mode === "single" && leagueEnabled && leagueState && !isTransferMarketOpen(leagueState)) {
+      return notify("🔒 Transfer market is closed during the league season (opens Rounds 18-21)");
+    }
     const { playerIndex, ownedIndex } = selectedOwned;
     const gp = gamePlayers[playerIndex];
     const item = gp.owned[ownedIndex];
@@ -545,10 +604,15 @@ export default function Home() {
     const updatedPlayers = gamePlayers.map((p, i) => {
       if (i !== playerIndex) return p;
       const extraChance = p.soldBonusUsedThisSeason ? 0 : 1;
+      const rawNewChances = p.purchaseChances + extraChance;
+      const cappedChances =
+        mode === "single" && singlePlayerStyle === "clubOwner"
+          ? Math.min(rawNewChances, LEAGUE_MAX_PURCHASE_CHANCES)
+          : rawNewChances;
       return {
         ...p,
         budget: p.budget + sellPrice,
-        purchaseChances: p.purchaseChances + extraChance,
+        purchaseChances: cappedChances,
         soldBonusUsedThisSeason: true,
         owned: p.owned.filter((_, idx) => idx !== ownedIndex),
         sold: [{
@@ -893,6 +957,241 @@ export default function Home() {
   }
 
   // ============================================
+  // LEAGUE SYSTEM (18-Team Domestic League)
+  // ============================================
+
+  function handleStartLeagueSeason() {
+    if (mode !== "single" || singlePlayerStyle !== "clubOwner") return;
+    if (pendingSlot) return notify("Finish current player selection first");
+    if (auctionState) return notify("An auction is in progress");
+    if (investorOffer) return notify("An investor offer is pending");
+    if (negotiation) return notify("A contract negotiation is in progress");
+
+    const userGp = gamePlayers[0];
+    if (!userGp || userGp.owned.length < LEAGUE_REQUIRED_SQUAD_SIZE) {
+      return notify(
+        `⚠️ You need a full starting XI (${LEAGUE_REQUIRED_SQUAD_SIZE} players) before starting the season. (${userGp?.owned.length ?? 0}/${LEAGUE_REQUIRED_SQUAD_SIZE})`
+      );
+    }
+    const filledSlots = new Set(userGp.owned.map(o => o.slot));
+    const missingPositions = ALL_POSITIONS.filter(pos => !filledSlots.has(pos));
+    if (missingPositions.length > 0) {
+      return notify(`⚠️ Missing positions: ${missingPositions.join(", ")}`);
+    }
+
+    const userTeamName = gamePlayers[0]?.name || "Your Team";
+    const newLeague = initializeLeagueSeason(basePlayers, season, userTeamName);
+    // Mark as actively started (round 0 -> about to play round 1)
+    setLeagueState({ ...newLeague, seasonPhase: "playing" });
+    setLeagueEnabled(true);
+    notify("🏆 Premier League season has begun! Press Next Game to play Round 1.");
+  }
+
+  function handlePlayLeagueGame() {
+    if (!leagueState || mode !== "single" || singlePlayerStyle !== "clubOwner") return;
+    if (pendingSlot) return notify("Finish current player selection first");
+    if (auctionState) return notify("An auction is in progress");
+    if (investorOffer) return notify("An investor offer is pending");
+    if (negotiation) return notify("A contract negotiation is in progress");
+
+    const preview = getMatchPreview(leagueState, gamePlayers, 0, season);
+    if (!preview) return notify("No upcoming fixture found");
+    setMatchPreview(preview);
+  }
+
+  function confirmPlayLeagueGame() {
+    if (!leagueState) return;
+    setMatchPreview(null);
+
+    const result = playRound(leagueState, gamePlayers, 0, season);
+    setLeagueState(result.updatedLeague);
+    let postRoundPlayers = result.updatedGamePlayers;
+    if (result.newsItems.length > 0) addNewsItems(result.newsItems);
+
+    // Random season events can still fire during league rounds, but less often than
+    // the normal investor mode between-season events (8% chance per round here).
+    if (eventsEnabled && Math.random() < 0.08) {
+      const randomEventResult = createRandomSeasonEvent(season, postRoundPlayers);
+      postRoundPlayers = randomEventResult.updatedPlayers;
+      if (randomEventResult.newsItems.length > 0) addNewsItems(randomEventResult.newsItems);
+      if (randomEventResult.event) {
+        setSeasonEvent(randomEventResult.event);
+        notify(`✨ ${randomEventResult.event.title}`);
+      }
+      // Special full-screen animations — full list, matching the normal between-season flow exactly
+      const leagueEventNews = randomEventResult.newsItems;
+      if (leagueEventNews.some(n => n.title.includes("Florentino"))) {
+        setTimeout(() => setShowFlorentinoAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("ACL"))) {
+        setTimeout(() => setShowAclAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Saudi"))) {
+        setTimeout(() => setShowSaudiAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Golden Boot"))) {
+        setTimeout(() => setShowGoldenBootAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Ballon"))) {
+        setTimeout(() => setShowBallonDorAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Golden Boy"))) {
+        setTimeout(() => setShowGoldenBoyAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Record Transfer"))) {
+        setTimeout(() => setShowRecordTransferAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Wonderkid"))) {
+        setTimeout(() => setShowWonderkidAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Bob Paisley") || n.title.includes("Paisley"))) {
+        setTimeout(() => setShowBobPaisleyAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Hot Market") || n.title.includes("Hot Transfer"))) {
+        setTimeout(() => setShowHotMarketAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Market Crash"))) {
+        setTimeout(() => setShowMarketCrashAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("One Season Wonder"))) {
+        setTimeout(() => setShowOneSeasonWonderAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Casino"))) {
+        setTimeout(() => setShowCasinoNightAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Failed Transfer"))) {
+        setTimeout(() => setShowFailedTransferAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Bench Warmer"))) {
+        setTimeout(() => setShowBenchWarmerAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Breakup"))) {
+        setTimeout(() => setShowBreakupSeasonAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Free Transfer"))) {
+        setTimeout(() => setShowFreeTransferAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Major Injury"))) {
+        setTimeout(() => setShowMajorInjuryAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Heart Attack"))) {
+        setTimeout(() => setShowEriksenAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Doping Ban"))) {
+        setTimeout(() => setShowDopingBanAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Girls Magnet"))) {
+        setTimeout(() => setShowGirlsMagnetAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Racist Attack"))) {
+        setTimeout(() => setShowRacistAttackAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Club Legend"))) {
+        setTimeout(() => setShowClubLegendAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("Fast Food") || n.title.includes("Food"))) {
+        setTimeout(() => setShowFastFoodAnim(true), 400);
+      }
+      if (leagueEventNews.some(n => n.title.includes("YouTube") || n.title.includes("Viral"))) {
+        setTimeout(() => setShowYouTubeAnim(true), 400);
+      }
+    }
+
+    setGamePlayers(postRoundPlayers);
+
+    if (result.userMatch) {
+      const { fixture, opponent, result: matchResult } = result.userMatch;
+      const userIsHome = fixture.homeId === "user";
+      setMatchSummary({
+        round: fixture.round,
+        userTeamName: gamePlayers[0]?.name || "Your Team",
+        opponentName: opponent.name,
+        userIsHome,
+        homeGoals: fixture.homeGoals!,
+        awayGoals: fixture.awayGoals!,
+        events: matchResult.events,
+      });
+    }
+
+    if (result.updatedLeague.seasonPhase === "finished") {
+      if (result.prizeMoneyAwarded > 0) {
+        notify(`🏁 Season complete! You earned €${result.prizeMoneyAwarded}M in prize money. Press Next Season to continue.`);
+      } else {
+        notify("🏁 Premier League season complete! Press Next Season to continue.");
+      }
+
+      const championRow = result.updatedLeague.standings[0];
+      const best = getBestPlayerOfSeason(result.updatedLeague, basePlayers);
+      setTimeout(() => {
+        setLeagueChampionAnim({
+          championName: championRow?.teamName ?? "Unknown",
+          isUserChampion: !!championRow?.isUser,
+          bestPlayerName: best?.stat.playerName ?? null,
+          bestPlayerTeam: best?.stat.teamName ?? null,
+          bestPlayerGoals: best?.stat.goals ?? 0,
+          bestPlayerAssists: best?.stat.assists ?? 0,
+        });
+      }, 600);
+    } else if (result.updatedLeague.seasonPhase === "transfer") {
+      notify(`🔄 Round ${result.updatedLeague.currentRound} played. Transfer window is now open (Rounds 18-21)!`);
+    } else {
+      notify(`⚽ Round ${result.updatedLeague.currentRound} played.`);
+    }
+  }
+
+  function getLeagueButtonLabel(): string | undefined {
+    if (mode !== "single" || singlePlayerStyle !== "clubOwner") return undefined;
+    if (!leagueEnabled || !leagueState) return "Start Season";
+    if (leagueState.seasonPhase === "finished") return "Next Season";
+    return "Next Game";
+  }
+
+  function handleMainSeasonButtonClick() {
+    if (mode !== "single" || singlePlayerStyle !== "clubOwner") {
+      nextSeason();
+      return;
+    }
+    if (!leagueEnabled || !leagueState) {
+      handleStartLeagueSeason();
+      return;
+    }
+    if (leagueState.seasonPhase === "finished") {
+      // Reset league for the next cycle and proceed to normal season transition
+      setLeagueEnabled(false);
+      setLeagueState(null);
+      setMatchSummary(null);
+      nextSeason();
+      return;
+    }
+    handlePlayLeagueGame();
+  }
+
+  // Boost purchase/sell chances exactly once when entering the transfer window (rounds 18-21)
+  const transferWindowBoostApplied = useRef<number | null>(null);
+  useEffect(() => {
+    if (!leagueState || mode !== "single") return;
+    if (leagueState.seasonPhase !== "transfer") return;
+    if (leagueState.currentRound < 18 || leagueState.currentRound > 21) return;
+    if (transferWindowBoostApplied.current === leagueState.currentRound) return;
+    if (leagueState.currentRound !== 18) return; // boost applied once, at window opening
+
+    transferWindowBoostApplied.current = leagueState.currentRound;
+    const boost = getTransferWindowChances();
+    setGamePlayers(prev => prev.map((gp, idx) =>
+      idx === 0
+        ? {
+            ...gp,
+            purchaseChances: Math.min(
+              gp.purchaseChances + boost.purchaseChances,
+              LEAGUE_MAX_PURCHASE_CHANCES
+            ),
+            sellChances: gp.sellChances + boost.sellChances,
+          }
+        : gp
+    ));
+  }, [leagueState?.currentRound, leagueState?.seasonPhase, mode]);
+
+  // ============================================
   // TURN & SEASON
   // ============================================
 
@@ -946,6 +1245,16 @@ export default function Home() {
 
     const newSeason = season + 1;
     const setupResult = setupNewSeason(newSeason, currentList, mode);
+
+    // Club Owner mode: the normal season-growth system above just regenerated
+    // squad player values using the standard game economy, which inflates
+    // them far beyond the fixed €150M league budget. Re-price owned players
+    // back to the league's rating-based scale so squad worth stays realistic.
+    if (mode === "single" && singlePlayerStyle === "clubOwner") {
+      setupResult.updatedPlayers = setupResult.updatedPlayers.map((gp, idx) =>
+        idx === 0 ? reapplyLeaguePricingToOwnedSquad(gp, newSeason) : gp
+      );
+    }
 
     // Versus: إيفنت منفصل لكل لاعب | Single: إيفنت مشترك
     let eventPlayers = setupResult.updatedPlayers;
@@ -1149,7 +1458,9 @@ export default function Home() {
 
   const hasModal = !!(auctionState || investorOffer || negotiation);
   const canNextSeason = mode === "single"
-    ? singleCanNextSeason(gamePlayers, devSeasonUnlocked, pendingSlot, hasModal)
+    ? (leagueEnabled && leagueState && leagueState.seasonPhase !== "finished"
+        ? !pendingSlot && !hasModal
+        : singleCanNextSeason(gamePlayers, devSeasonUnlocked, pendingSlot, hasModal))
     : versusCanNextSeason(gamePlayers, devSeasonUnlocked, pendingSlot, hasModal);
 
   // ============================================
@@ -1177,7 +1488,10 @@ export default function Home() {
         timerSeconds={timerSeconds}
         timer={timer}
         pendingSlot={pendingSlot}
-        onNextSeason={() => nextSeason()}
+        onNextSeason={handleMainSeasonButtonClick}
+        nextSeasonButtonLabel={getLeagueButtonLabel()}
+        leagueRound={leagueEnabled && leagueState ? leagueState.currentRound : undefined}
+        leagueTotalRounds={TOTAL_ROUNDS}
         onSeasonClick={handleSeasonClick}
         onFinishGame={() => finishGame()}
         onSave={handleSave}
@@ -1198,6 +1512,14 @@ export default function Home() {
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
             {/* Formation — 2 cols */}
             <div className="xl:col-span-2">
+              {singlePlayerStyle === "clubOwner" && (
+                <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700">
+                  <span className="text-xs text-slate-400 font-medium">Squad Average</span>
+                  <span className="text-lg font-black text-emerald-300">
+                    {calculateUserStrength(gamePlayers[0], season).toFixed(1)}
+                  </span>
+                </div>
+              )}
               <Formation
                 gamePlayer={gamePlayers[0]}
                 playerIndex={0}
@@ -1222,6 +1544,21 @@ export default function Home() {
                 onShowStats={() => setShowStats(true)}
                 onSkipTurn={handleSkipTurn}
               />
+              {leagueEnabled && leagueState && (
+                <>
+                  <LeagueStandings
+                    standings={leagueState.standings}
+                    currentRound={leagueState.currentRound}
+                    totalRounds={TOTAL_ROUNDS}
+                  />
+                  <button
+                    onClick={() => setShowLeagueStats(true)}
+                    className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                  >
+                    ⚽ Top Scorers · 🅰️ Assists · 🧤 Clean Sheets
+                  </button>
+                </>
+              )}
             </div>
             {/* News — 1 col */}
             <div className="xl:col-span-1 min-h-[700px]">
@@ -1565,6 +1902,55 @@ export default function Home() {
             );
             notify("∞ Budget Unlocked!");
           }}
+        />
+      )}
+
+      {matchPreview && (
+        <MatchPreviewModal
+          round={matchPreview.round}
+          userTeamName={gamePlayers[0]?.name || "Your Team"}
+          opponentName={matchPreview.opponentName}
+          userIsHome={matchPreview.userIsHome}
+          userLineup={matchPreview.userLineup}
+          opponentLineup={matchPreview.opponentLineup}
+          userAverage={matchPreview.userAverage}
+          opponentAverage={matchPreview.opponentAverage}
+          onStart={confirmPlayLeagueGame}
+          onClose={() => setMatchPreview(null)}
+        />
+      )}
+
+      {matchSummary && (
+        <MatchSummaryModal
+          round={matchSummary.round}
+          userTeamName={matchSummary.userTeamName}
+          opponentName={matchSummary.opponentName}
+          userIsHome={matchSummary.userIsHome}
+          homeGoals={matchSummary.homeGoals}
+          awayGoals={matchSummary.awayGoals}
+          events={matchSummary.events}
+          onClose={() => setMatchSummary(null)}
+        />
+      )}
+
+      {showLeagueStats && leagueState && (
+        <LeagueStatsModal
+          topScorers={getTopScorers(leagueState)}
+          topAssists={getTopAssists(leagueState)}
+          topCleanSheets={getTopCleanSheets(leagueState)}
+          onClose={() => setShowLeagueStats(false)}
+        />
+      )}
+
+      {leagueChampionAnim && (
+        <LeagueChampionAnimation
+          championName={leagueChampionAnim.championName}
+          isUserChampion={leagueChampionAnim.isUserChampion}
+          bestPlayerName={leagueChampionAnim.bestPlayerName}
+          bestPlayerTeam={leagueChampionAnim.bestPlayerTeam}
+          bestPlayerGoals={leagueChampionAnim.bestPlayerGoals}
+          bestPlayerAssists={leagueChampionAnim.bestPlayerAssists}
+          onDone={() => setLeagueChampionAnim(null)}
         />
       )}
 
