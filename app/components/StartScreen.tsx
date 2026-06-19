@@ -480,8 +480,8 @@ export default function StartScreen({ onStart, onContinue }: Props) {
           </Section>
         )}
 
-        {/* ── TEAM NAMES ── */}
-        {mode && (
+        {/* ── TEAM NAMES — hidden for clubOwner (club chosen in league selection) ── */}
+        {mode && singlePlayerStyle !== "clubOwner" && (
           <Section label="Team Names — أسماء الفرق" accent="#FFD54F">
             <div className={`grid gap-3 ${mode === "versus" ? "grid-cols-2" : "grid-cols-1"}`}>
               <input value={team1Name} onChange={e => setTeam1Name(e.target.value)} placeholder="Team 1"
@@ -496,6 +496,17 @@ export default function StartScreen({ onStart, onContinue }: Props) {
                   onFocus={e => (e.target.style.borderColor = "#a855f755")}
                   onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")} />
               )}
+            </div>
+          </Section>
+        )}
+        {/* Club Owner: show info that club is selected in next screen */}
+        {mode && singlePlayerStyle === "clubOwner" && (
+          <Section label="Club Selection — اختيار النادي" accent="#FFD54F">
+            <div className="py-3 text-center" style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>
+              🏟️ ستختار ناديك في الشاشة التالية
+              <div className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+                You will select your club in the next screen
+              </div>
             </div>
           </Section>
         )}

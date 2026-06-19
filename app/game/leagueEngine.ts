@@ -72,6 +72,7 @@ export type LeagueState = {
   seasonPhase: "transfer" | "playing" | "finished";
   champion: string | null;
   playerStats: Record<string, LeaguePlayerStat>; // keyed by player name
+  totalRounds: number; // dynamic based on team count (38 for 20 teams, 34 for 18 teams)
 };
 
 // ============================================
@@ -79,7 +80,10 @@ export type LeagueState = {
 // ============================================
 
 export const TOTAL_TEAMS = 20; // 19 dummy + user — kept even so no team ever gets a bye round
-export const TOTAL_ROUNDS = 38; // home-and-away round robin with 20 teams = 38 rounds
+export const TOTAL_ROUNDS = 38; // default (Premier League 20 teams). Use getTotalRounds() for dynamic leagues.
+export function getTotalRounds(teamCount: number): number {
+  return (teamCount - 1) * 2;
+}
 export const TRANSFER_WINDOW_START = 19;
 export const TRANSFER_WINDOW_END = 22;
 export const TRANSFER_WINDOW_CLOSE_ROUND = 23;
@@ -180,10 +184,38 @@ function ordinalSuffix(n: number): string {
 }
 
 const DUMMY_TEAM_NAMES = [
-  "Arsenal","Aston Villa","Bournemouth","Brentford","Brighton & Hove Albion",
-  "Chelsea","Crystal Palace","Everton","Fulham","Hull City",
-  "Ipswich Town","Leeds United","Liverpool","Manchester City","Manchester United",
-  "Newcastle United","Nottingham Forest","Sunderland","Tottenham Hotspur",
+  "Arsenal","Aston Villa","Bournemouth","Brentford","Brighton",
+  "Chelsea","Coventry City","Crystal Palace","Everton","Fulham",
+  "Hull City","Ipswich Town","Leeds United","Liverpool","Manchester City",
+  "Manchester United","Newcastle United","Nottingham Forest","Sunderland","Tottenham Hotspur",
+];
+
+const BUNDESLIGA_TEAM_NAMES = [
+  "Bayer Leverkusen","Bayern Munich","Borussia Dortmund","RB Leipzig","VfB Stuttgart",
+  "Eintracht Frankfurt","TSG Hoffenheim","FC Heidenheim","Werder Bremen","SC Freiburg",
+  "FC Augsburg","VfL Wolfsburg","Borussia Mönchengladbach","Mainz 05","VfL Bochum",
+  "Union Berlin","FC St. Pauli","Holstein Kiel",
+];
+
+const LA_LIGA_TEAM_NAMES = [
+  "Barcelona","Real Madrid","Villarreal","Atlético Madrid","Real Betis",
+  "Celta Vigo","Getafe","Rayo Vallecano","Valencia","Real Sociedad",
+  "Espanyol","Athletic Bilbao","Sevilla","Deportivo Alavés","Elche",
+  "Levante","Osasuna","Mallorca","Girona","Real Oviedo",
+];
+
+const SERIE_A_TEAM_NAMES = [
+  "AC Milan","Inter Milan","Juventus","Napoli","AS Roma",
+  "Lazio","Atalanta","Fiorentina","Bologna","Torino",
+  "Udinese","Genoa","Cagliari","Lecce","Hellas Verona",
+  "Empoli","Monza","Como","Parma","Venezia",
+];
+
+const LIGUE_1_TEAM_NAMES = [
+  "Paris Saint-Germain","Marseille","Monaco","Lyon","Lille",
+  "Lens","Nice","Rennes","Brest","Toulouse",
+  "Strasbourg","Lorient","Paris FC","Angers","Le Havre",
+  "Auxerre","Nantes","Metz",
 ];
 
 const POSITIONS_FOR_TEAM = ["GK","LB","LCB","RCB","RB","LCM","RCM","CAM","LW","ST","RW"];
@@ -196,7 +228,8 @@ export function generateLeagueTeams(
   allPlayers: Player[],
   season: number,
   userTeamName: string,
-  ownedPlayerNames: string[] = []
+  ownedPlayerNames: string[] = [],
+  leagueId: string = "premier_league"
 ): LeagueTeam[] {
   // A single season's database only has ~10 players per position, but we
   // need 19 unique players per position (one for each dummy team) to avoid
@@ -248,8 +281,17 @@ export function generateLeagueTeams(
   const positionCursor: Record<string, number> = {};
   for (const pos of POSITIONS_FOR_TEAM) positionCursor[pos] = 0;
 
-  // Build 19 dummy teams with balanced strength (19 dummy + user = 20 total, kept even so no byes)
-  for (let i = 0; i < 19; i++) {
+  // Get all club names for this league, then exclude the user's chosen club
+  const allLeagueNames =
+    leagueId === "bundesliga" ? BUNDESLIGA_TEAM_NAMES :
+    leagueId === "la_liga"   ? LA_LIGA_TEAM_NAMES :
+    leagueId === "serie_a"   ? SERIE_A_TEAM_NAMES :
+    leagueId === "ligue_1"   ? LIGUE_1_TEAM_NAMES :
+    DUMMY_TEAM_NAMES;
+  const dummyTeamNames = allLeagueNames.filter(name => name !== userTeamName);
+
+  // Build dummy teams (all clubs except user's chosen one)
+  for (let i = 0; i < dummyTeamNames.length; i++) {
     const squad: Player[] = [];
     for (const pos of POSITIONS_FOR_TEAM) {
       const pool = byPosition[pos];
@@ -279,7 +321,7 @@ export function generateLeagueTeams(
 
     teams.push({
       id: `team${i + 1}`,
-      name: DUMMY_TEAM_NAMES[i],
+      name: dummyTeamNames[i],
       isUser: false,
       players: squad,
       strength,
@@ -600,14 +642,14 @@ export function playRound(
     seasonPhase:
       round >= TRANSFER_WINDOW_START && round <= TRANSFER_WINDOW_END
         ? "transfer"
-        : round >= TOTAL_ROUNDS
+        : round >= league.totalRounds
         ? "finished"
         : "playing",
   };
 
   let prizeMoneyAwarded = 0;
 
-  if (round >= TOTAL_ROUNDS) {
+  if (round >= league.totalRounds) {
     const champion = updatedLeague.standings[0];
     updatedLeague.champion = champion?.teamId ?? null;
 
@@ -801,11 +843,14 @@ export function initializeLeagueSeason(
   allPlayers: Player[],
   season: number,
   userTeamName: string,
-  ownedPlayerNames: string[] = []
+  ownedPlayerNames: string[] = [],
+  leagueId: string = "premier_league"
 ): LeagueState {
-  const teams = generateLeagueTeams(allPlayers, season, userTeamName, ownedPlayerNames);
+  const teams = generateLeagueTeams(allPlayers, season, userTeamName, ownedPlayerNames, leagueId);
   const teamIds = teams.map(t => t.id);
   const fixtures = generateFixtures(teamIds);
+
+  const totalRounds = getTotalRounds(teams.length);
 
   return {
     teams,
@@ -815,6 +860,7 @@ export function initializeLeagueSeason(
     seasonPhase: "transfer", // before Start Season is pressed, transfers allowed
     champion: null,
     playerStats: {},
+    totalRounds,
   };
 }
 

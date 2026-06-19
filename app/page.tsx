@@ -41,6 +41,7 @@ const LEAGUE_FIXED_STARTING_BUDGET = 150; // stored in millions, matching BUDGET
 
 // Components
 import StartScreen from "./components/StartScreen";
+import LeagueSelectionScreen, { type LeagueId } from "./components/LeagueSelectionScreen";
 import TopBar from "./components/TopBar";
 import Formation from "./components/Formation";
 import TeamPanel from "./components/TeamPanel";
@@ -135,9 +136,19 @@ export default function Home() {
   const [devSeasonUnlocked, setDevSeasonUnlocked] = useState(false);
   const [devSeasonClicks, setDevSeasonClicks] = useState(0);
   const [singlePlayerStyle, setSinglePlayerStyle] = useState<"investor" | "clubOwner">("investor");
+  const [showLeagueSelection, setShowLeagueSelection] = useState(false);
+  const [pendingConfig, setPendingConfig] = useState<{
+    mode: GameMode; singlePlayerStyle?: "investor" | "clubOwner"; budgetMode: BudgetMode;
+    team1Name: string; team2Name: string; eventsEnabled: boolean; eventType: EventType;
+    timerSeconds: number | null; gameLengthMode: "classic" | "infinite";
+    negativeBudgetEndsGame: boolean; easterUnlocked: boolean;
+  } | null>(null);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<LeagueId>("premier_league");
+  const [selectedClubName, setSelectedClubName] = useState<string | null>(null);
 
   // ── 18-Team Domestic League (Single Mode Beta) ──
   const [leagueState, setLeagueState] = useState<LeagueState | null>(null);
+  const leagueTotalRounds = leagueState?.totalRounds ?? (selectedLeagueId === "bundesliga" || selectedLeagueId === "ligue_1" ? 34 : 38);
   const [leagueEnabled, setLeagueEnabled] = useState(false); // toggled true once user starts a league season
   const [matchSummary, setMatchSummary] = useState<{
     round: number;
@@ -385,6 +396,13 @@ export default function Home() {
   }) {
     setMode(config.mode);
     setSinglePlayerStyle(config.singlePlayerStyle ?? "investor");
+    // Club Owner: show league selection screen before starting
+    if (config.mode === "single" && config.singlePlayerStyle === "clubOwner") {
+      // Store config temporarily and show league selection
+      setPendingConfig(config);
+      setShowLeagueSelection(true);
+      return;
+    }
     setBudgetMode(config.budgetMode);
     setGameLengthMode(config.gameLengthMode);
     setEventsEnabled(config.eventsEnabled);
@@ -407,6 +425,44 @@ export default function Home() {
             purchaseChances: LEAGUE_MAX_PURCHASE_CHANCES,
           }))
         : gps;
+
+    setGamePlayers(finalGps);
+    setNews(startNews);
+    setSeason(GAME_START_SEASON);
+    setTurnIndex(getFirstTurn(config.mode));
+    setSeasonEvent(null);
+    setStarted(true);
+  }
+
+  // ============================================
+  // CONTINUE START GAME (after league/club selection)
+  // ============================================
+
+  function continueStartGame(config: {
+    mode: GameMode; singlePlayerStyle?: "investor" | "clubOwner"; budgetMode: BudgetMode;
+    team1Name: string; team2Name: string; eventsEnabled: boolean; eventType: EventType;
+    timerSeconds: number | null; gameLengthMode: "classic" | "infinite";
+    negativeBudgetEndsGame: boolean; easterUnlocked: boolean;
+  }, clubName: string, leagueBudget: number) {
+    setBudgetMode(config.budgetMode);
+    setGameLengthMode(config.gameLengthMode);
+    setEventsEnabled(config.eventsEnabled);
+    setTimerSeconds(config.timerSeconds);
+    setNegativeBudgetEndsGame(config.negativeBudgetEndsGame);
+    if (config.easterUnlocked) setEasterUnlocked(true);
+    if (config.timerSeconds !== null) setTimer(config.timerSeconds);
+
+    const { gamePlayers: gps, news: startNews } = buildInitialState(
+      config.budgetMode, clubName, config.team2Name, config.mode
+    );
+
+    // Use the league budget for the selected league
+    const finalGps = gps.map(gp => ({
+      ...gp,
+      name: clubName,
+      budget: leagueBudget,
+      purchaseChances: LEAGUE_MAX_PURCHASE_CHANCES,
+    }));
 
     setGamePlayers(finalGps);
     setNews(startNews);
@@ -981,7 +1037,7 @@ export default function Home() {
 
     const userTeamName = gamePlayers[0]?.name || "Your Team";
     const ownedPlayerNames = (gamePlayers[0]?.owned ?? []).map(o => o.player.name);
-    const newLeague = initializeLeagueSeason(basePlayers, season, userTeamName, ownedPlayerNames);
+    const newLeague = initializeLeagueSeason(basePlayers, season, userTeamName, ownedPlayerNames, selectedLeagueId);
     // Mark as actively started (round 0 -> about to play round 1)
     setLeagueState({ ...newLeague, seasonPhase: "playing" });
     setLeagueEnabled(true);
@@ -1512,7 +1568,28 @@ export default function Home() {
   // RENDER: START SCREEN
   // ============================================
 
-  if (!started) {
+  if (showLeagueSelection && pendingConfig) {
+    return (
+      <LeagueSelectionScreen
+        onSelect={(leagueId: LeagueId, teamName: string, budget: number) => {
+          setSelectedLeagueId(leagueId);
+          setSelectedClubName(teamName);
+          setShowLeagueSelection(false);
+          // Now actually start the game with the selected club
+          const cfg = { ...pendingConfig };
+          setPendingConfig(null);
+          // Continue startGame logic with club info
+          continueStartGame(cfg, teamName, budget);
+        }}
+        onBack={() => {
+          setShowLeagueSelection(false);
+          setPendingConfig(null);
+        }}
+      />
+    );
+  }
+
+  if (!started && !showLeagueSelection) {
     return <StartScreen onStart={startGame} onContinue={handleLoadSave} />;
   }
 
@@ -1551,7 +1628,7 @@ export default function Home() {
         onNextSeason={handleMainSeasonButtonClick}
         nextSeasonButtonLabel={getLeagueButtonLabel()}
         leagueRound={leagueEnabled && leagueState ? leagueState.currentRound : undefined}
-        leagueTotalRounds={TOTAL_ROUNDS}
+        leagueTotalRounds={leagueState?.totalRounds ?? TOTAL_ROUNDS}
         onSeasonClick={handleSeasonClick}
         onFinishGame={() => finishGame()}
         onSave={handleSave}
@@ -1609,7 +1686,7 @@ export default function Home() {
                   <LeagueStandings
                     standings={leagueState.standings}
                     currentRound={leagueState.currentRound}
-                    totalRounds={TOTAL_ROUNDS}
+                    totalRounds={leagueState?.totalRounds ?? TOTAL_ROUNDS}
                   />
                   <button
                     onClick={() => setShowLeagueStats(true)}
