@@ -20,7 +20,6 @@ type StartConfig = {
 
 type Props = { onStart: (config: StartConfig) => void; onContinue?: () => void };
 
-// ── Reusable styled button ──────────────────
 function Btn({
   selected, color, onClick, children, className = "",
 }: {
@@ -51,11 +50,9 @@ function Btn({
   );
 }
 
-// ── Section wrapper ─────────────────────────
 function Section({ label, accent = "#FFD54F", children }: { label: string; accent?: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      {/* Floating label pill */}
       <div className="flex justify-center mb-3">
         <div style={{
           background: "rgba(17,24,39,0.9)",
@@ -72,7 +69,6 @@ function Section({ label, accent = "#FFD54F", children }: { label: string; accen
           </span>
         </div>
       </div>
-      {/* Content */}
       <div style={{
         background: "rgba(17,24,39,0.6)",
         border: `1px solid rgba(255,255,255,0.06)`,
@@ -119,11 +115,29 @@ export default function StartScreen({ onStart, onContinue }: Props) {
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [showNewGameConfirm, setShowNewGameConfirm] = useState(false);
 
+  // ── Background transition state ──
+  const [activeBg, setActiveBg] = useState<"default" | "classic" | "infinite">("default");
+  const [bgFading, setBgFading] = useState(false);
+
   useEffect(() => {
     const info = getSaveInfo();
     setSaveInfo(info);
     if (info) setShowSavePopup(true);
   }, []);
+
+  // ── Handle game length selection with bg transition ──
+  function handleGameLengthSelect(val: "classic" | "infinite") {
+    const target = val === "classic" ? "classic" : "infinite";
+    if (gameLengthMode === val) {
+      // already selected — toggle back to default
+      setBgFading(true);
+      setTimeout(() => { setActiveBg("default"); setBgFading(false); }, 600);
+    } else {
+      setBgFading(true);
+      setTimeout(() => { setActiveBg(target); setBgFading(false); }, 600);
+    }
+    setGameLengthMode(val);
+  }
 
   function handleStart() {
     if (!mode) return;
@@ -140,26 +154,56 @@ export default function StartScreen({ onStart, onContinue }: Props) {
     <main className="min-h-screen text-white flex flex-col items-center justify-center p-4 relative overflow-hidden"
       style={{ background: "#050810" }}>
 
-      {/* ── Full-screen background image ── */}
+      {/* ── Background image layer 1 (default) ── */}
       <div className="absolute inset-0 z-0"
         style={{
           backgroundImage: "url('/images/start-bg.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
+          opacity: activeBg === "default" ? 1 : 0,
+          transition: "opacity 0.6s ease-in-out",
         }} />
 
-      {/* ── Dark overlay 50% opacity ── */}
+      {/* ── Background image layer 2 (2028) ── */}
+      <div className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: activeBg === "classic" ? "url('/images/bg-2028.png')" : "url('/images/bg-infinite.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          opacity: activeBg !== "default" ? 1 : 0,
+          transition: "opacity 0.6s ease-in-out",
+        }} />
+
+      {/* ── Flash overlay during transition ── */}
+      {bgFading && (
+        <div className="absolute inset-0 z-[3] pointer-events-none"
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            animation: "bgFlash 0.6s ease-in-out forwards",
+          }} />
+      )}
+
+      {/* ── Dark overlay ── */}
       <div className="absolute inset-0 z-[1]"
         style={{ background: "rgba(5,8,16,0.55)" }} />
 
-      {/* ── Vignette around edges ── */}
+      {/* ── Vignette ── */}
       <div className="absolute inset-0 z-[2] pointer-events-none"
         style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%)" }} />
 
-      {/* ── Subtle grid ── */}
+      {/* ── Grid ── */}
       <div className="absolute inset-0 z-[2] pointer-events-none"
         style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+
+      <style>{`
+        @keyframes bgFlash {
+          0%   { opacity: 0; }
+          30%  { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
 
       {/* ── Save popup ── */}
       {showSavePopup && saveInfo && !showNewGameConfirm && (
@@ -234,12 +278,10 @@ export default function StartScreen({ onStart, onContinue }: Props) {
               const n = easterClicks + 1;
               setEasterClicks(n);
               if (n >= 5) {
-                // حفظ الـ flag
                 if (!easterUnlocked) {
                   setEasterUnlocked(true);
                   try { localStorage.setItem("fi_easter_unlocked", "1"); } catch {}
                 }
-                // الأنيميشن والـ popup دايماً يظهرون بعد 5 نقرات
                 setEasterClicks(0);
                 setShowShatoor(true);
                 setTimeout(() => {
@@ -264,7 +306,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             )}
           </p>
 
-          {/* شطور animation */}
           {showShatoor && (
             <div className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none">
               <p className="font-black text-center"
@@ -287,7 +328,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             </div>
           )}
 
-          {/* Easter popup */}
           {showEasterPopup && (
             <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.88)" }}>
               <div className="w-full max-w-sm p-7 text-center shadow-2xl"
@@ -328,7 +368,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             style={{ background:"rgba(0,0,0,0.85)", backdropFilter:"blur(8px)", animation:"modalFadeIn 0.25s ease-out" }}>
             <div className="w-full max-w-md overflow-hidden"
               style={{ background:"linear-gradient(160deg,#080c14,#0a0f1e)", border:"1px solid rgba(99,102,241,0.4)", boxShadow:"0 0 60px rgba(99,102,241,0.15)", animation:"modalSlideUp 0.3s cubic-bezier(0.22,1,0.36,1)" }}>
-              {/* Header */}
               <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(99,102,241,0.08)" }}>
                 <div>
                   <div className="font-black text-white text-lg tracking-wide">كيف تلعب</div>
@@ -340,7 +379,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
                   ×
                 </button>
               </div>
-              {/* Content */}
               <div className="p-5">
                 {HOW_TO_PLAY.map((item, i) => (
                   <div key={i} className="flex items-start gap-4 py-3"
@@ -368,7 +406,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             style={{ background:"rgba(0,0,0,0.85)", backdropFilter:"blur(8px)", animation:"modalFadeIn 0.25s ease-out" }}>
             <div className="w-full max-w-md overflow-hidden"
               style={{ background:"linear-gradient(160deg,#08070000,#0d0a00)", border:"1px solid rgba(212,175,55,0.4)", boxShadow:"0 0 60px rgba(212,175,55,0.15)", animation:"modalSlideUp 0.3s cubic-bezier(0.22,1,0.36,1)" }}>
-              {/* Header */}
               <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom:"1px solid rgba(212,175,55,0.1)", background:"rgba(212,175,55,0.06)" }}>
                 <div>
                   <div className="font-black text-white text-lg">رسالة المطور</div>
@@ -380,7 +417,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
                   ×
                 </button>
               </div>
-              {/* Content */}
               <div className="p-5 text-sm leading-relaxed" style={{ maxHeight:"70vh", overflowY:"auto" }}>
                 <p className="text-gray-300 mb-3">السلام عليكم،</p>
                 <p className="text-gray-300 mb-3">أنا يوسف، شخص يعشق كرة القدم وبايرن ميونخ وقضى ساعات طويلة في ألعاب الكورة.</p>
@@ -499,7 +535,7 @@ export default function StartScreen({ onStart, onContinue }: Props) {
               { key:"classic",  emoji:"🏆", label:"Classic",  desc:"2008 → 2028", color:"#FFD54F" },
               { key:"infinite", emoji:"♾️", label:"Infinite", desc:"بلا نهاية",  color:"#FFD54F" },
             ] as const).map(g => (
-              <Btn key={g.key} selected={gameLengthMode===g.key} color={g.color} onClick={() => setGameLengthMode(g.key)} className="py-3.5 text-center">
+              <Btn key={g.key} selected={gameLengthMode===g.key} color={g.color} onClick={() => handleGameLengthSelect(g.key)} className="py-3.5 text-center">
                 <div className="text-xl mb-1">{g.emoji}</div>
                 <div className="text-sm leading-none">{g.label}</div>
                 <div className="text-[10px] font-normal mt-0.5 opacity-50">{g.desc}</div>
@@ -595,7 +631,6 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "none"; (e.currentTarget as HTMLButtonElement).style.boxShadow = mode ? "0 8px 32px rgba(255,213,79,0.45), 0 2px 0 rgba(255,255,255,0.2) inset" : "none"; }}
             onMouseDown={e => { if (mode) (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98)"; }}
             onMouseUp={e => { if (mode) (e.currentTarget as HTMLButtonElement).style.transform = "none"; }}>
-            {/* Shimmer sweep */}
             {mode && (
               <span style={{
                 position:"absolute", top:0, left:0, right:0, bottom:0,

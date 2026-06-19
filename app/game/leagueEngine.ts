@@ -195,9 +195,43 @@ const POSITIONS_FOR_TEAM = ["GK","LB","LCB","RCB","RB","LCM","RCM","CAM","LW","S
 export function generateLeagueTeams(
   allPlayers: Player[],
   season: number,
-  userTeamName: string
+  userTeamName: string,
+  ownedPlayerNames: string[] = []
 ): LeagueTeam[] {
-  const seasonPlayers = allPlayers.filter(p => p.availableSeason === season && !p.secret);
+  // A single season's database only has ~10 players per position, but we
+  // need 19 unique players per position (one for each dummy team) to avoid
+  // any player appearing on multiple clubs — which would double/triple-count
+  // their goals in the league-wide stat leaderboards. Widen the search to a
+  // ±3 season window around the league's actual season, then deduplicate by
+  // name (keeping whichever entry is closest to the real season, so ratings/
+  // ages stay as realistic as possible for that point in time).
+  const SEASON_WINDOW = 3;
+  const ownedSet = new Set(ownedPlayerNames);
+  const candidatePlayers = allPlayers.filter(
+    p => !p.secret &&
+      Math.abs(p.availableSeason - season) <= SEASON_WINDOW &&
+      !ownedSet.has(p.name) // exclude players the user already owns — otherwise
+                              // the same player could simultaneously "play" for
+                              // a dummy team and the user's own squad, double
+                              // counting their goals in the league stat tables.
+  );
+
+  // Deduplicate by name, keeping the entry whose availableSeason is closest
+  // to the league's actual season (ties broken by whichever appears first).
+  const closestByName = new Map<string, Player>();
+  for (const p of candidatePlayers) {
+    const existing = closestByName.get(p.name);
+    if (!existing) {
+      closestByName.set(p.name, p);
+      continue;
+    }
+    const existingDist = Math.abs(existing.availableSeason - season);
+    const candidateDist = Math.abs(p.availableSeason - season);
+    if (candidateDist < existingDist) {
+      closestByName.set(p.name, p);
+    }
+  }
+  const seasonPlayers = Array.from(closestByName.values());
 
   // Group available players by position
   const byPosition: Record<string, Player[]> = {};
@@ -224,15 +258,15 @@ export function generateLeagueTeams(
       if (pool.length > 0) {
         // Walk forward through the pool without wrapping back to an
         // already-used player, unless we've genuinely exhausted the pool
-        // (more teams than available real players for that position).
+        // (more teams than available real players for that position even
+        // after widening the search window — should be very rare now).
         const cursor = positionCursor[pos];
         if (cursor < pool.length) {
           player = pool[cursor];
           positionCursor[pos] = cursor + 1;
         } else {
           // Pool exhausted — fall back to reusing players rather than
-          // leaving the slot empty, but this should be rare with a deep
-          // enough player database per season.
+          // leaving the slot empty.
           player = pool[cursor % pool.length];
         }
       }
@@ -766,9 +800,10 @@ export function computeStandings(teams: LeagueTeam[], fixtures: Fixture[]): Stan
 export function initializeLeagueSeason(
   allPlayers: Player[],
   season: number,
-  userTeamName: string
+  userTeamName: string,
+  ownedPlayerNames: string[] = []
 ): LeagueState {
-  const teams = generateLeagueTeams(allPlayers, season, userTeamName);
+  const teams = generateLeagueTeams(allPlayers, season, userTeamName, ownedPlayerNames);
   const teamIds = teams.map(t => t.id);
   const fixtures = generateFixtures(teamIds);
 

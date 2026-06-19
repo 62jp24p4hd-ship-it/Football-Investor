@@ -11,9 +11,9 @@ import type {
 // Game engines
 import { buildAllBasePlayers, getSecretPlayers } from "./game/playerDatabase";
 import { generateSeasonPlayerPool } from "./game/playerGenerator";
-import { getCurrentValue, guaranteeAffordablePlayer, applyLeaguePricing, reapplyLeaguePricingToOwnedSquad } from "./game/valueEngine";
+import { getCurrentValue, guaranteeAffordablePlayer, applyLeaguePricing, reapplyLeaguePricingToOwnedSquad, calculateLeaguePlayerPrice } from "./game/valueEngine";
 import { getSeasonStats } from "./game/statsEngine";
-import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract } from "./game/contractEngine";
+import { createNegotiation, createRenewalNegotiation, updateOffer, isRejected, finalizeContract, getRecommendedSalary } from "./game/contractEngine";
 import { getEligibleCards, unlockCard, useFreezeCard, useTripleCard, executeStealSwap, emptyCards } from "./game/rewardCardEngine";
 import { createRandomSeasonEvent, createVersusSeasonEvents, forcedPositiveEvent, forcedNegativeEvent, forcedMarketEvent, createEventChoiceOptions, forcedSpecificEvent, triggerFlorentinoPerezEvent, triggerBobPaisleyDisaster, triggerFastFoodAddiction, triggerBreakupSeason, triggerCasinoNight, triggerOneSeasonWonder, triggerYouTubeViral, triggerDreamSeason, triggerLockerRoomDrama, triggerEriksenHeartAttack, triggerDopingBan, triggerGirlsMagnet, triggerRacistAttack, triggerClubLegend, checkTournamentEvents, triggerWorldCup, triggerEuro, triggerChampionsLeague } from "./game/eventEngine";
 import { createInvestorOffer, acceptInvestorOffer, rejectInvestorOffer } from "./game/investorOfferEngine";
@@ -980,7 +980,8 @@ export default function Home() {
     }
 
     const userTeamName = gamePlayers[0]?.name || "Your Team";
-    const newLeague = initializeLeagueSeason(basePlayers, season, userTeamName);
+    const ownedPlayerNames = (gamePlayers[0]?.owned ?? []).map(o => o.player.name);
+    const newLeague = initializeLeagueSeason(basePlayers, season, userTeamName, ownedPlayerNames);
     // Mark as actively started (round 0 -> about to play round 1)
     setLeagueState({ ...newLeague, seasonPhase: "playing" });
     setLeagueEnabled(true);
@@ -1201,6 +1202,65 @@ export default function Home() {
     if (turnIndex === 0) { setTurnIndex(1); return; }
     setTurnIndex(0);
     nextSeason(updatedList);
+  }
+
+  // Auto-sign a random full XI for Club Owner mode (debugging/testing shortcut).
+  // Picks one random eligible player per position from the current season's
+  // pool, prices them with the league's rating-based scale, and builds a
+  // basic contract for each so the user can jump straight into Start Season.
+  function autoSignFullSquadForClubOwner() {
+    const userGp = gamePlayers[0];
+    if (!userGp) return;
+
+    const alreadyOwnedSlots = new Set(userGp.owned.map(o => o.slot));
+    const newOwned: OwnedPlayer[] = [];
+    const goats = getSecretPlayers(); // one legendary GOAT per position, spread across different eras/seasons
+
+    for (const pos of ALL_POSITIONS) {
+      if (alreadyOwnedSlots.has(pos)) continue; // keep any player already in that slot
+
+      const chosen = goats.find(p => p.position === pos);
+      if (!chosen) continue; // no GOAT exists for this position in the database
+
+      // GOATs keep their own original season (their era), not the league's
+      // current season — that's what makes them legendary all-time picks.
+      const goatSeason = chosen.availableSeason;
+
+      const price = calculateLeaguePlayerPrice(chosen.rating ?? 95);
+      const salary = getRecommendedSalary(price);
+
+      newOwned.push({
+        player: {
+          ...chosen,
+          statsBySeason: {
+            ...(chosen.statsBySeason ?? {}),
+            [season]: chosen.statsBySeason?.[goatSeason] ?? {
+              season, games: 0, goals: 0, assists: 0, cleanSheets: 0,
+              yellowCards: 0, redCards: 0, rating: chosen.rating ?? 95, value: price,
+            },
+          },
+        },
+        slot: pos,
+        buySeason: season,
+        buyPrice: price,
+        currentValue: price,
+        budgetAtBuy: userGp.budget,
+        contract: {
+          salary,
+          duration: 3,
+          satisfaction: 75,
+          requiredSalary: salary,
+          startSeason: season,
+          endSeason: season + 3,
+        },
+        sponsorships: [],
+      });
+    }
+
+    setGamePlayers(prev =>
+      prev.map((gp, idx) => idx === 0 ? { ...gp, owned: [...gp.owned, ...newOwned] } : gp)
+    );
+    notify(`⚡ Legendary XI assembled! Signed ${newOwned.length} GOAT(s) to your squad!`);
   }
 
   function nextSeason(listOverride?: GamePlayer[]) {
@@ -1897,10 +1957,14 @@ export default function Home() {
           onDone={() => {
             setShowKonamiAnim(false);
             setKonamiUsed(true);
-            setGamePlayers(prev =>
-              prev.map(gp => ({ ...gp, budget: 99999 }))
-            );
-            notify("∞ Budget Unlocked!");
+            if (singlePlayerStyle === "clubOwner") {
+              autoSignFullSquadForClubOwner();
+            } else {
+              setGamePlayers(prev =>
+                prev.map(gp => ({ ...gp, budget: 99999 }))
+              );
+              notify("∞ Budget Unlocked!");
+            }
           }}
         />
       )}
