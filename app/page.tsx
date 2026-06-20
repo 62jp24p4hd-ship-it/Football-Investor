@@ -1353,15 +1353,22 @@ export default function Home() {
     const newOwned: OwnedPlayer[] = [];
     const goats = getSecretPlayers(); // one legendary GOAT per position, spread across different eras/seasons
 
+    // Generate a random GK pool in case no GOAT GK exists
+    const randomGkPool = generateSeasonPlayerPool(season).filter(p => p.position === "GK");
+
     for (const pos of ALL_POSITIONS) {
       if (alreadyOwnedSlots.has(pos)) continue; // keep any player already in that slot
 
-      const chosen = goats.find(p => p.position === pos);
-      if (!chosen) continue; // no GOAT exists for this position in the database
+      let chosen = goats.find(p => p.position === pos);
 
-      // GOATs keep their own original season (their era), not the league's
-      // current season — that's what makes them legendary all-time picks.
-      const goatSeason = chosen.availableSeason;
+      // If no GOAT for this position (e.g. GK), use a random generated player
+      if (!chosen) {
+        if (pos === "GK" && randomGkPool.length > 0) {
+          chosen = randomGkPool[Math.floor(Math.random() * randomGkPool.length)];
+        } else {
+          continue;
+        }
+      }
 
       const price = calculateLeaguePlayerPrice(chosen.rating ?? 95);
       const salary = getRecommendedSalary(price);
@@ -1371,9 +1378,11 @@ export default function Home() {
           ...chosen,
           statsBySeason: {
             ...(chosen.statsBySeason ?? {}),
-            [season]: chosen.statsBySeason?.[goatSeason] ?? {
+            // Reset stats to zero so tracking starts fresh from this season
+            [season]: {
               season, games: 0, goals: 0, assists: 0, cleanSheets: 0,
               yellowCards: 0, redCards: 0, rating: chosen.rating ?? 95, value: price,
+              ratingPrecise: chosen.rating ?? 95,
             },
           },
         },
