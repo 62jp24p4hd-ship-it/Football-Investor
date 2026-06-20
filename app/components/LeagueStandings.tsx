@@ -9,6 +9,7 @@ type LeagueStandingsProps = {
   totalRounds: number;
   leagueName?: string;
   leagueLogo?: string;
+  tier?: 1 | 2; // 1 = top flight (relegation bottom 3), 2 = second tier (promotion top 6)
 };
 
 export default function LeagueStandings({
@@ -17,6 +18,7 @@ export default function LeagueStandings({
   totalRounds,
   leagueName = "Premier League",
   leagueLogo,
+  tier = 1,
 }: LeagueStandingsProps) {
   if (!standings || standings.length === 0) return null;
 
@@ -65,21 +67,36 @@ export default function LeagueStandings({
               let rowText = "text-slate-300";
               let isGoldAnimated = false;
 
-              if (position === 1) {
-                isGoldAnimated = true;
-                rowText = "text-yellow-100 font-semibold";
-              } else if (position >= 2 && position <= 5) {
-                rowBg = "bg-green-600/30";
-                rowText = "text-green-100";
-              } else if (position === 6) {
-                rowBg = "bg-orange-600/30";
-                rowText = "text-orange-100";
-              } else if (position === 7) {
-                rowBg = "bg-blue-600/30";
-                rowText = "text-blue-100";
-              } else if (isRelegationZone) {
-                rowBg = "bg-red-700/35";
-                rowText = "text-red-100";
+              if (tier === 2) {
+                // Second tier: top 3 promoted directly
+                if (position === 1) {
+                  isGoldAnimated = true;
+                  rowText = "text-yellow-100 font-semibold";
+                } else if (position === 2 || position === 3) {
+                  rowBg = "bg-green-600/30";
+                  rowText = "text-green-100";
+                } else if (isRelegationZone) {
+                  rowBg = "bg-red-700/35";
+                  rowText = "text-red-100";
+                }
+              } else {
+                // First tier: standard colors
+                if (position === 1) {
+                  isGoldAnimated = true;
+                  rowText = "text-yellow-100 font-semibold";
+                } else if (position >= 2 && position <= 5) {
+                  rowBg = "bg-green-600/30";
+                  rowText = "text-green-100";
+                } else if (position === 6) {
+                  rowBg = "bg-orange-600/30";
+                  rowText = "text-orange-100";
+                } else if (position === 7) {
+                  rowBg = "bg-blue-600/30";
+                  rowText = "text-blue-100";
+                } else if (isRelegationZone) {
+                  rowBg = "bg-red-700/35";
+                  rowText = "text-red-100";
+                }
               }
 
               return (

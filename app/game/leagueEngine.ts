@@ -246,6 +246,43 @@ const SUPER_LIG_TEAM_NAMES = [
   "Amedspor","Çorum FK","Erzurumspor FK",
 ];
 
+const CHAMPIONSHIP_TEAM_NAMES = [
+  "Birmingham City","Blackburn Rovers","Bolton Wanderers","Bristol City","Burnley",
+  "Cardiff City","Charlton Athletic","Derby County","Lincoln City","Middlesbrough",
+  "Millwall","Norwich City","Portsmouth","Preston North End","Queens Park Rangers",
+  "Sheffield United","Southampton","Stoke City","Swansea City","Watford",
+  "West Bromwich Albion","West Ham United","Wolverhampton Wanderers","Wrexham",
+];
+
+const BUNDESLIGA2_TEAM_NAMES = [
+  "Hamburger SV","Schalke 04","Hertha BSC","FC Köln","Fortuna Düsseldorf",
+  "Hannover 96","SC Paderborn","Karlsruher SC","1. FC Nürnberg","1. FC Kaiserslautern",
+  "Greuther Fürth","Magdeburg","Eintracht Braunschweig","Elversberg","Darmstadt 98",
+  "Preußen Münster","SSV Ulm","Jahn Regensburg",
+];
+
+const SEGUNDA_TEAM_NAMES = [
+  "Real Zaragoza","Sporting Gijón","Tenerife","Real Oviedo","Racing Santander",
+  "Levante","Eibar","Elche","Albacete","Burgos",
+  "Cartagena","Eldense","Huesca","Mirandés","Racing Ferrol",
+  "Castellón","Deportivo La Coruña","Málaga","Córdoba","Almería",
+  "Granada","Cádiz",
+];
+
+const SERIE_B_TEAM_NAMES = [
+  "Sassuolo","Salernitana","Frosinone","Palermo","Cremonese",
+  "Sampdoria","Brescia","Pisa","Catanzaro","Modena",
+  "Bari","Spezia","Cosenza","Südtirol","Reggiana",
+  "Cittadella","Cesena","Mantova","Juve Stabia","Carrarese",
+];
+
+const LIGUE_2_TEAM_NAMES = [
+  "FC Metz","FC Nantes","AS Saint-Étienne","Montpellier Hérault SC","Stade de Reims",
+  "Clermont Foot 63","FC Sochaux-Montbéliard","En Avant Guingamp","Dijon FCO","Grenoble Foot 38",
+  "US Boulogne CO","AS Nancy Lorraine","Red Star FC","Stade Lavallois Mayenne FC","Rodez AF",
+  "Pau FC","FC Annecy","USL Dunkerque",
+];
+
 const POSITIONS_FOR_TEAM = ["GK","LB","LCB","RCB","RB","LCM","RCM","CAM","LW","ST","RW"];
 
 // ============================================
@@ -257,7 +294,9 @@ export function generateLeagueTeams(
   season: number,
   userTeamName: string,
   ownedPlayerNames: string[] = [],
-  leagueId: string = "premier_league"
+  leagueId: string = "premier_league",
+  relegatedTeams: string[] = [],
+  promotedTeams: string[] = []
 ): LeagueTeam[] {
   // A single season's database only has ~10 players per position, but we
   // need 19 unique players per position (one for each dummy team) to avoid
@@ -309,18 +348,33 @@ export function generateLeagueTeams(
   const positionCursor: Record<string, number> = {};
   for (const pos of POSITIONS_FOR_TEAM) positionCursor[pos] = 0;
 
-  // Get all club names for this league, then exclude the user's chosen club
-  const allLeagueNames =
-    leagueId === "bundesliga"    ? BUNDESLIGA_TEAM_NAMES :
-    leagueId === "la_liga"       ? LA_LIGA_TEAM_NAMES :
-    leagueId === "serie_a"       ? SERIE_A_TEAM_NAMES :
-    leagueId === "ligue_1"       ? LIGUE_1_TEAM_NAMES :
+  // Get base club names for this league
+  const baseLeagueNames =
+    leagueId === "bundesliga"        ? BUNDESLIGA_TEAM_NAMES :
+    leagueId === "la_liga"           ? LA_LIGA_TEAM_NAMES :
+    leagueId === "serie_a"           ? SERIE_A_TEAM_NAMES :
+    leagueId === "ligue_1"           ? LIGUE_1_TEAM_NAMES :
     leagueId === "saudi_league"      ? SAUDI_LEAGUE_TEAM_NAMES :
     leagueId === "portuguese_league" ? PORTUGUESE_LEAGUE_TEAM_NAMES :
     leagueId === "eredivisie"        ? EREDIVISIE_TEAM_NAMES :
-    leagueId === "super_lig"          ? SUPER_LIG_TEAM_NAMES :
+    leagueId === "super_lig"         ? SUPER_LIG_TEAM_NAMES :
+    leagueId === "championship"      ? CHAMPIONSHIP_TEAM_NAMES :
+    leagueId === "bundesliga2"       ? BUNDESLIGA2_TEAM_NAMES :
+    leagueId === "segunda"            ? SEGUNDA_TEAM_NAMES :
+    leagueId === "serie_b"            ? SERIE_B_TEAM_NAMES :
+    leagueId === "ligue_2"            ? LIGUE_2_TEAM_NAMES :
     DUMMY_TEAM_NAMES;
-  const dummyTeamNames = allLeagueNames.filter(name => name !== userTeamName);
+
+  // Apply promotion/relegation:
+  // - Remove promoted teams (they left this league going up)
+  // - Add relegated teams (they came down from the league above)
+  const adjustedNames = [
+    ...baseLeagueNames.filter(name => !promotedTeams.includes(name)),
+    ...relegatedTeams.filter(name => !baseLeagueNames.includes(name) && !promotedTeams.includes(name)),
+  ];
+
+  // Exclude user's club (they occupy one slot)
+  const dummyTeamNames = adjustedNames.filter(name => name !== userTeamName);
 
   // Build dummy teams (all clubs except user's chosen one)
   for (let i = 0; i < dummyTeamNames.length; i++) {
@@ -876,9 +930,11 @@ export function initializeLeagueSeason(
   season: number,
   userTeamName: string,
   ownedPlayerNames: string[] = [],
-  leagueId: string = "premier_league"
+  leagueId: string = "premier_league",
+  relegatedTeams: string[] = [],   // teams coming DOWN from tier above (added to this league)
+  promotedTeams: string[] = []     // teams going UP from this league (removed from this league)
 ): LeagueState {
-  const teams = generateLeagueTeams(allPlayers, season, userTeamName, ownedPlayerNames, leagueId);
+  const teams = generateLeagueTeams(allPlayers, season, userTeamName, ownedPlayerNames, leagueId, relegatedTeams, promotedTeams);
   const teamIds = teams.map(t => t.id);
   const fixtures = generateFixtures(teamIds);
 

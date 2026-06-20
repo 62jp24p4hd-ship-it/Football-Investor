@@ -19,6 +19,11 @@ const LEAGUE_INFO: Record<string, { name: string; flag: string; logo: string; co
   portuguese_league: { name: "Primeira Liga",    flag: "🇵🇹",        logo: "/images/league-portugal.png",   color: "#006600" },
   eredivisie:        { name: "Eredivisie",       flag: "🇳🇱",        logo: "/images/league-eredivisie.png", color: "#ff6600" },
   super_lig:         { name: "Süper Lig",        flag: "🇹🇷",        logo: "/images/league-superlig.png",   color: "#e30a17" },
+  championship:      { name: "Championship",    flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",       logo: "/images/league-championship.png", color: "#5c2d8a" },
+  bundesliga2:       { name: "Bundesliga 2",   flag: "🇩🇪",        logo: "/images/league-bundesliga2.png",  color: "#a00000" },
+  segunda:           { name: "Segunda División", flag: "🇪🇸",        logo: "/images/league-segunda.png",       color: "#c8a800" },
+  serie_b:           { name: "Serie B",           flag: "🇮🇹",        logo: "/images/league-serieb.png",        color: "#004a99" },
+  ligue_2:           { name: "Ligue 2",           flag: "🇫🇷",        logo: "/images/league-ligue2.png",         color: "#001e96" },
 };
 
 type Tab = "standings" | "scorers" | "assists";

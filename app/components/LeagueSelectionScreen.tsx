@@ -7,7 +7,7 @@ import { useState } from "react";
 // يظهر بعد Start Game في طور Club Owner
 // ============================================
 
-export type LeagueId = "premier_league" | "bundesliga" | "la_liga" | "serie_a" | "ligue_1" | "saudi_league" | "portuguese_league" | "eredivisie" | "super_lig";
+export type LeagueId = "premier_league" | "bundesliga" | "la_liga" | "serie_a" | "ligue_1" | "saudi_league" | "portuguese_league" | "eredivisie" | "super_lig" | "championship" | "bundesliga2" | "segunda" | "serie_b" | "ligue_2";
 
 export type LeagueInfo = {
   id: LeagueId;
@@ -19,6 +19,8 @@ export type LeagueInfo = {
   color: string;
   teams: string[];
   logo: string;
+  tier?: 1 | 2;
+  parentLeague?: string;
 };
 
 export const LEAGUES: LeagueInfo[] = [
@@ -39,6 +41,25 @@ export const LEAGUES: LeagueInfo[] = [
     ],
   },
   {
+    id: "championship",
+    name: "Championship",
+    country: "England",
+    flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    budget: 80,
+    available: true,
+    color: "#5c2d8a",
+    logo: "/images/league-championship.png",
+    tier: 2,
+    parentLeague: "premier_league",
+    teams: [
+      "Birmingham City","Blackburn Rovers","Bolton Wanderers","Bristol City","Burnley",
+      "Cardiff City","Charlton Athletic","Derby County","Lincoln City","Middlesbrough",
+      "Millwall","Norwich City","Portsmouth","Preston North End","Queens Park Rangers",
+      "Sheffield United","Southampton","Stoke City","Swansea City","Watford",
+      "West Bromwich Albion","West Ham United","Wolverhampton Wanderers","Wrexham",
+    ],
+  },
+  {
     id: "bundesliga",
     name: "Bundesliga",
     country: "Germany",
@@ -52,6 +73,24 @@ export const LEAGUES: LeagueInfo[] = [
       "Eintracht Frankfurt","TSG Hoffenheim","FC Heidenheim","Werder Bremen","SC Freiburg",
       "FC Augsburg","VfL Wolfsburg","Borussia Mönchengladbach","Mainz 05","VfL Bochum",
       "Union Berlin","FC St. Pauli","Holstein Kiel",
+    ],
+  },
+  {
+    id: "bundesliga2",
+    name: "Bundesliga 2",
+    country: "Germany",
+    flag: "🇩🇪",
+    budget: 70,
+    available: true,
+    color: "#a00000",
+    logo: "/images/league-bundesliga2.png",
+    tier: 2,
+    parentLeague: "bundesliga",
+    teams: [
+      "Hamburger SV","Schalke 04","Hertha BSC","FC Köln","Fortuna Düsseldorf",
+      "Hannover 96","SC Paderborn","Karlsruher SC","1. FC Nürnberg","1. FC Kaiserslautern",
+      "Greuther Fürth","Magdeburg","Eintracht Braunschweig","Elversberg","Darmstadt 98",
+      "Preußen Münster","SSV Ulm","Jahn Regensburg",
     ],
   },
   {
@@ -71,6 +110,25 @@ export const LEAGUES: LeagueInfo[] = [
     ],
   },
   {
+    id: "segunda",
+    name: "Segunda División",
+    country: "Spain",
+    flag: "🇪🇸",
+    budget: 75,
+    available: true,
+    color: "#c8a800",
+    logo: "/images/league-segunda.png",
+    tier: 2,
+    parentLeague: "la_liga",
+    teams: [
+      "Real Zaragoza","Sporting Gijón","Tenerife","Real Oviedo","Racing Santander",
+      "Levante","Eibar","Elche","Albacete","Burgos",
+      "Cartagena","Eldense","Huesca","Mirandés","Racing Ferrol",
+      "Castellón","Deportivo La Coruña","Málaga","Córdoba","Almería",
+      "Granada","Cádiz",
+    ],
+  },
+  {
     id: "serie_a",
     name: "Serie A",
     country: "Italy",
@@ -84,6 +142,24 @@ export const LEAGUES: LeagueInfo[] = [
       "Lazio","Atalanta","Fiorentina","Bologna","Torino",
       "Udinese","Genoa","Cagliari","Lecce","Hellas Verona",
       "Empoli","Monza","Como","Parma","Venezia",
+    ],
+  },
+  {
+    id: "serie_b",
+    name: "Serie B",
+    country: "Italy",
+    flag: "🇮🇹",
+    budget: 65,
+    available: true,
+    color: "#004a99",
+    logo: "/images/league-serieb.png",
+    tier: 2,
+    parentLeague: "serie_a",
+    teams: [
+      "Sassuolo","Salernitana","Frosinone","Palermo","Cremonese",
+      "Sampdoria","Brescia","Pisa","Catanzaro","Modena",
+      "Bari","Spezia","Cosenza","Südtirol","Reggiana",
+      "Cittadella","Cesena","Mantova","Juve Stabia","Carrarese",
     ],
   },
   {
@@ -166,6 +242,24 @@ export const LEAGUES: LeagueInfo[] = [
       "Auxerre","Nantes","Metz",
     ],
   },
+  {
+    id: "ligue_2",
+    name: "Ligue 2",
+    country: "France",
+    flag: "🇫🇷",
+    budget: 60,
+    available: true,
+    color: "#001e96",
+    logo: "/images/league-ligue2.png",
+    tier: 2,
+    parentLeague: "ligue_1",
+    teams: [
+      "FC Metz","FC Nantes","AS Saint-Étienne","Montpellier Hérault SC","Stade de Reims",
+      "Clermont Foot 63","FC Sochaux-Montbéliard","En Avant Guingamp","Dijon FCO","Grenoble Foot 38",
+      "US Boulogne CO","AS Nancy Lorraine","Red Star FC","Stade Lavallois Mayenne FC","Rodez AF",
+      "Pau FC","FC Annecy","USL Dunkerque",
+    ],
+  },
 ];
 
 type Props = {
@@ -246,26 +340,46 @@ export default function LeagueSelectionScreen({ onSelect, onBack }: Props) {
         {/* League Selection */}
         {!selectedLeague && (
           <div className="grid grid-cols-1 gap-3">
-            {LEAGUES.map(league => (
+            {LEAGUES.map((league, idx) => (
               <button
                 key={league.id}
                 onClick={() => handleLeagueClick(league)}
                 disabled={!league.available}
-                className="relative w-full p-5 text-left transition-all duration-200 overflow-hidden"
+                className="relative w-full p-5 text-left overflow-hidden"
                 style={{
                   background: league.available
-                    ? `linear-gradient(135deg, rgba(${hexToRgb(league.color)},0.15), rgba(${hexToRgb(league.color)},0.05))`
+                    ? `linear-gradient(135deg, rgba(${hexToRgb(league.color)},0.18), rgba(${hexToRgb(league.color)},0.06))`
                     : "rgba(17,24,39,0.4)",
                   border: league.available
-                    ? `1.5px solid rgba(${hexToRgb(league.color)},0.5)`
+                    ? `1.5px solid rgba(${hexToRgb(league.color)},0.6)`
                     : "1.5px solid rgba(255,255,255,0.06)",
                   borderRadius: "14px",
                   cursor: league.available ? "pointer" : "not-allowed",
-                  opacity: league.available ? 1 : 0.5,
-                  transform: "scale(1)",
+                  opacity: league.available ? 1 : 0.45,
+                  transform: "scale(1) translateY(0)",
+                  transition: "all 0.2s cubic-bezier(0.22,1,0.36,1)",
+                  boxShadow: league.available
+                    ? `0 2px 12px rgba(${hexToRgb(league.color)},0.1)`
+                    : "none",
+                  animation: league.available ? `leagueCardIn 0.4s cubic-bezier(0.22,1,0.36,1) ${idx * 0.05}s both` : "none",
                 }}
-                onMouseEnter={e => { if (league.available) (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.01)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                onMouseEnter={e => {
+                  if (!league.available) return;
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.transform = "scale(1.015) translateY(-2px)";
+                  el.style.boxShadow = `0 8px 28px rgba(${hexToRgb(league.color)},0.3)`;
+                  el.style.border = `1.5px solid rgba(${hexToRgb(league.color)},0.9)`;
+                  el.style.background = `linear-gradient(135deg, rgba(${hexToRgb(league.color)},0.28), rgba(${hexToRgb(league.color)},0.1))`;
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.transform = "scale(1) translateY(0)";
+                  el.style.boxShadow = league.available ? `0 2px 12px rgba(${hexToRgb(league.color)},0.1)` : "none";
+                  el.style.border = league.available ? `1.5px solid rgba(${hexToRgb(league.color)},0.6)` : "1.5px solid rgba(255,255,255,0.06)";
+                  el.style.background = league.available ? `linear-gradient(135deg, rgba(${hexToRgb(league.color)},0.18), rgba(${hexToRgb(league.color)},0.06))` : "rgba(17,24,39,0.4)";
+                }}
+                onMouseDown={e => { if (league.available) (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.98) translateY(0)"; }}
+                onMouseUp={e => { if (league.available) (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.015) translateY(-2px)"; }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

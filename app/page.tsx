@@ -151,28 +151,25 @@ export default function Home() {
   const [leagueState, setLeagueState] = useState<LeagueState | null>(null);
   const [otherLeagues, setOtherLeagues] = useState<Record<string, LeagueState>>({});
   const [showOtherLeagues, setShowOtherLeagues] = useState(false);
+  const [pendingRelegated, setPendingRelegated] = useState<string[]>([]);
+  const [pendingPromoted, setPendingPromoted] = useState<string[]>([]);
   const leagueTotalRounds = leagueState?.totalRounds ?? (selectedLeagueId === "bundesliga" || selectedLeagueId === "ligue_1" ? 34 : 38);
   const leagueNameMap: Record<string, string> = {
-    premier_league: "Premier League",
-    bundesliga: "Bundesliga",
-    la_liga: "La Liga",
-    serie_a: "Serie A",
-    ligue_1: "Ligue 1",
-    saudi_league: "Saudi Pro League",
-    portuguese_league: "Primeira Liga",
-    eredivisie: "Eredivisie",
-    super_lig: "Süper Lig",
+    premier_league: "Premier League", bundesliga: "Bundesliga", la_liga: "La Liga",
+    serie_a: "Serie A", ligue_1: "Ligue 1", saudi_league: "Saudi Pro League",
+    portuguese_league: "Primeira Liga", eredivisie: "Eredivisie", super_lig: "Süper Lig",
+    championship: "Championship",
+    bundesliga2: "Bundesliga 2",
+    segunda: "Segunda División",
+    serie_b: "Serie B",
+    ligue_2: "Ligue 2",
   };
   const leagueLogoMap: Record<string, string> = {
-    premier_league: "/images/league-premier.png",
-    bundesliga: "/images/league-bundesliga.png",
-    la_liga: "/images/league-laliga.png",
-    serie_a: "/images/league-seriea.png",
-    ligue_1: "/images/league-ligue1.png",
-    saudi_league: "/images/league-saudi.png",
-    portuguese_league: "/images/league-portugal.png",
-    eredivisie: "/images/league-eredivisie.png",
-    super_lig: "/images/league-superlig.png",
+    premier_league: "/images/league-premier.png", bundesliga: "/images/league-bundesliga.png",
+    la_liga: "/images/league-laliga.png", serie_a: "/images/league-seriea.png",
+    ligue_1: "/images/league-ligue1.png", saudi_league: "/images/league-saudi.png",
+    portuguese_league: "/images/league-portugal.png", eredivisie: "/images/league-eredivisie.png",
+    super_lig: "/images/league-superlig.png", championship: "/images/league-championship.png",
   };
   const [leagueEnabled, setLeagueEnabled] = useState(false); // toggled true once user starts a league season
   const [matchSummary, setMatchSummary] = useState<{
@@ -344,36 +341,62 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [started, mode, konamiUsed]);
 
-  // ── Enter / Space Shortcut ───────────────────
-  // Press 1: Next Game, Press 2: Start Game (MatchPreview), Press 3: Close modal
+  // ── Enter / Space Shortcut ──────────────────
   useEffect(() => {
     if (!started || mode !== "single" || singlePlayerStyle !== "clubOwner") return;
-
     function handleShortcut(e: KeyboardEvent) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      // Don't fire if user is typing in an input
       if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "TEXTAREA") return;
       e.preventDefault();
-
-      // If match preview modal is open → Start Game
-      if (matchPreview) {
-        confirmPlayLeagueGame();
-        return;
-      }
-
-      // If match summary modal is open → close it
-      if (matchSummary) {
-        setMatchSummary(null);
-        return;
-      }
-
-      // Otherwise → Next Game / Start Season / Next Season
+      if (matchPreview) { confirmPlayLeagueGame(); return; }
+      if (matchSummary) { setMatchSummary(null); return; }
       handleMainSeasonButtonClick();
     }
-
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [started, mode, singlePlayerStyle, matchPreview, matchSummary, leagueState, leagueEnabled]);
+
+  // ── Enter+Space held together = Skip entire league season ──
+  useEffect(() => {
+    if (!started || mode !== "single" || singlePlayerStyle !== "clubOwner") return;
+    const keysDown = new Set<string>();
+    function handleSeasonSkipDown(e: KeyboardEvent) {
+      keysDown.add(e.key);
+      if (!keysDown.has("Enter") || !keysDown.has(" ")) return;
+      e.preventDefault();
+      if (!leagueState || leagueState.seasonPhase === "finished") return;
+      // Simulate all remaining rounds automatically
+      let currentLeague = leagueState;
+      let currentPlayers = gamePlayers;
+      let currentOtherLeagues = { ...otherLeagues };
+      const totalRounds = currentLeague.totalRounds;
+      while (currentLeague.currentRound < totalRounds && currentLeague.seasonPhase !== "finished") {
+        const result = playRound(currentLeague, currentPlayers, 0, season);
+        currentLeague = result.updatedLeague;
+        currentPlayers = result.updatedGamePlayers;
+        // Simulate other leagues too
+        const updatedOthers: Record<string, LeagueState> = {};
+        for (const [lid, ol] of Object.entries(currentOtherLeagues)) {
+          if (ol.seasonPhase === "finished") { updatedOthers[lid] = ol; continue; }
+          const dummyUser = ol.teams.find(t => t.isUser)?.name ?? "Team A";
+          const r = playRound(ol, [{ name: dummyUser, budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
+          updatedOthers[lid] = r.updatedLeague;
+        }
+        currentOtherLeagues = updatedOthers;
+      }
+      setLeagueState(currentLeague);
+      setGamePlayers(currentPlayers);
+      setOtherLeagues(currentOtherLeagues);
+      notify("⏩ Season skipped to end!");
+    }
+    function handleSeasonSkipUp(e: KeyboardEvent) { keysDown.delete(e.key); }
+    window.addEventListener("keydown", handleSeasonSkipDown);
+    window.addEventListener("keyup", handleSeasonSkipUp);
+    return () => {
+      window.removeEventListener("keydown", handleSeasonSkipDown);
+      window.removeEventListener("keyup", handleSeasonSkipUp);
+    };
+  }, [started, mode, singlePlayerStyle, leagueState, gamePlayers, otherLeagues, season]);
 
   // ============================================
   // HELPERS
@@ -1093,28 +1116,66 @@ export default function Home() {
 
     const userTeamName = gamePlayers[0]?.name || "Your Team";
     const ownedPlayerNames = (gamePlayers[0]?.owned ?? []).map(o => o.player.name);
-    const newLeague = initializeLeagueSeason(basePlayers, season, userTeamName, ownedPlayerNames, selectedLeagueId);
-    // Mark as actively started (round 0 -> about to play round 1)
+
+    // Read saved relegated/promoted before clearing (avoids async state issue)
+    const savedRelegated: string[] = (window as any).__relegatedFromTier1 ?? pendingRelegated;
+    const savedPromoted: string[]  = (window as any).__promotedFromTier2  ?? pendingPromoted;
+    const TIER1_OF_MAP: Record<string, string> = { championship: "premier_league", bundesliga2: "bundesliga", segunda: "la_liga", serie_b: "serie_a", ligue_2: "ligue_1" };
+    const isTier1 = !TIER1_OF_MAP[selectedLeagueId];
+    // Exclude user's own team from promoted list (they take a slot via userTeamName, not via promotedTeams)
+    const savedPromotedWithoutUser2 = savedPromoted.filter(n => n !== userTeamName);
+    const teamsJoining = isTier1 ? savedPromotedWithoutUser2 : savedRelegated;
+    const teamsLeaving = isTier1 ? savedRelegated : savedPromotedWithoutUser2;
+    (window as any).__relegatedFromTier1 = [];
+    (window as any).__promotedFromTier2  = [];
+    setPendingRelegated([]);
+    setPendingPromoted([]);
+
+    const newLeague = initializeLeagueSeason(
+      basePlayers, season, userTeamName, ownedPlayerNames,
+      selectedLeagueId, teamsJoining, teamsLeaving
+    );
     setLeagueState({ ...newLeague, seasonPhase: "playing" });
     setLeagueEnabled(true);
 
-    // Initialize other leagues (all except user's current league)
-    const ALL_LEAGUE_IDS = ["premier_league", "bundesliga", "la_liga", "serie_a", "ligue_1", "saudi_league", "portuguese_league", "eredivisie", "super_lig"];
-    const newOtherLeagues: Record<string, LeagueState> = {};
-    // Use the first team in each league as the "dummy user" so it doesn't appear as an extra club
+    // Initialize other leagues
+    const ALL_LEAGUE_IDS = ["premier_league","bundesliga","la_liga","serie_a","ligue_1",
+      "saudi_league","portuguese_league","eredivisie","super_lig","championship","bundesliga2","segunda","serie_b","ligue_2"];
     const LEAGUE_FIRST_TEAM: Record<string, string> = {
-      premier_league: "Arsenal", bundesliga: "Bayer Leverkusen", la_liga: "Barcelona",
-      serie_a: "AC Milan", ligue_1: "Paris Saint-Germain", saudi_league: "Al Nassr",
-      portuguese_league: "Sporting CP", eredivisie: "Ajax", super_lig: "Galatasaray",
+      premier_league:"Arsenal", bundesliga:"Bayer Leverkusen", la_liga:"Barcelona",
+      serie_a:"AC Milan", ligue_1:"Paris Saint-Germain", saudi_league:"Al Nassr",
+      portuguese_league:"Sporting CP", eredivisie:"Ajax", super_lig:"Galatasaray",
+      championship:"Birmingham City",
+      bundesliga2:"Hamburger SV",
+      segunda:"Real Zaragoza",
+      serie_b:"Sassuolo",
+      ligue_2:"FC Metz",
     };
+    const TIER2_OF_MAP: Record<string, string> = { premier_league: "championship", bundesliga: "bundesliga2", la_liga: "segunda", serie_a: "serie_b", ligue_1: "ligue_2" };
+    const newOtherLeagues: Record<string, LeagueState> = {};
+    // Exclude user's team from promoted list when passing to other leagues
+    // (user's team is already handled by userTeamName exclusion in generateLeagueTeams)
+    const savedPromotedWithoutUser = savedPromoted.filter(n => n !== userTeamName);
     for (const lid of ALL_LEAGUE_IDS) {
       if (lid === selectedLeagueId) continue;
-      const dummyName = LEAGUE_FIRST_TEAM[lid] ?? "Team A";
-      const otherLeague = initializeLeagueSeason(basePlayers, season, dummyName, [], lid);
+      const dummyName = LEAGUE_FIRST_TEAM[lid];
+      if (!dummyName) continue;
+      let lidJoining: string[] = [];
+      let lidLeaving: string[]  = [];
+      if (TIER2_OF_MAP[selectedLeagueId] === lid) {
+        // User was in PL → Championship gets relegated PL teams + loses promoted Championship teams
+        // Also include userTeamName in lidLeaving since it might still be in Championship base list
+        lidJoining = savedRelegated;
+        lidLeaving = [...savedPromotedWithoutUser, userTeamName];
+      } else if (TIER1_OF_MAP[selectedLeagueId] === lid) {
+        // User was in Championship → PL gets promoted Championship teams + loses relegated PL teams
+        lidJoining = savedPromotedWithoutUser;
+        lidLeaving = [...savedRelegated, userTeamName];
+      }
+      const otherLeague = initializeLeagueSeason(basePlayers, season, dummyName, [], lid, lidJoining, lidLeaving);
       newOtherLeagues[lid] = { ...otherLeague, seasonPhase: "playing" };
     }
     setOtherLeagues(newOtherLeagues);
-
     notify("🏆 Season has begun! Press Next Game to play Round 1.");
   }
 
@@ -1139,15 +1200,13 @@ export default function Home() {
     let postRoundPlayers = result.updatedGamePlayers;
     if (result.newsItems.length > 0) addNewsItems(result.newsItems);
 
-    // Simulate the same round in all other leagues
+    // Simulate other leagues
     if (Object.keys(otherLeagues).length > 0) {
       const updatedOtherLeagues: Record<string, LeagueState> = {};
       for (const [lid, otherLeague] of Object.entries(otherLeagues)) {
-        if (otherLeague.seasonPhase === "finished") {
-          updatedOtherLeagues[lid] = otherLeague;
-          continue;
-        }
-        const otherResult = playRound(otherLeague, [{ name: otherLeague.teams.find(t => t.isUser)?.name ?? "Team A", budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
+        if (otherLeague.seasonPhase === "finished") { updatedOtherLeagues[lid] = otherLeague; continue; }
+        const dummyUser = otherLeague.teams.find(t => t.isUser)?.name ?? "Team A";
+        const otherResult = playRound(otherLeague, [{ name: dummyUser, budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
         updatedOtherLeagues[lid] = otherResult.updatedLeague;
       }
       setOtherLeagues(updatedOtherLeagues);
@@ -1259,10 +1318,55 @@ export default function Home() {
     }
 
     if (result.updatedLeague.seasonPhase === "finished") {
+      // Promotion / Relegation
+      const TIER2_TO_TIER1: Record<string, string> = { championship: "premier_league", bundesliga2: "bundesliga", segunda: "la_liga", serie_b: "serie_a", ligue_2: "ligue_1" };
+      const TIER1_TO_TIER2: Record<string, string> = { premier_league: "championship", bundesliga: "bundesliga2", la_liga: "segunda", serie_a: "serie_b", ligue_1: "ligue_2" };
+      const finalStandings = result.updatedLeague.standings;
+      const totalClubs = finalStandings.length;
+      const userPos = finalStandings.findIndex(r => r.isUser) + 1;
+
+      // Get relegated/promoted from current league standings + other leagues
+      let relegatedFromTier1: string[] = [];
+      let promotedFromTier2: string[] = [];
+      if (TIER1_TO_TIER2[selectedLeagueId]) {
+        relegatedFromTier1 = finalStandings.slice(-3).map(r => r.teamName);
+        const tier2State = otherLeagues[TIER1_TO_TIER2[selectedLeagueId]];
+        promotedFromTier2 = tier2State ? tier2State.standings.slice(0, 3).map(r => r.teamName) : [];
+      } else if (TIER2_TO_TIER1[selectedLeagueId]) {
+        promotedFromTier2 = finalStandings.slice(0, 3).map(r => r.teamName);
+        const tier1State = otherLeagues[TIER2_TO_TIER1[selectedLeagueId]];
+        relegatedFromTier1 = tier1State ? tier1State.standings.slice(-3).map(r => r.teamName) : [];
+      }
+      (window as any).__relegatedFromTier1 = relegatedFromTier1;
+      (window as any).__promotedFromTier2  = promotedFromTier2;
+      setPendingRelegated(relegatedFromTier1);
+      setPendingPromoted(promotedFromTier2);
+
+      const LEAGUE_BUDGETS: Record<string, number> = {
+        premier_league:150, bundesliga:130, la_liga:140, serie_a:120, ligue_1:110,
+        saudi_league:200, portuguese_league:100, eredivisie:90, super_lig:95, championship:80,
+      };
+
+      if (TIER2_TO_TIER1[selectedLeagueId] && userPos <= 3) {
+        const promotedTo = TIER2_TO_TIER1[selectedLeagueId] as LeagueId;
+        setTimeout(() => {
+          notify(`🎉 PROMOTED! You've been promoted to ${leagueNameMap[promotedTo]}!`);
+          setSelectedLeagueId(promotedTo);
+          setGamePlayers(prev => prev.map((gp, i) => i === 0 ? { ...gp, budget: Math.max(gp.budget, LEAGUE_BUDGETS[promotedTo] ?? 150) } : gp));
+        }, 800);
+      } else if (TIER1_TO_TIER2[selectedLeagueId] && userPos > totalClubs - 3) {
+        const relegatedTo = TIER1_TO_TIER2[selectedLeagueId] as LeagueId;
+        setTimeout(() => {
+          notify(`😢 RELEGATED! You've been relegated to ${leagueNameMap[relegatedTo]}.`);
+          setSelectedLeagueId(relegatedTo);
+          setGamePlayers(prev => prev.map((gp, i) => i === 0 ? { ...gp, budget: LEAGUE_BUDGETS[relegatedTo] ?? 80 } : gp));
+        }, 800);
+      }
+
       if (result.prizeMoneyAwarded > 0) {
         notify(`🏁 Season complete! You earned €${result.prizeMoneyAwarded}M in prize money. Press Next Season to continue.`);
       } else {
-        notify("🏁 Premier League season complete! Press Next Season to continue.");
+        notify(`🏁 ${leagueNameMap[selectedLeagueId] ?? "League"} season complete! Press Next Season to continue.`);
       }
 
       const championRow = result.updatedLeague.standings[0];
@@ -1360,23 +1464,21 @@ export default function Home() {
     const newOwned: OwnedPlayer[] = [];
     const goats = getSecretPlayers(); // one legendary GOAT per position, spread across different eras/seasons
 
-    // Generate a random GK pool in case no GOAT GK exists
+    // Random GK pool for fallback if no GOAT GK
     const randomGkPool = generateSeasonPlayerPool(season).filter(p => p.position === "GK");
 
     for (const pos of ALL_POSITIONS) {
       if (alreadyOwnedSlots.has(pos)) continue; // keep any player already in that slot
 
-      let chosen = goats.find(p => p.position === pos);
+      let chosen: Player | undefined = goats.find(p => p.position === pos);
 
-      // If no GOAT for this position (e.g. GK), use a random generated player
-      if (!chosen) {
-        if (pos === "GK" && randomGkPool.length > 0) {
-          chosen = randomGkPool[Math.floor(Math.random() * randomGkPool.length)];
-        } else {
-          continue;
-        }
+      // Fallback: use random GK if no GOAT GK exists
+      if (!chosen && pos === "GK" && randomGkPool.length > 0) {
+        chosen = randomGkPool[Math.floor(Math.random() * randomGkPool.length)];
       }
+      if (!chosen) continue;
 
+      const goatSeason = chosen.availableSeason;
       const price = calculateLeaguePlayerPrice(chosen.rating ?? 95);
       const salary = getRecommendedSalary(price);
 
@@ -1385,7 +1487,6 @@ export default function Home() {
           ...chosen,
           statsBySeason: {
             ...(chosen.statsBySeason ?? {}),
-            // Reset stats to zero so tracking starts fresh from this season
             [season]: {
               season, games: 0, goals: 0, assists: 0, cleanSheets: 0,
               yellowCards: 0, redCards: 0, rating: chosen.rating ?? 95, value: price,
@@ -1786,6 +1887,7 @@ export default function Home() {
                     totalRounds={leagueState?.totalRounds ?? TOTAL_ROUNDS}
                     leagueName={leagueNameMap[selectedLeagueId]}
                     leagueLogo={leagueLogoMap[selectedLeagueId]}
+                    tier={["championship","bundesliga2","segunda","serie_b","ligue_2"].includes(selectedLeagueId) ? 2 : 1}
                   />
                   <button
                     onClick={() => setShowLeagueStats(true)}
