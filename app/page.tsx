@@ -1101,9 +1101,16 @@ export default function Home() {
     // Initialize other leagues (all except user's current league)
     const ALL_LEAGUE_IDS = ["premier_league", "bundesliga", "la_liga", "serie_a", "ligue_1", "saudi_league", "portuguese_league", "eredivisie", "super_lig"];
     const newOtherLeagues: Record<string, LeagueState> = {};
+    // Use the first team in each league as the "dummy user" so it doesn't appear as an extra club
+    const LEAGUE_FIRST_TEAM: Record<string, string> = {
+      premier_league: "Arsenal", bundesliga: "Bayer Leverkusen", la_liga: "Barcelona",
+      serie_a: "AC Milan", ligue_1: "Paris Saint-Germain", saudi_league: "Al Nassr",
+      portuguese_league: "Sporting CP", eredivisie: "Ajax", super_lig: "Galatasaray",
+    };
     for (const lid of ALL_LEAGUE_IDS) {
       if (lid === selectedLeagueId) continue;
-      const otherLeague = initializeLeagueSeason(basePlayers, season, `AI_${lid}`, [], lid);
+      const dummyName = LEAGUE_FIRST_TEAM[lid] ?? "Team A";
+      const otherLeague = initializeLeagueSeason(basePlayers, season, dummyName, [], lid);
       newOtherLeagues[lid] = { ...otherLeague, seasonPhase: "playing" };
     }
     setOtherLeagues(newOtherLeagues);
@@ -1140,7 +1147,7 @@ export default function Home() {
           updatedOtherLeagues[lid] = otherLeague;
           continue;
         }
-        const otherResult = playRound(otherLeague, [{ name: `AI_${lid}`, budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
+        const otherResult = playRound(otherLeague, [{ name: otherLeague.teams.find(t => t.isUser)?.name ?? "Team A", budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
         updatedOtherLeagues[lid] = otherResult.updatedLeague;
       }
       setOtherLeagues(updatedOtherLeagues);
