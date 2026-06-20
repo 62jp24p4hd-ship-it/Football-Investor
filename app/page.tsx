@@ -1099,7 +1099,7 @@ export default function Home() {
     setLeagueEnabled(true);
 
     // Initialize other leagues (all except user's current league)
-    const ALL_LEAGUE_IDS = ["premier_league", "bundesliga", "la_liga", "serie_a", "ligue_1"];
+    const ALL_LEAGUE_IDS = ["premier_league", "bundesliga", "la_liga", "serie_a", "ligue_1", "saudi_league", "portuguese_league", "eredivisie", "super_lig"];
     const newOtherLeagues: Record<string, LeagueState> = {};
     for (const lid of ALL_LEAGUE_IDS) {
       if (lid === selectedLeagueId) continue;
