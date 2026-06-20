@@ -58,6 +58,7 @@ import EndGameModal from "./components/EndGameModal";
 import DeveloperPanel from "./components/DeveloperPanel";
 import HowToPlayModal from "./components/HowToPlayModal";
 import LeagueStandings from "./components/LeagueStandings";
+import OtherLeaguesModal from "./components/OtherLeaguesModal";
 import MatchSummaryModal from "./components/MatchSummaryModal";
 import MatchPreviewModal from "./components/MatchPreviewModal";
 import LeagueStatsModal from "./components/LeagueStatsModal";
@@ -148,7 +149,31 @@ export default function Home() {
 
   // ── 18-Team Domestic League (Single Mode Beta) ──
   const [leagueState, setLeagueState] = useState<LeagueState | null>(null);
+  const [otherLeagues, setOtherLeagues] = useState<Record<string, LeagueState>>({});
+  const [showOtherLeagues, setShowOtherLeagues] = useState(false);
   const leagueTotalRounds = leagueState?.totalRounds ?? (selectedLeagueId === "bundesliga" || selectedLeagueId === "ligue_1" ? 34 : 38);
+  const leagueNameMap: Record<string, string> = {
+    premier_league: "Premier League",
+    bundesliga: "Bundesliga",
+    la_liga: "La Liga",
+    serie_a: "Serie A",
+    ligue_1: "Ligue 1",
+    saudi_league: "Saudi Pro League",
+    portuguese_league: "Primeira Liga",
+    eredivisie: "Eredivisie",
+    super_lig: "Süper Lig",
+  };
+  const leagueLogoMap: Record<string, string> = {
+    premier_league: "/images/league-premier.png",
+    bundesliga: "/images/league-bundesliga.png",
+    la_liga: "/images/league-laliga.png",
+    serie_a: "/images/league-seriea.png",
+    ligue_1: "/images/league-ligue1.png",
+    saudi_league: "/images/league-saudi.png",
+    portuguese_league: "/images/league-portugal.png",
+    eredivisie: "/images/league-eredivisie.png",
+    super_lig: "/images/league-superlig.png",
+  };
   const [leagueEnabled, setLeagueEnabled] = useState(false); // toggled true once user starts a league season
   const [matchSummary, setMatchSummary] = useState<{
     round: number;
@@ -318,6 +343,37 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [started, mode, konamiUsed]);
+
+  // ── Enter / Space Shortcut ───────────────────
+  // Press 1: Next Game, Press 2: Start Game (MatchPreview), Press 3: Close modal
+  useEffect(() => {
+    if (!started || mode !== "single" || singlePlayerStyle !== "clubOwner") return;
+
+    function handleShortcut(e: KeyboardEvent) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      // Don't fire if user is typing in an input
+      if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "TEXTAREA") return;
+      e.preventDefault();
+
+      // If match preview modal is open → Start Game
+      if (matchPreview) {
+        confirmPlayLeagueGame();
+        return;
+      }
+
+      // If match summary modal is open → close it
+      if (matchSummary) {
+        setMatchSummary(null);
+        return;
+      }
+
+      // Otherwise → Next Game / Start Season / Next Season
+      handleMainSeasonButtonClick();
+    }
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [started, mode, singlePlayerStyle, matchPreview, matchSummary, leagueState, leagueEnabled]);
 
   // ============================================
   // HELPERS
@@ -1041,7 +1097,18 @@ export default function Home() {
     // Mark as actively started (round 0 -> about to play round 1)
     setLeagueState({ ...newLeague, seasonPhase: "playing" });
     setLeagueEnabled(true);
-    notify("🏆 Premier League season has begun! Press Next Game to play Round 1.");
+
+    // Initialize other leagues (all except user's current league)
+    const ALL_LEAGUE_IDS = ["premier_league", "bundesliga", "la_liga", "serie_a", "ligue_1"];
+    const newOtherLeagues: Record<string, LeagueState> = {};
+    for (const lid of ALL_LEAGUE_IDS) {
+      if (lid === selectedLeagueId) continue;
+      const otherLeague = initializeLeagueSeason(basePlayers, season, `AI_${lid}`, [], lid);
+      newOtherLeagues[lid] = { ...otherLeague, seasonPhase: "playing" };
+    }
+    setOtherLeagues(newOtherLeagues);
+
+    notify("🏆 Season has begun! Press Next Game to play Round 1.");
   }
 
   function handlePlayLeagueGame() {
@@ -1064,6 +1131,20 @@ export default function Home() {
     setLeagueState(result.updatedLeague);
     let postRoundPlayers = result.updatedGamePlayers;
     if (result.newsItems.length > 0) addNewsItems(result.newsItems);
+
+    // Simulate the same round in all other leagues
+    if (Object.keys(otherLeagues).length > 0) {
+      const updatedOtherLeagues: Record<string, LeagueState> = {};
+      for (const [lid, otherLeague] of Object.entries(otherLeagues)) {
+        if (otherLeague.seasonPhase === "finished") {
+          updatedOtherLeagues[lid] = otherLeague;
+          continue;
+        }
+        const otherResult = playRound(otherLeague, [{ name: `AI_${lid}`, budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
+        updatedOtherLeagues[lid] = otherResult.updatedLeague;
+      }
+      setOtherLeagues(updatedOtherLeagues);
+    }
 
     // Random season events can still fire during league rounds, but less often than
     // the normal investor mode between-season events (8% chance per round here).
@@ -1687,6 +1768,8 @@ export default function Home() {
                     standings={leagueState.standings}
                     currentRound={leagueState.currentRound}
                     totalRounds={leagueState?.totalRounds ?? TOTAL_ROUNDS}
+                    leagueName={leagueNameMap[selectedLeagueId]}
+                    leagueLogo={leagueLogoMap[selectedLeagueId]}
                   />
                   <button
                     onClick={() => setShowLeagueStats(true)}
@@ -1694,6 +1777,14 @@ export default function Home() {
                   >
                     ⚽ Top Scorers · 🅰️ Assists · 🧤 Clean Sheets
                   </button>
+                  {Object.keys(otherLeagues).length > 0 && (
+                    <button
+                      onClick={() => setShowOtherLeagues(true)}
+                      className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                    >
+                      🌍 Other Leagues
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -2095,6 +2186,12 @@ export default function Home() {
         />
       )}
 
+      {showOtherLeagues && Object.keys(otherLeagues).length > 0 && (
+        <OtherLeaguesModal
+          otherLeagues={otherLeagues}
+          onClose={() => setShowOtherLeagues(false)}
+        />
+      )}
     </main>
   );
 }

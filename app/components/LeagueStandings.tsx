@@ -7,12 +7,16 @@ type LeagueStandingsProps = {
   standings: StandingRow[];
   currentRound: number;
   totalRounds: number;
+  leagueName?: string;
+  leagueLogo?: string;
 };
 
 export default function LeagueStandings({
   standings,
   currentRound,
   totalRounds,
+  leagueName = "Premier League",
+  leagueLogo,
 }: LeagueStandingsProps) {
   if (!standings || standings.length === 0) return null;
 
@@ -21,7 +25,17 @@ export default function LeagueStandings({
   return (
     <div className="bg-slate-900/60 border border-slate-700 rounded-xl p-3 mt-3">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-bold text-slate-200">🏆 Premier League</h3>
+        <div className="flex items-center gap-2">
+          {leagueLogo && (
+            <img
+              src={leagueLogo}
+              alt={leagueName}
+              style={{ width: "22px", height: "22px", objectFit: "contain" }}
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          )}
+          <h3 className="text-sm font-bold text-slate-200">🏆 {leagueName}</h3>
+        </div>
         <span className="text-xs text-slate-400">
           Round {currentRound}/{totalRounds}
         </span>
@@ -45,9 +59,8 @@ export default function LeagueStandings({
             {standings.map((row, idx) => {
               const gd = row.goalsFor - row.goalsAgainst;
               const position = idx + 1;
-              const isRelegationZone = position > totalTeams - 3; // last 3 positions
+              const isRelegationZone = position > totalTeams - 3;
 
-              // Full-row background color based on position
               let rowBg = "";
               let rowText = "text-slate-300";
               let isGoldAnimated = false;

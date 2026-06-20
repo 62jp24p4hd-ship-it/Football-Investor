@@ -218,6 +218,34 @@ const LIGUE_1_TEAM_NAMES = [
   "Auxerre","Nantes","Metz",
 ];
 
+const SAUDI_LEAGUE_TEAM_NAMES = [
+  "Al Nassr","Al Hilal","Al Ahli","Al Ittihad","Al Shabab",
+  "Al Qadsiah","Al Taawoun","Al Ettifaq","Al Fateh","Al Fayha",
+  "Al Khaleej","Al Riyadh","Damac FC","Al Okhdood","Al Kholood",
+  "Al Hazem","NEOM SC","Al Najma",
+];
+
+const PORTUGUESE_LEAGUE_TEAM_NAMES = [
+  "Sporting CP","FC Porto","SL Benfica","SC Braga","Vitória de Guimarães",
+  "Famalicão","Moreirense","Arouca","Estoril Praia","Gil Vicente",
+  "Rio Ave","Santa Clara","Nacional","Casa Pia","Estrela da Amadora",
+  "Alverca","Tondela","AVS Futebol SAD",
+];
+
+const EREDIVISIE_TEAM_NAMES = [
+  "Ajax","PSV Eindhoven","Feyenoord","AZ Alkmaar","FC Twente",
+  "FC Utrecht","Sparta Rotterdam","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard",
+  "SC Heerenveen","FC Groningen","PEC Zwolle","Almere City","Heracles Almelo",
+  "RKC Waalwijk","Willem II","NAC Breda",
+];
+
+const SUPER_LIG_TEAM_NAMES = [
+  "Galatasaray","Fenerbahçe","Beşiktaş","Trabzonspor","İstanbul Başakşehir",
+  "Göztepe","Samsunspor","Çaykur Rizespor","Konyaspor","Alanyaspor",
+  "Kocaelispor","Gaziantep FK","Kasımpaşa","Gençlerbirliği","Eyüpspor",
+  "Amedspor","Çorum FK","Erzurumspor FK",
+];
+
 const POSITIONS_FOR_TEAM = ["GK","LB","LCB","RCB","RB","LCM","RCM","CAM","LW","ST","RW"];
 
 // ============================================
@@ -283,10 +311,14 @@ export function generateLeagueTeams(
 
   // Get all club names for this league, then exclude the user's chosen club
   const allLeagueNames =
-    leagueId === "bundesliga" ? BUNDESLIGA_TEAM_NAMES :
-    leagueId === "la_liga"   ? LA_LIGA_TEAM_NAMES :
-    leagueId === "serie_a"   ? SERIE_A_TEAM_NAMES :
-    leagueId === "ligue_1"   ? LIGUE_1_TEAM_NAMES :
+    leagueId === "bundesliga"    ? BUNDESLIGA_TEAM_NAMES :
+    leagueId === "la_liga"       ? LA_LIGA_TEAM_NAMES :
+    leagueId === "serie_a"       ? SERIE_A_TEAM_NAMES :
+    leagueId === "ligue_1"       ? LIGUE_1_TEAM_NAMES :
+    leagueId === "saudi_league"      ? SAUDI_LEAGUE_TEAM_NAMES :
+    leagueId === "portuguese_league" ? PORTUGUESE_LEAGUE_TEAM_NAMES :
+    leagueId === "eredivisie"        ? EREDIVISIE_TEAM_NAMES :
+    leagueId === "super_lig"          ? SUPER_LIG_TEAM_NAMES :
     DUMMY_TEAM_NAMES;
   const dummyTeamNames = allLeagueNames.filter(name => name !== userTeamName);
 

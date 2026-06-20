@@ -7,7 +7,7 @@ import { useState } from "react";
 // يظهر بعد Start Game في طور Club Owner
 // ============================================
 
-export type LeagueId = "premier_league" | "bundesliga" | "la_liga" | "serie_a" | "ligue_1";
+export type LeagueId = "premier_league" | "bundesliga" | "la_liga" | "serie_a" | "ligue_1" | "saudi_league" | "portuguese_league" | "eredivisie" | "super_lig";
 
 export type LeagueInfo = {
   id: LeagueId;
@@ -18,6 +18,7 @@ export type LeagueInfo = {
   available: boolean;
   color: string;
   teams: string[];
+  logo: string;
 };
 
 export const LEAGUES: LeagueInfo[] = [
@@ -29,6 +30,7 @@ export const LEAGUES: LeagueInfo[] = [
     budget: 150,
     available: true,
     color: "#3d195b",
+    logo: "/images/league-premier.png",
     teams: [
       "Arsenal","Aston Villa","Bournemouth","Brentford","Brighton",
       "Chelsea","Coventry City","Crystal Palace","Everton","Fulham",
@@ -44,6 +46,7 @@ export const LEAGUES: LeagueInfo[] = [
     budget: 130,
     available: true,
     color: "#d00000",
+    logo: "/images/league-bundesliga.png",
     teams: [
       "Bayer Leverkusen","Bayern Munich","Borussia Dortmund","RB Leipzig","VfB Stuttgart",
       "Eintracht Frankfurt","TSG Hoffenheim","FC Heidenheim","Werder Bremen","SC Freiburg",
@@ -59,6 +62,7 @@ export const LEAGUES: LeagueInfo[] = [
     budget: 140,
     available: true,
     color: "#ee8700",
+    logo: "/images/league-laliga.png",
     teams: [
       "Barcelona","Real Madrid","Villarreal","Atlético Madrid","Real Betis",
       "Celta Vigo","Getafe","Rayo Vallecano","Valencia","Real Sociedad",
@@ -74,11 +78,76 @@ export const LEAGUES: LeagueInfo[] = [
     budget: 120,
     available: true,
     color: "#0066cc",
+    logo: "/images/league-seriea.png",
     teams: [
       "AC Milan","Inter Milan","Juventus","Napoli","AS Roma",
       "Lazio","Atalanta","Fiorentina","Bologna","Torino",
       "Udinese","Genoa","Cagliari","Lecce","Hellas Verona",
       "Empoli","Monza","Como","Parma","Venezia",
+    ],
+  },
+  {
+    id: "saudi_league",
+    name: "Saudi Pro League",
+    country: "Saudi Arabia",
+    flag: "🇸🇦",
+    budget: 200,
+    available: true,
+    color: "#006c35",
+    logo: "/images/league-saudi.png",
+    teams: [
+      "Al Nassr","Al Hilal","Al Ahli","Al Ittihad","Al Shabab",
+      "Al Qadsiah","Al Taawoun","Al Ettifaq","Al Fateh","Al Fayha",
+      "Al Khaleej","Al Riyadh","Damac FC","Al Okhdood","Al Kholood",
+      "Al Hazem","NEOM SC","Al Najma",
+    ],
+  },
+  {
+    id: "portuguese_league",
+    name: "Primeira Liga",
+    country: "Portugal",
+    flag: "🇵🇹",
+    budget: 100,
+    available: true,
+    color: "#006600",
+    logo: "/images/league-portugal.png",
+    teams: [
+      "Sporting CP","FC Porto","SL Benfica","SC Braga","Vitória de Guimarães",
+      "Famalicão","Moreirense","Arouca","Estoril Praia","Gil Vicente",
+      "Rio Ave","Santa Clara","Nacional","Casa Pia","Estrela da Amadora",
+      "Alverca","Tondela","AVS Futebol SAD",
+    ],
+  },
+  {
+    id: "eredivisie",
+    name: "Eredivisie",
+    country: "Netherlands",
+    flag: "🇳🇱",
+    budget: 90,
+    available: true,
+    color: "#ff6600",
+    logo: "/images/league-eredivisie.png",
+    teams: [
+      "Ajax","PSV Eindhoven","Feyenoord","AZ Alkmaar","FC Twente",
+      "FC Utrecht","Sparta Rotterdam","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard",
+      "SC Heerenveen","FC Groningen","PEC Zwolle","Almere City","Heracles Almelo",
+      "RKC Waalwijk","Willem II","NAC Breda",
+    ],
+  },
+  {
+    id: "super_lig",
+    name: "Süper Lig",
+    country: "Turkey",
+    flag: "🇹🇷",
+    budget: 95,
+    available: true,
+    color: "#e30a17",
+    logo: "/images/league-superlig.png",
+    teams: [
+      "Galatasaray","Fenerbahçe","Beşiktaş","Trabzonspor","İstanbul Başakşehir",
+      "Göztepe","Samsunspor","Çaykur Rizespor","Konyaspor","Alanyaspor",
+      "Kocaelispor","Gaziantep FK","Kasımpaşa","Gençlerbirliği","Eyüpspor",
+      "Amedspor","Çorum FK","Erzurumspor FK",
     ],
   },
   {
@@ -89,6 +158,7 @@ export const LEAGUES: LeagueInfo[] = [
     budget: 110,
     available: true,
     color: "#002395",
+    logo: "/images/league-ligue1.png",
     teams: [
       "Paris Saint-Germain","Marseille","Monaco","Lyon","Lille",
       "Lens","Nice","Rennes","Brest","Toulouse",
@@ -199,7 +269,14 @@ export default function LeagueSelectionScreen({ onSelect, onBack }: Props) {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <span className="text-4xl">{league.flag}</span>
+                    <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={league.logo}
+                        alt={league.name}
+                        style={{ width: "52px", height: "52px", objectFit: "contain", opacity: league.available ? 1 : 0.3 }}
+                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    </div>
                     <div>
                       <div className="font-black text-lg tracking-wide" style={{ color: league.available ? "white" : "#4b5563" }}>
                         {league.name}
