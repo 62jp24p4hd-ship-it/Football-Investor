@@ -1,6 +1,7 @@
 "use client";
 
 import type { OwnedPlayer } from "../game/types";
+import type { CLPlayerStat } from "../game/clTypes";
 import { getCurrentValue } from "../game/valueEngine";
 import { getSeasonStats } from "../game/statsEngine";
 import { calculateAge, nationalityFlag, positionBg, getSatisfactionColor, getRetirementWarning } from "../game/helpers";
@@ -54,6 +55,7 @@ type Props = {
   onSell: () => void;
   onKeep: () => void;
   onRenew: () => void;
+  clStats?: CLPlayerStat;
 };
 
 function Stat({ value, label, icon, highlight }: { value: number; label: string; icon?: string; highlight?: boolean }) {
@@ -94,7 +96,7 @@ function PixelPortrait({ name, size = 72 }: { name: string; size?: number }) {
   );
 }
 
-export default function OwnedPlayerModal({ owned, ownerName, season, marketMultiplier, canSell, onSell, onKeep, onRenew }: Props) {
+export default function OwnedPlayerModal({ owned, ownerName, season, marketMultiplier, canSell, onSell, onKeep, onRenew, clStats }: Props) {
   const { player, buyPrice, buySeason, contract } = owned;
   const stats = getSeasonStats(player, season);
   const prevStats = getSeasonStats(player, season - 1);
@@ -338,6 +340,43 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
           {isLastSeason && !owned.refusesRenewal && (
             <div className="text-sm text-yellow-400 bg-yellow-950/40 border border-yellow-500/30 rounded-none px-4 py-3 mb-4 text-center font-bold">
               ⚠️ Last season on contract — renew or lose this player for free!
+            </div>
+          )}
+
+          {/* Champions League Stats */}
+          {clStats && (clStats.goals > 0 || clStats.assists > 0 || clStats.cleanSheets > 0 || clStats.games > 0) && (
+            <div className="mb-4 rounded-none p-4" style={{
+              background: "linear-gradient(135deg, rgba(0,8,32,0.8), rgba(0,16,64,0.5))",
+              border: "1px solid rgba(251,191,36,0.25)",
+            }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span style={{ fontSize: 14 }}>🏆</span>
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#fbbf24" }}>
+                  دوري الأبطال — Champions League
+                </span>
+              </div>
+              <div className={`grid gap-3 text-center ${player.position === "GK" ? "grid-cols-2" : "grid-cols-4"}`}>
+                <div>
+                  <div className="text-xl font-black" style={{ color: "#fbbf24" }}>{clStats.games}</div>
+                  <div className="text-[10px] text-gray-500 uppercase mt-1">Games</div>
+                </div>
+                {player.position !== "GK" && (
+                  <>
+                    <div>
+                      <div className="text-xl font-black text-white">{clStats.goals}</div>
+                      <div className="text-[10px] text-gray-500 uppercase mt-1">⚽ Goals</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-black text-white">{clStats.assists}</div>
+                      <div className="text-[10px] text-gray-500 uppercase mt-1">🎯 Assists</div>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <div className="text-xl font-black text-white">{clStats.cleanSheets}</div>
+                  <div className="text-[10px] text-gray-500 uppercase mt-1">🧤 Clean Sheets</div>
+                </div>
+              </div>
             </div>
           )}
 

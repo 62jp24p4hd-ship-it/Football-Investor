@@ -11,6 +11,7 @@ type MatchSummaryModalProps = {
   homeGoals: number;
   awayGoals: number;
   events: MatchEvent[];
+  roundLabel?: string;
   onClose: () => void;
 };
 
@@ -22,6 +23,7 @@ export default function MatchSummaryModal({
   homeGoals,
   awayGoals,
   events,
+  roundLabel,
   onClose,
 }: MatchSummaryModalProps) {
   const homeName = userIsHome ? userTeamName : opponentName;
@@ -107,7 +109,7 @@ export default function MatchSummaryModal({
 
           <div className="relative flex items-center justify-between mb-6">
             <span className="text-base text-white/70 font-semibold uppercase tracking-widest">
-              Round {round}
+              {roundLabel ?? `Round ${round}`}
             </span>
             <span
               className={`text-base font-black px-5 py-2 rounded-full ${theme.badge} flex items-center gap-2 shadow-lg`}

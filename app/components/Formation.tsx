@@ -229,10 +229,10 @@ function SlotCard({
 
         {/* BOTTOM: Value + profit */}
         <div className="flex items-center justify-center gap-1 w-full" style={{ marginTop: "4px" }}>
-          <span className="text-yellow-300 font-bold" style={{ fontSize: "9px" }}>€{value}M</span>
+          <span className="text-yellow-300 font-bold" style={{ fontSize: "9px" }}>€{+value.toFixed(1)}M</span>
           <span className={`font-bold ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
             style={{ fontSize: "9px" }}>
-            {profit >= 0 ? "+" : ""}{profit}M
+            {profit >= 0 ? "+" : ""}{+profit.toFixed(1)}M
           </span>
         </div>
 

@@ -35,6 +35,10 @@ import {
 } from "./game/leagueEngine";
 import type { LeagueState, MatchEvent, MatchPreview, LeaguePlayerStat } from "./game/leagueEngine";
 import { getPlayerPortrait } from "./game/playerPortraits";
+import type { CLState, CLTie } from "./game/clTypes";
+import { initializeCL, playCLRound, setupPlayoff, playPlayoffLeg, drawR16, playKnockoutLeg, getCLRoundForDomesticRound } from "./game/clEngine";
+import CLModal from "./components/CLModal";
+import CLDrawAnimation from "./components/CLDrawAnimation";
 
 const LEAGUE_MAX_PURCHASE_CHANCES = 14; // hard cap, club owner mode only — any bonus chances beyond this are ignored
 const LEAGUE_REQUIRED_SQUAD_SIZE = 11;
@@ -186,6 +190,7 @@ export default function Home() {
     homeGoals: number;
     awayGoals: number;
     events: MatchEvent[];
+    roundLabel?: string;
   } | null>(null);
   const [matchPreview, setMatchPreview] = useState<MatchPreview | null>(null);
   const [showLeagueStats, setShowLeagueStats] = useState(false);
@@ -205,6 +210,17 @@ export default function Home() {
     bestPlayerAssists: number;
     bestPlayerPhoto?: string;
   } | null>(null);
+
+  // ── Champions League ─────────────────────
+  const [clState, setClState] = useState<CLState | null>(null);
+  const [showCLModal, setShowCLModal] = useState(false);
+  const [showCLDraw, setShowCLDraw] = useState(false);
+  const [pendingCLRound, setPendingCLRound] = useState<number | null>(null);
+  const [clMatchPreview, setClMatchPreview] = useState<{ round: number; userTeam: string; opponent: string; isUserHome: boolean; roundLabel?: string } | null>(null);
+  const [pendingCLKnockout, setPendingCLKnockout] = useState<{ phase: CLState["phase"]; leg: 1|2; userTie: CLTie } | null>(null);
+  const [pendingShowCLDraw, setPendingShowCLDraw] = useState(false);
+  // Standings from the previous season used to seed CL qualification
+  const [clPrevStandings, setClPrevStandings] = useState<Record<string, { teamName: string; isUser: boolean }[]>>({});
 
   // ── Konami Code ───────────────────────────
   const [showKonamiAnim, setShowKonamiAnim] = useState(false);
@@ -362,13 +378,14 @@ export default function Home() {
       if (e.key !== "Enter" && e.key !== " ") return;
       if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "TEXTAREA") return;
       e.preventDefault();
+      if (clMatchPreview) { setClMatchPreview(null); if (pendingCLKnockout) { handlePlayKnockoutRound(); } else { handlePlayCLRound(); } return; }
       if (matchPreview) { confirmPlayLeagueGame(); return; }
-      if (matchSummary) { setMatchSummary(null); return; }
+      if (matchSummary) { setMatchSummary(null); if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); } return; }
       handleMainSeasonButtonClick();
     }
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [started, mode, singlePlayerStyle, matchPreview, matchSummary, leagueState, leagueEnabled]);
+  }, [started, mode, singlePlayerStyle, clMatchPreview, pendingCLKnockout, matchPreview, matchSummary, leagueState, leagueEnabled]);
 
   // ── Enter+Space held together = Skip entire league season ──
   useEffect(() => {
@@ -402,6 +419,21 @@ export default function Home() {
       setGamePlayers(currentPlayers);
       setOtherLeagues(currentOtherLeagues);
       notify("⏩ Season skipped to end!");
+
+      // Capture standings for next season's CL qualification
+      if (singlePlayerStyle === "clubOwner") {
+        const capturedCLStandings: Record<string, { teamName: string; isUser: boolean }[]> = {};
+        capturedCLStandings[selectedLeagueId] = currentLeague.standings.map(s => ({
+          teamName: s.teamName,
+          isUser: s.isUser,
+        }));
+        for (const [lid, ol] of Object.entries(currentOtherLeagues)) {
+          capturedCLStandings[lid] = ol.standings.map(s => ({ teamName: s.teamName, isUser: false }));
+        }
+        setClPrevStandings(capturedCLStandings);
+        setClState(null);
+        setPendingCLRound(null);
+      }
 
       // Save season to club history
       const userStSkip = currentLeague.standings.find(r => r.isUser);
@@ -1248,6 +1280,25 @@ export default function Home() {
       newOtherLeagues[lid] = { ...otherLeague, seasonPhase: "playing" };
     }
     setOtherLeagues(newOtherLeagues);
+
+    // ── Initialize Champions League (season 2009+, club owner mode) ──
+    if (singlePlayerStyle === "clubOwner" && season >= 2009 && Object.keys(clPrevStandings).length > 0) {
+      try {
+        const newCLState = initializeCL(season, clPrevStandings, selectedLeagueId, userTeamName);
+        setClState(newCLState);
+        setPendingCLRound(null);
+        addNewsItem({
+          id: Date.now(),
+          season,
+          title: "🏆 Champions League Draw Complete!",
+          description: `${newCLState.teams.length} teams compete in this season's Champions League. ${userTeamName} are ${newCLState.teams.find(t => t.isUser) ? "participating!" : "not qualified."}`,
+          tone: "special",
+        });
+      } catch {
+        // CL init failed silently — non-critical feature
+      }
+    }
+
     notify("🏆 Season has begun! Press Next Game to play Round 1.");
   }
 
@@ -1273,6 +1324,7 @@ export default function Home() {
     if (result.newsItems.length > 0) addNewsItems(result.newsItems);
 
     // Simulate other leagues
+    let latestOtherLeagues: Record<string, LeagueState> = { ...otherLeagues };
     if (Object.keys(otherLeagues).length > 0) {
       const updatedOtherLeagues: Record<string, LeagueState> = {};
       for (const [lid, otherLeague] of Object.entries(otherLeagues)) {
@@ -1281,7 +1333,79 @@ export default function Home() {
         const otherResult = playRound(otherLeague, [{ name: dummyUser, budget: 0, owned: [], purchaseChances: 0, sellChances: 0 } as any], 0, season);
         updatedOtherLeagues[lid] = otherResult.updatedLeague;
       }
+      latestOtherLeagues = updatedOtherLeagues;
       setOtherLeagues(updatedOtherLeagues);
+    }
+
+    // ── Champions League round trigger ────────────────
+    if (clState && singlePlayerStyle === "clubOwner" && clState.phase === "group") {
+      const clRound = getCLRoundForDomesticRound(result.updatedLeague.currentRound);
+      if (clRound !== null && clRound > clState.currentGroupRound) {
+        setPendingCLRound(clRound);
+      }
+    }
+    // CL knockout schedule: trigger phases based on domestic round
+    if (clState && singlePlayerStyle === "clubOwner" && clState.phase !== "group" && clState.phase !== "finished" && !pendingCLKnockout) {
+      const dr = result.updatedLeague.currentRound;
+      const userTeamName = gamePlayers[0]?.name ?? "";
+      const userStrength = calculateUserStrength(gamePlayers[0], season);
+      const userRoster = gamePlayers[0]?.owned ?? [];
+
+      let nextCLState = clState;
+
+      // Helper: find user's unplayed tie for a given leg
+      function findUserKOTie(ties: CLTie[], leg: 1|2): CLTie | null {
+        return ties.find(t => t.userInvolved && (leg===1 ? t.leg1===null : t.leg2===null)) ?? null;
+      }
+
+      type KOEntry = { minDr: number; phase: CLState["phase"]; leg: 1|2; koRound: "r16"|"qf"|"sf"|"final"|"playoff" };
+      const koSchedule: KOEntry[] = [
+        { minDr: 19, phase: "playoff_leg1", leg: 1, koRound: "playoff" },
+        { minDr: 21, phase: "playoff_leg2", leg: 2, koRound: "playoff" },
+        { minDr: 23, phase: "r16_leg1",     leg: 1, koRound: "r16" },
+        { minDr: 25, phase: "r16_leg2",     leg: 2, koRound: "r16" },
+        { minDr: 27, phase: "qf_leg1",      leg: 1, koRound: "qf" },
+        { minDr: 29, phase: "qf_leg2",      leg: 2, koRound: "qf" },
+        { minDr: 31, phase: "sf_leg1",      leg: 1, koRound: "sf" },
+        { minDr: 33, phase: "sf_leg2",      leg: 2, koRound: "sf" },
+        { minDr: 35, phase: "final",        leg: 1, koRound: "final" },
+      ];
+
+      for (const entry of koSchedule) {
+        if (nextCLState.phase !== entry.phase || dr < entry.minDr) continue;
+
+        const ties = entry.koRound === "playoff" ? nextCLState.playoffTies
+          : entry.koRound === "r16" ? nextCLState.r16Ties
+          : entry.koRound === "qf" ? nextCLState.qfTies
+          : entry.koRound === "sf" ? nextCLState.sfTies
+          : nextCLState.finalTie ? [nextCLState.finalTie] : [];
+
+        const userTie = findUserKOTie(ties, entry.leg);
+        if (userTie) {
+          // User is in this round — show preview on next click
+          setPendingCLKnockout({ phase: entry.phase, leg: entry.leg, userTie });
+          break;
+        }
+
+        // User not in this round — auto-simulate all
+        if (entry.koRound === "playoff") {
+          const { clState: nc } = playPlayoffLeg(nextCLState, entry.leg, userTeamName, userStrength, userRoster);
+          nextCLState = nc;
+          if (entry.leg === 2) {
+            nextCLState = drawR16(nextCLState);
+            setShowCLDraw(true);
+          }
+        } else {
+          const { clState: nc } = playKnockoutLeg(nextCLState, entry.koRound, entry.leg, userTeamName, userStrength, userRoster);
+          nextCLState = nc;
+          if (entry.koRound === "final" && nextCLState.champion) {
+            notify(`🏆 ${nextCLState.champion} wins the Champions League!`);
+          }
+        }
+        // Continue loop — check if next phase is also due this round
+      }
+
+      if (nextCLState !== clState) setClState(nextCLState);
     }
 
     // Random season events can still fire during league rounds, but less often than
@@ -1442,6 +1566,22 @@ export default function Home() {
         notify(`🏁 ${leagueNameMap[selectedLeagueId] ?? "League"} season complete! Press Next Season to continue.`);
       }
 
+      // Capture standings for next season's CL qualification
+      if (singlePlayerStyle === "clubOwner") {
+        const capturedCLStandings: Record<string, { teamName: string; isUser: boolean }[]> = {};
+        capturedCLStandings[selectedLeagueId] = result.updatedLeague.standings.map(s => ({
+          teamName: s.teamName,
+          isUser: s.isUser,
+        }));
+        for (const [lid, ol] of Object.entries(latestOtherLeagues)) {
+          capturedCLStandings[lid] = ol.standings.map(s => ({ teamName: s.teamName, isUser: false }));
+        }
+        setClPrevStandings(capturedCLStandings);
+        // Reset CL for next season
+        setClState(null);
+        setPendingCLRound(null);
+      }
+
       // Save season to club history
       const userSt = result.updatedLeague.standings.find(r => r.isUser);
       const userPos2 = result.updatedLeague.standings.findIndex(r => r.isUser) + 1;
@@ -1488,11 +1628,128 @@ export default function Home() {
     }
   }
 
-  function getLeagueButtonLabel(): string | undefined {
-    if (mode !== "single" || singlePlayerStyle !== "clubOwner") return undefined;
-    if (!leagueEnabled || !leagueState) return "Start Season";
-    if (leagueState.seasonPhase === "finished") return "Next Season";
-    return "Next Game";
+  // ── Play CL Group Round ──────────────────────────────────────────
+  function handlePlayCLRound() {
+    if (!clState || pendingCLRound === null) return;
+    const round = pendingCLRound;
+    const userTeamName = gamePlayers[0]?.name ?? "";
+    const userStrength = calculateUserStrength(gamePlayers[0], season);
+    const userRoster = gamePlayers[0]?.owned ?? [];
+
+    const { clState: newCLState, userEvents, userFixture } = playCLRound(
+      clState, round, userTeamName, userStrength, userRoster
+    );
+
+    // Show match summary screen (same as domestic league)
+    if (userFixture && userFixture.homeGoals !== undefined && userFixture.awayGoals !== undefined) {
+      const isUserHome = userFixture.homeTeam === userTeamName;
+      const oppName = isUserHome ? userFixture.awayTeam : userFixture.homeTeam;
+      setMatchSummary({
+        round,
+        userTeamName,
+        opponentName: oppName,
+        userIsHome: isUserHome,
+        homeGoals: userFixture.homeGoals,
+        awayGoals: userFixture.awayGoals,
+        events: userEvents,
+        roundLabel: `🏆 CL · الجولة ${round}`,
+      });
+      const userGoals = isUserHome ? userFixture.homeGoals : userFixture.awayGoals;
+      const oppGoals = isUserHome ? userFixture.awayGoals : userFixture.homeGoals;
+      const outcome = userGoals > oppGoals ? "Win" : userGoals < oppGoals ? "Loss" : "Draw";
+      addNewsItem({
+        id: Date.now(),
+        season,
+        title: `🏆 CL Round ${round}: ${outcome} vs ${oppName}`,
+        description: `${userTeamName} ${userGoals}-${oppGoals} ${oppName} in the Champions League group stage.`,
+        tone: outcome === "Win" ? "good" : outcome === "Loss" ? "bad" : "neutral",
+        journalist: "Fabrizio Romano",
+        source: "UEFA Champions League",
+      });
+    }
+
+    // After round 8, setup playoff with real teams
+    let finalCLState = newCLState;
+    if (round >= 8 && newCLState.phase === "group") {
+      finalCLState = setupPlayoff(newCLState); // creates 8 real playoff ties
+      addNewsItem({
+        id: Date.now() + 1,
+        season,
+        title: "🏆 CL Group Phase Complete!",
+        description: `Top 8 teams advance to R16. Teams 9-24 enter the playoff round. دور الملحق يبدأ الجولة 19.`,
+        tone: "neutral",
+        source: "UEFA",
+      });
+    }
+
+    setClState(finalCLState);
+    setPendingCLRound(null);
+  }
+
+  function handlePlayKnockoutRound() {
+    if (!clState || !pendingCLKnockout) return;
+    const { phase, leg, userTie } = pendingCLKnockout;
+    const userTeamName = gamePlayers[0]?.name ?? "";
+    const userStrength = calculateUserStrength(gamePlayers[0], season);
+    const userRoster = gamePlayers[0]?.owned ?? [];
+
+    let newCLState: CLState;
+    let userEvents: import("./game/leagueEngine").MatchEvent[];
+    let resultTie: CLTie | null;
+
+    if (phase === "playoff_leg1" || phase === "playoff_leg2") {
+      const res = playPlayoffLeg(clState, leg, userTeamName, userStrength, userRoster);
+      newCLState = res.clState;
+      userEvents = res.userEvents;
+      resultTie = res.userTie;
+      if (phase === "playoff_leg2") {
+        newCLState = drawR16(newCLState);
+        setPendingShowCLDraw(true); // show draw after summary closes
+      }
+    } else {
+      const roundTypeMap: Record<string, "r16"|"qf"|"sf"|"final"> = {
+        r16_leg1: "r16", r16_leg2: "r16", qf_leg1: "qf", qf_leg2: "qf",
+        sf_leg1: "sf", sf_leg2: "sf", final: "final",
+      };
+      const roundType = roundTypeMap[phase] ?? "r16";
+      const res = playKnockoutLeg(clState, roundType, leg, userTeamName, userStrength, userRoster);
+      newCLState = res.clState;
+      userEvents = res.userEvents;
+      resultTie = res.userTie;
+      if (phase === "final" && newCLState.champion === userTeamName) {
+        notify("🏆 CHAMPIONS LEAGUE WINNERS! +€80M prize money!");
+        setGamePlayers(prev => prev.map((gp, i) => i === 0 ? { ...gp, budget: gp.budget + 80 } : gp));
+      } else if (phase === "final" && newCLState.champion) {
+        notify(`🏆 ${newCLState.champion} wins the Champions League!`);
+      }
+    }
+
+    // Show match summary
+    if (resultTie) {
+      const isLeg1 = leg === 1 || phase === "final";
+      const homeTeam = isLeg1 ? resultTie.teamA : resultTie.teamB;
+      const isUserHome = homeTeam === userTeamName;
+      const opponentName = isUserHome
+        ? (isLeg1 ? resultTie.teamB : resultTie.teamA)
+        : (isLeg1 ? resultTie.teamA : resultTie.teamB);
+      const homeGoals = isLeg1 ? (resultTie.leg1?.goalsA ?? 0) : (resultTie.leg2?.goalsB ?? 0);
+      const awayGoals = isLeg1 ? (resultTie.leg1?.goalsB ?? 0) : (resultTie.leg2?.goalsA ?? 0);
+      const phaseLabels: Record<string, string> = {
+        playoff_leg1: "🏆 ملحق التأهل — الجولة 1", playoff_leg2: "🏆 ملحق التأهل — الجولة 2",
+        r16_leg1: "🏆 دور الـ16 — الجولة 1",     r16_leg2: "🏆 دور الـ16 — الجولة 2",
+        qf_leg1:  "🏆 ربع النهائي — الجولة 1",    qf_leg2:  "🏆 ربع النهائي — الجولة 2",
+        sf_leg1:  "🏆 نصف النهائي — الجولة 1",    sf_leg2:  "🏆 نصف النهائي — الجولة 2",
+        final:    "🏆 نهائي دوري أبطال أوروبا",
+      };
+      setMatchSummary({
+        round: leg, userTeamName, opponentName, userIsHome: isUserHome,
+        homeGoals, awayGoals, events: userEvents,
+        roundLabel: phaseLabels[phase] ?? "🏆 CL",
+      });
+    }
+
+    setClState(newCLState);
+    setPendingCLKnockout(null);
   }
 
   function handleMainSeasonButtonClick() {
@@ -1505,14 +1762,58 @@ export default function Home() {
       return;
     }
     if (leagueState.seasonPhase === "finished") {
-      // Reset league for the next cycle and proceed to normal season transition
       setLeagueEnabled(false);
       setLeagueState(null);
       setMatchSummary(null);
       nextSeason();
       return;
     }
+    // ── If a CL knockout match is pending, show preview ──
+    if (pendingCLKnockout && clState) {
+      const { phase, leg, userTie } = pendingCLKnockout;
+      const userTeamName = gamePlayers[0]?.name ?? "";
+      const isUserTeamA = userTie.teamA === userTeamName;
+      const opponent = isUserTeamA ? userTie.teamB : userTie.teamA;
+      const isUserHome = (leg === 1 && isUserTeamA) || (leg === 2 && !isUserTeamA);
+      const knockoutLabels: Record<string, string> = {
+        playoff_leg1: "ملحق التأهل — الجولة 1",
+        playoff_leg2: "ملحق التأهل — الجولة 2",
+        r16_leg1: "دور الـ16 — الجولة 1",
+        r16_leg2: "دور الـ16 — الجولة 2",
+        qf_leg1: "ربع النهائي — الجولة 1",
+        qf_leg2: "ربع النهائي — الجولة 2",
+        sf_leg1: "نصف النهائي — الجولة 1",
+        sf_leg2: "نصف النهائي — الجولة 2",
+        final: "النهائي",
+      };
+      setClMatchPreview({ round: leg, userTeam: userTeamName, opponent, isUserHome, roundLabel: knockoutLabels[phase] });
+      return;
+    }
+
+    // ── If a CL group round is pending, show CL match preview first ──
+    if (pendingCLRound !== null && clState && clState.phase === "group") {
+      const userTeamName = gamePlayers[0]?.name ?? "";
+      const fixture = clState.groupFixtures.find(
+        f => f.round === pendingCLRound &&
+          (f.homeTeam === userTeamName || f.awayTeam === userTeamName)
+      );
+      if (fixture) {
+        const isUserHome = fixture.homeTeam === userTeamName;
+        const opponent = isUserHome ? fixture.awayTeam : fixture.homeTeam;
+        setClMatchPreview({ round: pendingCLRound, userTeam: userTeamName, opponent, isUserHome });
+        return;
+      }
+    }
     handlePlayLeagueGame();
+  }
+
+  function getLeagueButtonLabel(): string | undefined {
+    if (mode !== "single" || singlePlayerStyle !== "clubOwner") return undefined;
+    if (!leagueEnabled || !leagueState) return "Start Season";
+    if (leagueState.seasonPhase === "finished") return "Next Season";
+    if (pendingCLKnockout) return "🏆 CL Match";
+    if (pendingCLRound !== null && clState?.phase === "group") return "🏆 CL Match";
+    return "Next Game";
   }
 
   // Boost purchase/sell chances exactly once when entering the transfer window (rounds 18-21)
@@ -2019,6 +2320,20 @@ export default function Home() {
                   >
                     ⚽ Top Scorers · 🅰️ Assists · 🧤 Clean Sheets
                   </button>
+                  {clState && (
+                    <button
+                      onClick={() => setShowCLModal(true)}
+                      className="w-full mt-2 py-2 rounded-xl text-xs font-bold transition-colors"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(0,8,32,0.9), rgba(0,16,64,0.9))",
+                        border: "1px solid rgba(251,191,36,0.4)",
+                        color: "#fbbf24",
+                        boxShadow: "0 0 12px rgba(251,191,36,0.12)",
+                      }}
+                    >
+                      🏆 دوري الأبطال — Champions League
+                    </button>
+                  )}
                   <button
                     onClick={() => setShowClubHistory(true)}
                     className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
@@ -2142,6 +2457,7 @@ export default function Home() {
           onSell={handleSellPlayer}
           onKeep={handleKeepPlayer}
           onRenew={handleRenewPlayer}
+          clStats={clState?.playerStats[getOwnedItem(selectedOwned.playerIndex, selectedOwned.ownedIndex)?.player.name ?? ""] ?? undefined}
         />
       )}
 
@@ -2409,7 +2725,8 @@ export default function Home() {
           homeGoals={matchSummary.homeGoals}
           awayGoals={matchSummary.awayGoals}
           events={matchSummary.events}
-          onClose={() => setMatchSummary(null)}
+          roundLabel={matchSummary.roundLabel}
+          onClose={() => { setMatchSummary(null); if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); } }}
         />
       )}
 
@@ -2477,6 +2794,116 @@ export default function Home() {
           season={season}
           onClose={() => setCompareOwned(null)}
         />
+      )}
+
+      {/* Champions League Modal */}
+      {showCLModal && clState && (
+        <CLModal
+          clState={clState}
+          onClose={() => setShowCLModal(false)}
+        />
+      )}
+
+      {/* Champions League Draw Animation */}
+      {showCLDraw && clState && clState.r16Ties.length > 0 && (
+        <CLDrawAnimation
+          r16Ties={clState.r16Ties}
+          onDone={() => setShowCLDraw(false)}
+        />
+      )}
+
+      {/* CL Match Preview */}
+      {clMatchPreview && (
+        <div className="fixed inset-0 z-[180] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
+          <style>{`@keyframes clPreviewIn{from{opacity:0;transform:scale(0.88) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+          <div className="w-full max-w-sm overflow-hidden"
+            style={{
+              background: "linear-gradient(160deg,#000820 0%,#001848 50%,#000820 100%)",
+              border: "1px solid rgba(251,191,36,0.5)",
+              borderRadius: "20px",
+              boxShadow: "0 0 60px rgba(251,191,36,0.2), 0 0 120px rgba(0,8,64,0.8)",
+              animation: "clPreviewIn 0.45s cubic-bezier(0.22,1,0.36,1)",
+            }}>
+            {/* Header */}
+            <div className="px-6 pt-5 pb-3 text-center"
+              style={{ borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
+              <div className="text-2xl mb-1">🏆</div>
+              <div style={{ color: "#fbbf24", fontSize: 10, fontWeight: 700, letterSpacing: "0.4em", textTransform: "uppercase" }}>
+                Champions League
+              </div>
+              <div style={{ color: "rgba(251,191,36,0.5)", fontSize: 9, marginTop: 2 }}>
+                {clMatchPreview.roundLabel ?? `Group Stage — Round ${clMatchPreview.round}`}
+              </div>
+            </div>
+
+            {/* Teams */}
+            <div className="px-6 py-6">
+              <div className="flex items-center justify-between gap-3">
+                {/* Home */}
+                <div className="flex-1 text-center">
+                  <div style={{
+                    background: clMatchPreview.isUserHome ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${clMatchPreview.isUserHome ? "rgba(251,191,36,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    borderRadius: 12, padding: "12px 8px",
+                  }}>
+                    <div style={{ fontSize: 24 }}>🏟</div>
+                    <div style={{ color: "#fff", fontWeight: 900, fontSize: 12, marginTop: 6, lineHeight: 1.2 }}>
+                      {clMatchPreview.isUserHome ? clMatchPreview.userTeam : clMatchPreview.opponent}
+                    </div>
+                    {clMatchPreview.isUserHome && (
+                      <div style={{ color: "#fbbf24", fontSize: 8, marginTop: 3, fontWeight: 700, letterSpacing: "0.1em" }}>أنت</div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ color: "rgba(251,191,36,0.6)", fontWeight: 900, fontSize: 18 }}>VS</div>
+
+                {/* Away */}
+                <div className="flex-1 text-center">
+                  <div style={{
+                    background: !clMatchPreview.isUserHome ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${!clMatchPreview.isUserHome ? "rgba(251,191,36,0.4)" : "rgba(255,255,255,0.08)"}`,
+                    borderRadius: 12, padding: "12px 8px",
+                  }}>
+                    <div style={{ fontSize: 24 }}>✈️</div>
+                    <div style={{ color: "#fff", fontWeight: 900, fontSize: 12, marginTop: 6, lineHeight: 1.2 }}>
+                      {!clMatchPreview.isUserHome ? clMatchPreview.userTeam : clMatchPreview.opponent}
+                    </div>
+                    {!clMatchPreview.isUserHome && (
+                      <div style={{ color: "#fbbf24", fontSize: 8, marginTop: 3, fontWeight: 700, letterSpacing: "0.1em" }}>أنت</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 9, textAlign: "center", marginTop: 12 }}>
+                {clMatchPreview.isUserHome ? "ملعبك" : "ملعب الخصم"} · الجولة {clMatchPreview.round} من 8
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="px-5 pb-5 flex flex-col gap-2">
+              <button
+                onClick={() => { setClMatchPreview(null); if (pendingCLKnockout) { handlePlayKnockoutRound(); } else { handlePlayCLRound(); } }}
+                className="w-full py-3 font-black text-sm transition-all hover:scale-[1.02] active:scale-[0.97]"
+                style={{
+                  background: "linear-gradient(135deg,#b45309,#f59e0b,#fbbf24)",
+                  color: "#000",
+                  borderRadius: 12,
+                  boxShadow: "0 4px 20px rgba(251,191,36,0.35)",
+                }}>
+                ▶ ابدأ المباراة
+              </button>
+              <button
+                onClick={() => setClMatchPreview(null)}
+                className="w-full py-2 text-xs font-semibold transition-colors"
+                style={{ color: "rgba(255,255,255,0.3)", borderRadius: 10 }}>
+                لاحقاً
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
