@@ -1284,7 +1284,10 @@ export default function Home() {
     // ── Initialize Champions League (season 2009+, club owner mode) ──
     if (singlePlayerStyle === "clubOwner" && season >= 2009 && Object.keys(clPrevStandings).length > 0) {
       try {
-        const newCLState = initializeCL(season, clPrevStandings, selectedLeagueId, userTeamName);
+        // Combine user's league + all other leagues so CL gets real player rosters
+        const allLeagueStatesForCL: Record<string, import("./game/leagueEngine").LeagueState> = { ...newOtherLeagues };
+        if (newLeague) allLeagueStatesForCL[selectedLeagueId] = { ...newLeague, seasonPhase: "playing" };
+        const newCLState = initializeCL(season, clPrevStandings, selectedLeagueId, userTeamName, allLeagueStatesForCL);
         setClState(newCLState);
         setPendingCLRound(null);
         addNewsItem({

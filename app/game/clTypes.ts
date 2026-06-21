@@ -78,4 +78,5 @@ export type CLState = {
   finalTie: CLTie | null;
   playerStats: Record<string, CLPlayerStat>;
   champion: string | null;
+  teamRosters: Record<string, string[]>; // teamName → player names (for scorer display)
 };

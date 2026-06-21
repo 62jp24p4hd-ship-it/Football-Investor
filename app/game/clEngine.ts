@@ -5,6 +5,7 @@
 import type { CLState, CLTeam, CLStanding, CLFixture, CLTie, CLPlayerStat } from "./clTypes";
 import { getCLQualifiers, CL_LEAGUE_SPOTS } from "./clTeams";
 import type { OwnedPlayer } from "./types";
+import type { LeagueState } from "./leagueEngine";
 
 // ============================================
 // HELPERS
@@ -40,7 +41,8 @@ export function simulateCLMatch(
   awayStrength: number,
   homeTeamName: string,
   awayTeamName: string,
-  userRoster?: OwnedPlayer[]
+  homePlayerNames?: string[],
+  awayPlayerNames?: string[],
 ): {
   homeGoals: number;
   awayGoals: number;
@@ -70,20 +72,26 @@ export function simulateCLMatch(
     return m;
   }
 
-  // For user's owned players, use real names; otherwise generic
-  const homeAttackers = userRoster
-    ? userRoster.filter(o => ["ST","LW","RW","CAM"].includes(o.slot ?? o.player.position)).map(o => o.player.name)
-    : ["Striker"];
-  const homeMidfielders = userRoster
-    ? userRoster.filter(o => ["LCM","RCM","CAM","LW","RW"].includes(o.slot ?? o.player.position)).map(o => o.player.name)
-    : ["Midfielder"];
+  // Use real player names if provided, otherwise generic fallbacks
+  const homePlayers = (homePlayerNames && homePlayerNames.length > 0)
+    ? homePlayerNames
+    : ["Striker", "Midfielder", "Forward"];
+  const awayPlayers = (awayPlayerNames && awayPlayerNames.length > 0)
+    ? awayPlayerNames
+    : ["Striker", "Forward", "Winger"];
+
+  function pickGoalPair(players: string[]): { scorer: string; assister: string | null } {
+    const scorer = players[Math.floor(Math.random() * players.length)];
+    const others = players.filter(n => n !== scorer);
+    const assister = others.length > 0 ? others[Math.floor(Math.random() * others.length)] : null;
+    return { scorer, assister };
+  }
 
   for (let g = 0; g < homeGoals; g++) {
-    const scorer = homeAttackers[Math.floor(Math.random() * homeAttackers.length)] ?? "Striker";
-    const assister = homeMidfielders[Math.floor(Math.random() * homeMidfielders.length)] ?? "Midfielder";
+    const { scorer, assister } = pickGoalPair(homePlayers);
     const minute = randMinute();
     scorers.push({ name: scorer, team: homeTeamName });
-    if (assister !== scorer) {
+    if (assister) {
       assisters.push({ name: assister, team: homeTeamName });
       events.push({ minute, type: "goal", team: "home", scorerName: scorer, assistName: assister });
     } else {
@@ -91,15 +99,11 @@ export function simulateCLMatch(
     }
   }
 
-  // Away goals use generic names (away teams are always AI)
-  const awayAttackers = ["Striker", "Forward", "Winger"];
-  const awayMidfielders = ["Playmaker", "Midfielder"];
   for (let g = 0; g < awayGoals; g++) {
-    const scorer = awayAttackers[Math.floor(Math.random() * awayAttackers.length)];
-    const assister = awayMidfielders[Math.floor(Math.random() * awayMidfielders.length)];
+    const { scorer, assister } = pickGoalPair(awayPlayers);
     const minute = randMinute();
     scorers.push({ name: scorer, team: awayTeamName });
-    if (assister !== scorer) {
+    if (assister) {
       assisters.push({ name: assister, team: awayTeamName });
       events.push({ minute, type: "goal", team: "away", scorerName: scorer, assistName: assister });
     } else {
@@ -353,10 +357,19 @@ export function playCLRound(
     const homeStrength = isUserHome ? userStrength : (homeTeam?.strength ?? 70);
     const awayStrength = isUserAway ? userStrength : (awayTeam?.strength ?? 70);
 
+    // Derive player name lists: user roster or team rosters for AI
+    const homePlayerNames = isUserHome
+      ? userRoster?.map(o => o.player.name)
+      : clState.teamRosters?.[f.homeTeam];
+    const awayPlayerNames = isUserAway
+      ? userRoster?.map(o => o.player.name)
+      : clState.teamRosters?.[f.awayTeam];
+
     const result = simulateCLMatch(
       homeStrength, awayStrength,
       f.homeTeam, f.awayTeam,
-      isUserHome ? userRoster : undefined
+      homePlayerNames,
+      awayPlayerNames,
     );
 
     // Capture user match events
@@ -480,10 +493,18 @@ export function playPlayoffLeg(
     const homeStrength = isUserHome ? userStrength : (homeTeam?.strength ?? 70);
     const awayStrength = isUserAway ? userStrength : (awayTeam?.strength ?? 70);
 
+    const homePlayerNames = isUserHome
+      ? userRoster?.map(o => o.player.name)
+      : clState.teamRosters?.[homeTeamName];
+    const awayPlayerNames = isUserAway
+      ? userRoster?.map(o => o.player.name)
+      : clState.teamRosters?.[awayTeamName];
+
     const result = simulateCLMatch(
       homeStrength, awayStrength,
       homeTeamName, awayTeamName,
-      isUserHome ? userRoster : undefined
+      homePlayerNames,
+      awayPlayerNames,
     );
 
     if (isUserMatch) capturedUserEvents = result.events;
@@ -598,7 +619,9 @@ export function playKnockoutLeg(
         const awayTeam = clState.teams.find(t => t.name === awayTeamName);
         const hs = isUserHome ? userStrength : (homeTeam?.strength ?? 70);
         const as_ = isUserAway ? userStrength : (awayTeam?.strength ?? 70);
-        const result = simulateCLMatch(hs, as_, homeTeamName, awayTeamName, isUserHome ? userRoster : undefined);
+        const hPN = isUserHome ? userRoster?.map(o => o.player.name) : clState.teamRosters?.[homeTeamName];
+        const aPN = isUserAway ? userRoster?.map(o => o.player.name) : clState.teamRosters?.[awayTeamName];
+        const result = simulateCLMatch(hs, as_, homeTeamName, awayTeamName, hPN, aPN);
         if (isUserMatch) capturedUserEvents = result.events;
         playerStats = updatePlayerStats(playerStats, result.scorers, result.assisters,
           homeTeamName, awayTeamName, result.homeGoals, result.awayGoals, userTeamName,
@@ -622,7 +645,9 @@ export function playKnockoutLeg(
       const awayTeam = clState.teams.find(t => t.name === awayTeamName);
       const hs = isUserHome ? userStrength : (homeTeam?.strength ?? 70);
       const as_ = isUserAway ? userStrength : (awayTeam?.strength ?? 70);
-      const result = simulateCLMatch(hs, as_, homeTeamName, awayTeamName, isUserHome ? userRoster : undefined);
+      const hPN2 = isUserHome ? userRoster?.map(o => o.player.name) : clState.teamRosters?.[homeTeamName];
+      const aPN2 = isUserAway ? userRoster?.map(o => o.player.name) : clState.teamRosters?.[awayTeamName];
+      const result = simulateCLMatch(hs, as_, homeTeamName, awayTeamName, hPN2, aPN2);
       if (isUserMatch) capturedUserEvents = result.events;
       playerStats = updatePlayerStats(playerStats, result.scorers, result.assisters,
         homeTeamName, awayTeamName, result.homeGoals, result.awayGoals, userTeamName,
@@ -724,7 +749,8 @@ export function initializeCL(
   season: number,
   allLeagueStandings: Record<string, { teamName: string; isUser: boolean }[]>,
   userLeagueId: string,
-  userTeamName: string
+  userTeamName: string,
+  allLeagueStates?: Record<string, LeagueState>
 ): CLState {
   const clLeagueIds = Object.keys(CL_LEAGUE_SPOTS);
   const allTeams: CLTeam[] = [];
@@ -753,6 +779,18 @@ export function initializeCL(
   const groupFixtures = drawGroupFixtures(teams);
   const standings = updateStandings(teams, groupFixtures);
 
+  // Build team rosters from all league states so AI teams get real player names
+  const teamRosters: Record<string, string[]> = {};
+  if (allLeagueStates) {
+    for (const leagueState of Object.values(allLeagueStates)) {
+      for (const team of leagueState.teams) {
+        if (!team.isUser && team.players && team.players.length > 0) {
+          teamRosters[team.name] = team.players.map(p => p.name);
+        }
+      }
+    }
+  }
+
   return {
     season,
     phase: "group",
@@ -767,6 +805,7 @@ export function initializeCL(
     finalTie: null,
     playerStats: {},
     champion: null,
+    teamRosters,
   };
 }
 
