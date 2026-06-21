@@ -21,14 +21,7 @@ type Props = {
 };
 
 // ── Custom player pixel portraits ──────────────
-const PIXEL_PORTRAITS: Record<string, string> = {
-  "Yousef Alnuwasser": "/images/yousef-pixel.png",
-  "Hussain Alrezk":    "/images/hussain-alrezk.png",
-  "ABDULLAH ALMUSAWI": "/images/abdullah-almusawi.png",
-  "Ali Alsaif":        "/images/ali-alsaif.png",
-  "Abdulaziz Alghariri": "/images/abdulaziz-alghariri.png",
-  "Ali Albrahim":        "/images/ali-albrahim.png",
-};
+import { PIXEL_PORTRAITS } from "../game/playerPortraits";
 
 function PixelPortrait({ name, size = 56 }: { name: string; size?: number }) {
   const src = PIXEL_PORTRAITS[name];

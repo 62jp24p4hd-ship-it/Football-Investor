@@ -9,7 +9,7 @@ type LeagueStandingsProps = {
   totalRounds: number;
   leagueName?: string;
   leagueLogo?: string;
-  tier?: 1 | 2; // 1 = top flight (relegation bottom 3), 2 = second tier (promotion top 6)
+  tier?: 1 | 2;
 };
 
 export default function LeagueStandings({
@@ -63,38 +63,31 @@ export default function LeagueStandings({
               const position = idx + 1;
               const isRelegationZone = position > totalTeams - 3;
 
-              let rowBg = "";
               let rowText = "text-slate-300";
               let isGoldAnimated = false;
+              let isRedAnimated = false;
+              let isGreen = false;
 
               if (tier === 2) {
-                // Second tier: top 3 promoted directly
                 if (position === 1) {
                   isGoldAnimated = true;
                   rowText = "text-yellow-100 font-semibold";
                 } else if (position === 2 || position === 3) {
-                  rowBg = "bg-green-600/30";
+                  isGreen = true;
                   rowText = "text-green-100";
                 } else if (isRelegationZone) {
-                  rowBg = "bg-red-700/35";
+                  isRedAnimated = true;
                   rowText = "text-red-100";
                 }
               } else {
-                // First tier: standard colors
                 if (position === 1) {
                   isGoldAnimated = true;
                   rowText = "text-yellow-100 font-semibold";
                 } else if (position >= 2 && position <= 5) {
-                  rowBg = "bg-green-600/30";
+                  isGreen = true;
                   rowText = "text-green-100";
-                } else if (position === 6) {
-                  rowBg = "bg-orange-600/30";
-                  rowText = "text-orange-100";
-                } else if (position === 7) {
-                  rowBg = "bg-blue-600/30";
-                  rowText = "text-blue-100";
                 } else if (isRelegationZone) {
-                  rowBg = "bg-red-700/35";
+                  isRedAnimated = true;
                   rowText = "text-red-100";
                 }
               }
@@ -102,8 +95,12 @@ export default function LeagueStandings({
               return (
                 <tr
                   key={row.teamId}
-                  className={`border-b border-slate-800/50 ${rowBg} ${rowText} ${
+                  className={`border-b border-slate-800/50 ${rowText} ${
                     isGoldAnimated ? "gold-shimmer-row" : ""
+                  } ${
+                    isRedAnimated ? "red-shimmer-row" : ""
+                  } ${
+                    isGreen ? "bg-green-600/30" : ""
                   } ${row.isUser ? "ring-2 ring-emerald-400/70 ring-inset font-bold" : ""}`}
                 >
                   <td className="py-1 px-1">{position}</td>
@@ -140,6 +137,23 @@ export default function LeagueStandings({
           animation: goldShimmer 2.5s linear infinite;
         }
         @keyframes goldShimmer {
+          0% { background-position: 0% 0%; }
+          100% { background-position: -200% 0%; }
+        }
+
+        .red-shimmer-row {
+          background: linear-gradient(
+            90deg,
+            rgba(220, 38, 38, 0.2) 0%,
+            rgba(239, 68, 68, 0.5) 25%,
+            rgba(220, 38, 38, 0.2) 50%,
+            rgba(239, 68, 68, 0.5) 75%,
+            rgba(220, 38, 38, 0.2) 100%
+          );
+          background-size: 200% 100%;
+          animation: redShimmer 2.5s linear infinite;
+        }
+        @keyframes redShimmer {
           0% { background-position: 0% 0%; }
           100% { background-position: -200% 0%; }
         }

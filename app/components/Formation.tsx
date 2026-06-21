@@ -1,19 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import type { GamePlayer, OwnedPlayer } from "../game/types";
 import { getCurrentValue } from "../game/valueEngine";
 import { getSeasonStats } from "../game/statsEngine";
 import { positionBg } from "../game/helpers";
 
-const PIXEL_PORTRAITS: Record<string, string> = {
-  "Yousef Alnuwasser":   "/images/yousef-pixel.png",
-  "Hussain Alrezk":      "/images/hussain-alrezk.png",
-  "ABDULLAH ALMUSAWI":   "/images/abdullah-almusawi.png",
-  "Ali Alsaif":          "/images/ali-alsaif.png",
-  "Ali AlGhanim":"/images/ali-alghanim.png",
-  "Abdulaziz Alghariri": "/images/abdulaziz-alghariri.png",
-  "Ali Albrahim":        "/images/ali-albrahim.png",
-};
+import { PIXEL_PORTRAITS } from "../game/playerPortraits";
 
 type Props = {
   gamePlayer: GamePlayer;
@@ -25,6 +18,7 @@ type Props = {
   isVersus?: boolean;
   onSlotClick: (slot: string) => void;
   onOwnedClick: (playerIndex: number, ownedIndex: number) => void;
+  onCompareReady?: (a: OwnedPlayer, b: OwnedPlayer) => void;
 };
 
 // ── Card animations per type ─────────────────
@@ -82,7 +76,8 @@ function SlotCard({
     const borderColor = getCardBorder(owned, isVersus);
     const glowColor = getCardGlow(owned, isVersus);
     const portrait = PIXEL_PORTRAITS[owned.player.name];
-    const shortName = owned.player.name.split(" ").pop() || owned.player.name;
+    const isYousef = owned.player.name === "Yousef Alnuwasser";
+    const shortName = isYousef ? "Yousef" : (owned.player.name.split(" ").pop() || owned.player.name);
 
     return (
       <button
@@ -109,51 +104,68 @@ function SlotCard({
           (e.currentTarget as HTMLButtonElement).style.boxShadow = glowColor;
         }}
       >
-        {/* Royal Gold animation for Yousef card */}
-        {owned.player.name === "Yousef Alnuwasser" && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{borderRadius:"14px",zIndex:0}}>
-            {/* Rotating gold border glow */}
+        {/* ── GOAT card animation for Yousef ── */}
+        {isYousef && (
+          <>
+            {/* Floating 🐐 badge above card */}
             <div style={{
-              position:"absolute", inset:"-2px",
-              background:"conic-gradient(from 0deg, #D4AF37, #FFD54F, #fff8dc, #D4AF37, #b8960a, #FFD54F, #D4AF37)",
-              borderRadius:"15px",
-              animation:"yousefRotateBorder 3s linear infinite",
-              opacity:0.9,
-            }} />
-            <div style={{
-              position:"absolute", inset:"1.5px",
-              background:"rgba(10,8,0,0.92)",
-              borderRadius:"13px",
-            }} />
-            {/* Sweep shimmer */}
-            <div style={{
-              position:"absolute", top:0, left:0, right:0, bottom:0,
-              background:"linear-gradient(105deg, transparent 20%, rgba(255,230,100,0.4) 50%, transparent 80%)",
-              animation:"yousefSweep 2s ease-in-out infinite",
-              borderRadius:"14px",
-            }} />
-            {/* Top gold shine */}
-            <div style={{
-              position:"absolute", top:0, left:0, right:0,
-              height:"40%",
-              background:"linear-gradient(180deg, rgba(212,175,55,0.15) 0%, transparent 100%)",
-              borderRadius:"14px 14px 0 0",
-              animation:"yousefTopGlow 2s ease-in-out infinite alternate",
-            }} />
-            {/* Floating gold particles */}
-            {[...Array(5)].map((_,i) => (
-              <div key={i} style={{
-                position:"absolute",
-                width:"2px", height:"2px",
-                borderRadius:"50%",
-                background:"#FFD54F",
-                boxShadow:"0 0 4px rgba(255,213,79,0.9)",
-                left:`${15+i*16}%`,
-                bottom:"5%",
-                animation:`yousefParticle ${1.5+i*0.3}s ease-out ${i*0.2}s infinite`,
+              position:"absolute", top:"-10px", right:"4px",
+              fontSize:"16px", zIndex:20, lineHeight:1,
+              animation:"yousefGoat 2.2s ease-in-out infinite",
+              filter:"drop-shadow(0 0 8px rgba(212,175,55,0.95))",
+              pointerEvents:"none",
+            }}>🐐</div>
+
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{borderRadius:"14px",zIndex:0}}>
+
+              {/* Holographic rainbow sweep */}
+              <div style={{
+                position:"absolute", top:0, left:0, right:0, bottom:0,
+                background:"linear-gradient(105deg, transparent 5%, rgba(212,175,55,0.35) 25%, rgba(168,85,247,0.25) 45%, rgba(56,189,248,0.25) 65%, rgba(52,211,153,0.2) 80%, transparent 95%)",
+                animation:"yousefSweep 2.2s ease-in-out infinite",
+                borderRadius:"14px",
               }} />
-            ))}
-          </div>
+
+              {/* Pulsing top halo */}
+              <div style={{
+                position:"absolute", top:0, left:0, right:0, height:"45%",
+                background:"linear-gradient(180deg, rgba(212,175,55,0.22) 0%, rgba(168,85,247,0.08) 60%, transparent 100%)",
+                borderRadius:"14px 14px 0 0",
+                animation:"yousefTopGlow 1.8s ease-in-out infinite alternate",
+              }} />
+
+              {/* G.O.A.T watermark */}
+              <div style={{
+                position:"absolute", bottom:"24px", left:0, right:0,
+                textAlign:"center",
+                fontSize:"7px", fontWeight:900, letterSpacing:"0.35em",
+                color:"rgba(212,175,55,0.18)",
+                pointerEvents:"none",
+              }}>G.O.A.T</div>
+
+              {/* Multi-color sparkle particles */}
+              {([
+                {c:"#FFD54F", s:"rgba(255,213,79,0.9)",  l:10},
+                {c:"#c084fc", s:"rgba(192,132,252,0.9)", l:24},
+                {c:"#38bdf8", s:"rgba(56,189,248,0.9)",  l:38},
+                {c:"#FFD54F", s:"rgba(255,213,79,0.9)",  l:52},
+                {c:"#34d399", s:"rgba(52,211,153,0.9)",  l:66},
+                {c:"#f87171", s:"rgba(248,113,113,0.9)", l:80},
+              ] as const).map((p,i) => (
+                <div key={i} style={{
+                  position:"absolute",
+                  width: i%2===0 ? "3px" : "2px",
+                  height: i%2===0 ? "3px" : "2px",
+                  borderRadius:"50%",
+                  background: p.c,
+                  boxShadow:`0 0 6px ${p.s}`,
+                  left:`${p.l}%`,
+                  bottom:"4%",
+                  animation:`yousefParticle ${1.2+i*0.22}s ease-out ${i*0.14}s infinite`,
+                }} />
+              ))}
+            </div>
+          </>
         )}
         {/* Shimmer sweep for other secret cards */}
         {owned.player.secret && owned.player.name !== "Yousef Alnuwasser" && (
@@ -186,13 +198,21 @@ function SlotCard({
         <div className="flex flex-col items-center gap-0.5 flex-1 justify-center">
           {portrait ? (
             <img src={portrait} alt={shortName}
-              style={{ width: "36px", height: "36px", imageRendering: "pixelated", objectFit: "contain",
-                filter: `drop-shadow(0 0 6px ${borderColor})` }} />
+              style={{
+                width: isYousef ? "28px" : "36px",
+                height: isYousef ? "28px" : "36px",
+                imageRendering: "pixelated", objectFit: "contain",
+                filter: `drop-shadow(0 0 6px ${borderColor})`
+              }} />
           ) : null}
           <div className="text-white font-black text-center leading-tight"
-            style={{ fontSize: portrait ? "9px" : "11px", maxWidth: "100%", overflow: "hidden",
+            style={{
+              fontSize: isYousef ? "11px" : portrait ? "9px" : "11px",
+              maxWidth: "100%", overflow: "hidden",
               textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%",
-              textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+              textShadow: isYousef ? "0 0 8px rgba(212,175,55,0.9), 0 1px 4px rgba(0,0,0,0.9)" : "0 1px 4px rgba(0,0,0,0.8)",
+              color: isYousef ? "#FFD54F" : "#fff",
+            }}>
             {shortName}
           </div>
           {owned.activeEffects && owned.activeEffects.length > 0 && (
@@ -215,6 +235,20 @@ function SlotCard({
             {profit >= 0 ? "+" : ""}{profit}M
           </span>
         </div>
+
+        {/* Contract warning badge */}
+        {owned.contract && (owned.contract.endSeason - season) <= 2 && (
+          <div style={{
+            position: "absolute", top: "4px", left: "4px",
+            background: (owned.contract.endSeason - season) <= 1 ? "rgba(239,68,68,0.9)" : "rgba(245,158,11,0.85)",
+            borderRadius: "4px", padding: "1px 4px",
+            fontSize: "7px", fontWeight: 900, color: "white",
+            letterSpacing: "0.05em", zIndex: 10,
+            boxShadow: (owned.contract.endSeason - season) <= 1 ? "0 0 6px rgba(239,68,68,0.6)" : "0 0 6px rgba(245,158,11,0.5)",
+          }}>
+            {(owned.contract.endSeason - season) <= 1 ? "⚠️ آخر موسم" : "📋 موسم"}
+          </div>
+        )}
       </button>
     );
   }
@@ -266,23 +300,23 @@ if (typeof document !== "undefined") {
     const style = document.createElement("style");
     style.id = styleId;
     style.textContent = `
-      @keyframes yousefRotateBorder {
-        0%   { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
       @keyframes yousefSweep {
-        0%   { transform: translateX(-150%); opacity:0; }
-        30%  { opacity:1; }
-        70%  { opacity:1; }
-        100% { transform: translateX(150%); opacity:0; }
+        0%   { transform: translateX(-160%); opacity:0; }
+        25%  { opacity:1; }
+        75%  { opacity:1; }
+        100% { transform: translateX(160%); opacity:0; }
       }
       @keyframes yousefTopGlow {
-        0%   { opacity:0.4; }
+        0%   { opacity:0.35; }
         100% { opacity:1; }
       }
       @keyframes yousefParticle {
-        0%   { transform:translateY(0) scale(1); opacity:0.8; }
-        100% { transform:translateY(-70px) scale(0.3); opacity:0; }
+        0%   { transform:translateY(0) scale(1);   opacity:0.9; }
+        100% { transform:translateY(-75px) scale(0.2); opacity:0; }
+      }
+      @keyframes yousefGoat {
+        0%,100% { transform: translateY(0) rotate(-8deg) scale(1);    filter: drop-shadow(0 0 6px rgba(212,175,55,0.8));  }
+        50%     { transform: translateY(-5px) rotate(8deg) scale(1.2); filter: drop-shadow(0 0 14px rgba(212,175,55,1)); }
       }
       @keyframes cardGoldPulse {
         0%,100% { box-shadow: 0 0 20px rgba(212,175,55,0.5), 0 0 40px rgba(212,175,55,0.2), 0 2px 8px rgba(0,0,0,0.6); }
@@ -314,23 +348,74 @@ if (typeof document !== "undefined") {
   }
 }
 
-export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, isVersus, onSlotClick, onOwnedClick }: Props) {
+export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, isVersus, onSlotClick, onOwnedClick, onCompareReady }: Props) {
   const isFrozen = gamePlayer.frozenSeason === season;
+  const [filterPos, setFilterPos] = useState<string>("ALL");
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareSlots, setCompareSlots] = useState<string[]>([]);
 
   const owned = (slot: string) => gamePlayer.owned.find(o => o.slot === slot);
   const ownedIdx = (slot: string) => gamePlayer.owned.findIndex(o => o.slot === slot);
 
+  // Contract warnings count
+  const contractWarnings = gamePlayer.owned.filter(o =>
+    o.contract && (o.contract.endSeason - season) <= 2
+  ).length;
+
+  function handleCompareClick(slot: string) {
+    const o = owned(slot);
+    if (!o) return;
+    const next = compareSlots.includes(slot)
+      ? compareSlots.filter(s => s !== slot)
+      : [...compareSlots, slot].slice(-2);
+    setCompareSlots(next);
+    if (next.length === 2) {
+      const a = owned(next[0]);
+      const b = owned(next[1]);
+      if (a && b && onCompareReady) {
+        onCompareReady(a, b);
+        setCompareMode(false);
+        setCompareSlots([]);
+      }
+    }
+  }
+
   function card(slot: string) {
+    const o = owned(slot);
+    const posMatch = filterPos === "ALL" || !o || o.player.position === filterPos ||
+      (filterPos === "ATT" && ["ST","LW","RW","SS","CF"].includes(o.player.position)) ||
+      (filterPos === "MID" && ["CM","CAM","CDM","LM","RM"].includes(o.player.position)) ||
+      (filterPos === "DEF" && ["CB","LB","RB","LWB","RWB"].includes(o.player.position)) ||
+      (filterPos === "GK" && o.player.position === "GK");
+
+    const dimmed = filterPos !== "ALL" && o && !posMatch;
+    const isCompareSelected = compareSlots.includes(slot);
+
     return (
-      <SlotCard
-        key={slot} slot={slot}
-        owned={owned(slot)} ownedIndex={ownedIdx(slot)}
-        isActive={isActive} isPending={pendingSlot === slot}
-        playerIndex={playerIndex}
-        onSlotClick={onSlotClick} onOwnedClick={onOwnedClick}
-        season={season} marketMultiplier={marketMultiplier}
-        isVersus={isVersus}
-      />
+      <div key={slot} style={{ opacity: dimmed ? 0.3 : 1, transition: "opacity 0.2s", position: "relative" }}>
+        {compareMode && o && (
+          <div
+            onClick={() => handleCompareClick(slot)}
+            style={{
+              position: "absolute", inset: 0, zIndex: 20, borderRadius: "14px",
+              background: isCompareSelected ? "rgba(99,102,241,0.35)" : "rgba(99,102,241,0.08)",
+              border: `2px solid ${isCompareSelected ? "#6366f1" : "rgba(99,102,241,0.4)"}`,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: isCompareSelected ? "0 0 16px rgba(99,102,241,0.5)" : "none",
+            }}>
+            {isCompareSelected && <span style={{ fontSize: "20px" }}>✓</span>}
+          </div>
+        )}
+        <SlotCard
+          slot={slot}
+          owned={o} ownedIndex={ownedIdx(slot)}
+          isActive={isActive && !compareMode} isPending={pendingSlot === slot}
+          playerIndex={playerIndex}
+          onSlotClick={onSlotClick} onOwnedClick={onOwnedClick}
+          season={season} marketMultiplier={marketMultiplier}
+          isVersus={isVersus}
+        />
+      </div>
     );
   }
 
@@ -353,6 +438,58 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         <div className="absolute top-3 left-[28%] right-[28%] h-7 border-b border-l border-r border-white/5" />
         <div className="absolute bottom-3 left-[28%] right-[28%] h-7 border-t border-l border-r border-white/5" />
       </div>
+
+      {/* ── Filter & Compare toolbar ── */}
+      {isActive && !isVersus && (
+        <div className="relative z-20 flex items-center justify-between gap-2 px-3 pt-2.5 pb-1">
+          {/* Position filters */}
+          <div className="flex gap-1">
+            {(["ALL","GK","DEF","MID","ATT"] as const).map(pos => (
+              <button key={pos} onClick={() => setFilterPos(pos)}
+                style={{
+                  fontSize: "9px", fontWeight: 800, padding: "3px 7px", borderRadius: "5px", cursor: "pointer",
+                  background: filterPos === pos ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                  border: filterPos === pos ? "1px solid rgba(52,211,153,0.7)" : "1px solid rgba(255,255,255,0.1)",
+                  color: filterPos === pos ? "#34d399" : "#6b7280",
+                  transition: "all 0.15s",
+                }}>
+                {pos}
+              </button>
+            ))}
+          </div>
+          {/* Right: contract warnings + compare button */}
+          <div className="flex items-center gap-2">
+            {contractWarnings > 0 && !compareMode && (
+              <div style={{
+                fontSize: "9px", fontWeight: 800, padding: "3px 7px", borderRadius: "5px",
+                background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)",
+                color: "#f87171", letterSpacing: "0.05em",
+              }}>
+                ⚠️ {contractWarnings} عقود
+              </div>
+            )}
+            {!compareMode ? (
+              <button onClick={() => { setCompareMode(true); setCompareSlots([]); }}
+                style={{
+                  fontSize: "9px", fontWeight: 800, padding: "3px 7px", borderRadius: "5px", cursor: "pointer",
+                  background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)",
+                  color: "#a5b4fc", transition: "all 0.15s",
+                }}>
+                ⚖️ قارن
+              </button>
+            ) : (
+              <button onClick={() => { setCompareMode(false); setCompareSlots([]); }}
+                style={{
+                  fontSize: "9px", fontWeight: 800, padding: "3px 7px", borderRadius: "5px", cursor: "pointer",
+                  background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)",
+                  color: "#f87171",
+                }}>
+                ✕ إلغاء المقارنة
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10 p-3 flex flex-col gap-2">
 

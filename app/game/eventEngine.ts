@@ -308,13 +308,14 @@ function dynamicWeight(id: string, baseWeight: number): number {
 
 export function createRandomSeasonEvent(
   season: number,
-  gamePlayers: GamePlayer[]
+  gamePlayers: GamePlayer[],
+  isDuringSeason = false
 ): SeasonEventResult {
   const newsItems: NewsItem[] = [];
   let updatedPlayers = [...gamePlayers];
 
-  // 0.05% — Bob Paisley (ultra-rare، دائماً ممكن)
-  if (Math.random() < 0.0005) {
+  // 0.05% — Bob Paisley (ultra-rare) — لا يظهر أثناء الموسم
+  if (!isDuringSeason && Math.random() < 0.0005) {
     const ownerIndex = Math.floor(Math.random() * gamePlayers.length);
     return triggerBobPaisleyDisaster(updatedPlayers, ownerIndex, season);
   }
@@ -542,10 +543,16 @@ export function createRandomSeasonEvent(
     },
   ];
 
+  // أثناء الموسم: أزل الإيفنتات التي تطرد اللاعبين من النادي
+  const DEPARTURE_EVENTS = new Set(["freeTransfer", "florentinoPerez"]);
+  const activePool = isDuringSeason
+    ? pool.filter(e => !DEPARTURE_EVENTS.has(e.id))
+    : pool;
+
   // Weighted random selection
-  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0);
+  const totalWeight = activePool.reduce((sum, e) => sum + e.weight, 0);
   let rand = Math.random() * totalWeight;
-  for (const entry of pool) {
+  for (const entry of activePool) {
     rand -= entry.weight;
     if (rand <= 0) {
       recordEvent(entry.id);

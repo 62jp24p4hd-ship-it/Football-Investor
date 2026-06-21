@@ -1,6 +1,7 @@
 "use client";
 
 import type { GamePlayer, GameMode, BudgetMode } from "../game/types";
+import { getLeagueTheme } from "../game/leagueThemes";
 
 type Props = {
   season: number;
@@ -21,14 +22,18 @@ type Props = {
   nextSeasonButtonLabel?: string;
   leagueRound?: number;
   leagueTotalRounds?: number;
+  selectedLeagueId?: string;
+  singlePlayerStyle?: "investor" | "clubOwner";
 };
 
 export default function TopBar({
   season, mode, gameLengthMode, activePlayerIndex, gamePlayers,
   timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick,
   onFinishGame, onSecretClick, onSave, canNextSeason, nextSeasonButtonLabel,
-  leagueRound, leagueTotalRounds
+  leagueRound, leagueTotalRounds, selectedLeagueId, singlePlayerStyle
 }: Props) {
+  const isClubOwner = singlePlayerStyle === "clubOwner";
+  const theme = isClubOwner ? getLeagueTheme(selectedLeagueId) : getLeagueTheme();
   const isTimerActive = pendingSlot !== null && timerSeconds !== null;
   const timerDanger = timer <= 5;
   const seasonsLeft = 2028 - season;
@@ -38,9 +43,12 @@ export default function TopBar({
 
   return (
     <header style={{
-      background: "linear-gradient(180deg, #070b14 0%, #0a0f1e 100%)",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
-      boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+      background: theme.headerGradient,
+      borderBottom: `1px solid ${isClubOwner ? theme.dimColor : "rgba(255,255,255,0.06)"}`,
+      boxShadow: isClubOwner
+        ? `0 4px 30px ${theme.glowColor}, 0 0 0 1px ${theme.dimColor}`
+        : "0 4px 24px rgba(0,0,0,0.5)",
+      transition: "background 0.6s ease, box-shadow 0.6s ease",
     }} className="sticky top-0 z-30 backdrop-blur-md">
 
       <div className="max-w-7xl mx-auto px-4 py-2.5">
@@ -50,11 +58,17 @@ export default function TopBar({
           <div className="flex items-center gap-3">
 
             {/* Logo */}
-            <div className="hidden md:flex items-center gap-2 pr-3" style={{ borderRight: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="text-xl">⚽</span>
+            <div className="hidden md:flex items-center gap-2 pr-3" style={{ borderRight: `1px solid ${isClubOwner ? theme.dimColor : "rgba(255,255,255,0.08)"}` }}>
+              <span className="text-xl">{isClubOwner ? theme.flag : "⚽"}</span>
               <span className="font-black text-white text-xs tracking-wider uppercase hidden lg:block"
-                style={{ background: "linear-gradient(135deg,#fff,#a8f5d0)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                Football<br/>Investor
+                style={{
+                  background: isClubOwner
+                    ? `linear-gradient(135deg,#fff,${theme.textColor})`
+                    : "linear-gradient(135deg,#fff,#a8f5d0)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}>
+                {isClubOwner ? (selectedLeagueId ? selectedLeagueId.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()) : "Club Owner") : "Football\nInvestor"}
               </span>
             </div>
 
@@ -86,12 +100,30 @@ export default function TopBar({
                   style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)" }}>♾️</span>
               )}
               {typeof leagueRound === "number" && leagueRound > 0 && (
-                <div className="hidden lg:flex flex-col items-center justify-center px-2 py-1 rounded-none"
-                  style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)" }}>
-                  <span className="text-[9px] text-emerald-400 leading-none">Round</span>
-                  <span className="text-xs font-black text-emerald-300 leading-none">
+                <div className="flex flex-col items-center justify-center px-2 py-1"
+                  style={{
+                    background: theme.dimColor,
+                    border: `1px solid ${isClubOwner ? theme.accentColor + "55" : "rgba(16,185,129,0.25)"}`,
+                    borderRadius: "4px",
+                    minWidth: "52px",
+                  }}>
+                  <span className="text-[9px] font-bold leading-none mb-0.5" style={{ color: theme.textColor, opacity: 0.7, letterSpacing: "0.1em" }}>
+                    {isClubOwner ? `${theme.flag} JW` : "Round"}
+                  </span>
+                  <span className="text-xs font-black leading-none tabular-nums" style={{ color: theme.textColor }}>
                     {leagueRound}/{leagueTotalRounds ?? 36}
                   </span>
+                  {/* Progress bar */}
+                  <div style={{ width: "100%", height: "2px", background: "rgba(255,255,255,0.1)", borderRadius: "1px", marginTop: "3px" }}>
+                    <div style={{
+                      width: `${Math.min(100, (leagueRound / (leagueTotalRounds ?? 36)) * 100)}%`,
+                      height: "100%",
+                      background: theme.accentColor,
+                      borderRadius: "1px",
+                      boxShadow: `0 0 4px ${theme.accentColor}`,
+                      transition: "width 0.4s ease",
+                    }} />
+                  </div>
                 </div>
               )}
             </button>
@@ -178,9 +210,10 @@ export default function TopBar({
               <button onClick={onSave}
                 className="px-3 py-2.5 font-bold text-sm transition-all hover:scale-105 active:scale-95"
                 style={{
-                  background: "rgba(16,185,129,0.08)",
-                  border: "1px solid rgba(16,185,129,0.25)",
-                  color: "#10b981",
+                  background: isClubOwner ? theme.dimColor : "rgba(16,185,129,0.08)",
+                  border: `1px solid ${isClubOwner ? theme.accentColor + "55" : "rgba(16,185,129,0.25)"}`,
+                  color: isClubOwner ? theme.textColor : "#10b981",
+                  borderRadius: "6px",
                 }}
                 title="Save Game">
                 💾

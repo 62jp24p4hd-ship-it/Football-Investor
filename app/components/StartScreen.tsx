@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import type { BudgetMode, GameMode, EventType } from "../game/types";
-import { getSaveInfo, deleteSave } from "../game/saveSystem";
+import { getAllSlots, deleteSlot } from "../game/saveSystem";
+import type { SlotInfo } from "../game/saveSystem";
 
 type StartConfig = {
   mode: GameMode;
@@ -18,7 +19,7 @@ type StartConfig = {
   easterUnlocked: boolean;
 };
 
-type Props = { onStart: (config: StartConfig) => void; onContinue?: () => void };
+type Props = { onStart: (config: StartConfig) => void; onLoad: (slotNum: number) => void };
 
 function Btn({
   selected, color, onClick, children, className = "",
@@ -92,7 +93,7 @@ const HOW_TO_PLAY = [
   { emoji: "📋", en: "Manage contracts — don't let players leave for free", ar: "أدر العقود — لا تترك اللاعبين يرحلون مجاناً" },
 ];
 
-export default function StartScreen({ onStart, onContinue }: Props) {
+export default function StartScreen({ onStart, onLoad }: Props) {
   const [mode, setMode] = useState<GameMode | null>(null);
   const [singlePlayerStyle, setSinglePlayerStyle] = useState<"investor" | "clubOwner" | null>(null);
   const [budgetMode, setBudgetMode] = useState<BudgetMode>("balanced");
@@ -111,18 +112,15 @@ export default function StartScreen({ onStart, onContinue }: Props) {
   const [showEasterPopup, setShowEasterPopup] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showDevMsg, setShowDevMsg] = useState(false);
-  const [saveInfo, setSaveInfo] = useState<{ season: number; mode: string; savedAt: string } | null>(null);
-  const [showSavePopup, setShowSavePopup] = useState(false);
-  const [showNewGameConfirm, setShowNewGameConfirm] = useState(false);
+  const [slots, setSlots] = useState<(SlotInfo | null)[]>([]);
+  const [showSaves, setShowSaves] = useState(false);
 
   // ── Background transition state ──
   const [activeBg, setActiveBg] = useState<"default" | "classic" | "infinite">("default");
   const [bgFading, setBgFading] = useState(false);
 
   useEffect(() => {
-    const info = getSaveInfo();
-    setSaveInfo(info);
-    if (info) setShowSavePopup(true);
+    setSlots(getAllSlots());
   }, []);
 
   // ── Handle game length selection with bg transition ──
@@ -205,54 +203,70 @@ export default function StartScreen({ onStart, onContinue }: Props) {
         }
       `}</style>
 
-      {/* ── Save popup ── */}
-      {showSavePopup && saveInfo && !showNewGameConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.88)" }}>
-          <div className="w-full max-w-sm p-6 shadow-2xl" style={{ background: "#0d1117", border: "1px solid rgba(16,185,129,0.3)", boxShadow: "0 0 40px rgba(16,185,129,0.15)" }}>
-            <div className="text-center mb-5">
-              <div className="text-4xl mb-2">💾</div>
-              <div className="text-white font-black text-xl">Save Found</div>
-              <div className="text-gray-500 text-xs mt-1">يوجد حفظ سابق للعبة</div>
+      {/* ── 10-Slot Saves Panel ── */}
+      {showSaves && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-md overflow-hidden" style={{ background: "linear-gradient(160deg,#080c14,#0a0f1e)", border: "1px solid rgba(255,213,79,0.3)", boxShadow: "0 0 60px rgba(255,213,79,0.1)", borderRadius: "16px", animation: "modalSlideUp 0.3s cubic-bezier(0.22,1,0.36,1)" }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,213,79,0.06)" }}>
+              <div>
+                <div className="font-black text-white text-base tracking-wide">💾 المحفوظات</div>
+                <div className="text-[10px] tracking-[0.2em] uppercase mt-0.5" style={{ color: "rgba(255,213,79,0.5)" }}>Saved Games — 10 Slots</div>
+              </div>
+              <button onClick={() => setShowSaves(false)}
+                className="w-8 h-8 flex items-center justify-center font-black text-lg transition-all hover:scale-110 active:scale-90"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af", borderRadius: "6px" }}>
+                ×
+              </button>
             </div>
-            <div className="p-3 mb-5 text-xs space-y-1.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex justify-between text-gray-400"><span>Season</span><span className="text-white font-bold">{saveInfo.season}</span></div>
-              <div className="flex justify-between text-gray-400"><span>Mode</span><span className="text-white font-bold capitalize">{saveInfo.mode}</span></div>
-              <div className="flex justify-between text-gray-400"><span>Saved</span><span className="text-white font-bold">{new Date(saveInfo.savedAt).toLocaleDateString()}</span></div>
+            <div className="p-4 space-y-2" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+              {slots.map((info, i) => {
+                const slotNum = i + 1;
+                const modeLabel = !info ? "—" : info.singlePlayerStyle === "clubOwner" ? "🏟️ مالك نادي" : info.mode === "versus" ? "👥 ضد صديق" : "💼 مستثمر";
+                return (
+                  <div key={slotNum} style={{
+                    background: info ? "rgba(255,213,79,0.06)" : "rgba(255,255,255,0.02)",
+                    border: info ? "1px solid rgba(255,213,79,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: "10px",
+                    padding: "10px 12px",
+                    display: "flex", alignItems: "center", gap: "10px",
+                  }}>
+                    <div style={{ fontSize: "11px", fontWeight: 900, color: info ? "#FFD54F" : "#374151", minWidth: "22px", textAlign: "center" }}>
+                      {slotNum}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {info ? (
+                        <>
+                          <div style={{ fontSize: "12px", fontWeight: 800, color: "white", lineHeight: 1.3 }}>{modeLabel}</div>
+                          <div style={{ fontSize: "10px", color: "#6b7280", marginTop: "2px" }}>
+                            الموسم {info.season} · {new Date(info.savedAt).toLocaleDateString("ar-SA")}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: "11px", color: "#374151", fontStyle: "italic" }}>خانة فارغة</div>
+                      )}
+                    </div>
+                    {info && (
+                      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                        <button
+                          onClick={() => { setShowSaves(false); onLoad(slotNum); }}
+                          style={{ fontSize: "10px", fontWeight: 800, padding: "5px 10px", background: "rgba(16,185,129,0.15)", border: "1px solid #10b981", color: "#10b981", borderRadius: "6px", cursor: "pointer", whiteSpace: "nowrap" }}>
+                          ▶ تحميل
+                        </button>
+                        <button
+                          onClick={() => { deleteSlot(slotNum); setSlots(getAllSlots()); }}
+                          style={{ fontSize: "10px", fontWeight: 800, padding: "5px 8px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", color: "#ef4444", borderRadius: "6px", cursor: "pointer" }}>
+                          🗑
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <button onClick={() => { setShowSavePopup(false); onContinue?.(); }}
-              className="w-full py-3.5 font-black text-sm uppercase tracking-wider mb-2 transition-all hover:scale-105 active:scale-95"
-              style={{ background: "linear-gradient(135deg,#10b981,#059669)", color: "white", boxShadow: "0 4px 20px rgba(16,185,129,0.4)" }}>
-              ▶ Continue Game — متابعة
-            </button>
-            <button onClick={() => { setShowSavePopup(false); setShowNewGameConfirm(true); }}
-              className="w-full py-3 font-bold text-sm uppercase transition-all hover:scale-105 active:scale-95"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#6b7280" }}>
-              New Game — لعبة جديدة
-            </button>
           </div>
-        </div>
-      )}
-
-      {/* ── New game confirm ── */}
-      {showNewGameConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.88)" }}>
-          <div className="w-full max-w-sm p-6 shadow-2xl" style={{ background: "#0d1117", border: "1px solid rgba(239,68,68,0.3)", boxShadow: "0 0 40px rgba(239,68,68,0.1)" }}>
-            <div className="text-center mb-5">
-              <div className="text-3xl mb-2">⚠️</div>
-              <div className="text-white font-black text-base">Starting a new game will delete your save.</div>
-              <div className="text-gray-500 text-sm mt-1">Are you sure?</div>
-            </div>
-            <button onClick={() => { deleteSave(); setSaveInfo(null); setShowNewGameConfirm(false); }}
-              className="w-full py-3.5 font-black text-sm uppercase mb-2 transition-all hover:scale-105 active:scale-95"
-              style={{ background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", color: "#ef4444" }}>
-              Yes, Delete & Start New
-            </button>
-            <button onClick={() => { setShowNewGameConfirm(false); setShowSavePopup(true); }}
-              className="w-full py-3 font-bold text-sm uppercase transition-all hover:scale-105 active:scale-95"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#6b7280" }}>
-              Cancel
-            </button>
-          </div>
+          <style>{`
+            @keyframes modalSlideUp{from{opacity:0;transform:translateY(30px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+          `}</style>
         </div>
       )}
 
@@ -361,6 +375,25 @@ export default function StartScreen({ onStart, onContinue }: Props) {
             </div>
           )}
           <p className="text-gray-500 text-xs tracking-[0.3em] uppercase mt-1">Build The Most Valuable Squad</p>
+
+          {/* ── Saves button ── */}
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={() => { setSlots(getAllSlots()); setShowSaves(true); }}
+              style={{
+                borderRadius: "999px", padding: "8px 22px",
+                background: slots.some(Boolean) ? "rgba(255,213,79,0.12)" : "rgba(255,255,255,0.05)",
+                border: slots.some(Boolean) ? "1.5px solid rgba(255,213,79,0.6)" : "1.5px solid rgba(255,255,255,0.1)",
+                color: slots.some(Boolean) ? "#FFD54F" : "#6b7280",
+                fontSize: "12px", fontWeight: 800, cursor: "pointer",
+                transition: "all 0.15s",
+                boxShadow: slots.some(Boolean) ? "0 0 14px rgba(255,213,79,0.2)" : "none",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.05)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}>
+              💾 المحفوظات {slots.filter(Boolean).length > 0 && `(${slots.filter(Boolean).length}/10)`}
+            </button>
+          </div>
         </div>
 
         {showHowToPlay && (

@@ -23,8 +23,8 @@ import { setupNewSeason, buildInitialState, getFirstTurn, validateGameStart } fr
 import { generateSponsorshipOffer, shouldReceiveSponsorshipOffer, addSponsorshipToPlayer, createSponsorshipNews } from "./game/sponsorshipEngine";
 import { createTransferNews, createSaleNews, createFreezeCardNews, createTripleBuyNews, createStealCardNews, createGeneratedClassNews } from "./game/newsEngine";
 import { shuffle, randomId, pickRandom } from "./game/helpers";
-import { saveGame, loadGame, deleteSave, hasSave } from "./game/saveSystem";
-import type { SaveData } from "./game/saveSystem";
+import { autoSave, loadFromSlot } from "./game/saveSystem";
+import { getLeagueTheme } from "./game/leagueThemes";
 import { singleCanNextSeason } from "./game/singleMode";
 import { versusCanNextSeason } from "./game/versusMode";
 import { FORMATION_433, GAME_END_SEASON, GAME_START_SEASON, BUDGET_SETTINGS, ALL_POSITIONS } from "./game/constants";
@@ -34,6 +34,7 @@ import {
   getTopScorers, getTopAssists, getTopCleanSheets, getBestPlayerOfSeason, calculateUserStrength,
 } from "./game/leagueEngine";
 import type { LeagueState, MatchEvent, MatchPreview, LeaguePlayerStat } from "./game/leagueEngine";
+import { getPlayerPortrait } from "./game/playerPortraits";
 
 const LEAGUE_MAX_PURCHASE_CHANCES = 14; // hard cap, club owner mode only — any bonus chances beyond this are ignored
 const LEAGUE_REQUIRED_SQUAD_SIZE = 11;
@@ -63,6 +64,9 @@ import MatchSummaryModal from "./components/MatchSummaryModal";
 import MatchPreviewModal from "./components/MatchPreviewModal";
 import LeagueStatsModal from "./components/LeagueStatsModal";
 import LeagueChampionAnimation from "./components/LeagueChampionAnimation";
+import SeasonSummaryModal from "./components/SeasonSummaryModal";
+import ClubHistoryModal, { saveSeasonToHistory } from "./components/ClubHistoryModal";
+import ComparisonModal from "./components/ComparisonModal";
 import { FlorentinoEntrance, AclInjuryAnimation, SaudiOfferAnimation, GoatSigningAnimation, GoldenBootAnimation, BallonDorAnimation, FastFoodAnimation, YouTubeViralAnimation, GoldenBoyAnimation, RecordTransferAnimation, WonderkidAnimation, BobPaisleyAnimation, HotMarketAnimation, OneSeasonWonderAnimation, CasinoNightAnimation, MarketCrashAnimation, FailedTransferAnimation, BenchWarmerAnimation, BreakupSeasonAnimation, FreeTransferAnimation, MajorInjuryAnimation, EriksenAnimation, DopingBanAnimation, GirlsMagnetAnimation, RacistAttackAnimation, ClubLegendAnimation, KonamiCodeAnimation, WorldCupAnimation, EuroAnimation, ChampionsLeagueAnimation } from "./animations/index";
 
 // ============================================
@@ -170,6 +174,8 @@ export default function Home() {
     ligue_1: "/images/league-ligue1.png", saudi_league: "/images/league-saudi.png",
     portuguese_league: "/images/league-portugal.png", eredivisie: "/images/league-eredivisie.png",
     super_lig: "/images/league-superlig.png", championship: "/images/league-championship.png",
+    bundesliga2: "/images/league-bundesliga2.png", segunda: "/images/league-segunda.png",
+    serie_b: "/images/league-serieb.png", ligue_2: "/images/league-ligue2.png",
   };
   const [leagueEnabled, setLeagueEnabled] = useState(false); // toggled true once user starts a league season
   const [matchSummary, setMatchSummary] = useState<{
@@ -183,13 +189,21 @@ export default function Home() {
   } | null>(null);
   const [matchPreview, setMatchPreview] = useState<MatchPreview | null>(null);
   const [showLeagueStats, setShowLeagueStats] = useState(false);
+  const [showClubHistory, setShowClubHistory] = useState(false);
+  const [seasonSummary, setSeasonSummary] = useState<{ leagueState: import("./game/leagueEngine").LeagueState } | null>(null);
+  const [compareOwned, setCompareOwned] = useState<[import("./game/types").OwnedPlayer, import("./game/types").OwnedPlayer] | null>(null);
   const [leagueChampionAnim, setLeagueChampionAnim] = useState<{
     championName: string;
     isUserChampion: boolean;
+    userTeamName: string;
+    leagueId: string;
+    leagueName: string;
+    leagueLogo?: string;
     bestPlayerName: string | null;
     bestPlayerTeam: string | null;
     bestPlayerGoals: number;
     bestPlayerAssists: number;
+    bestPlayerPhoto?: string;
   } | null>(null);
 
   // ── Konami Code ───────────────────────────
@@ -388,6 +402,45 @@ export default function Home() {
       setGamePlayers(currentPlayers);
       setOtherLeagues(currentOtherLeagues);
       notify("⏩ Season skipped to end!");
+
+      // Save season to club history
+      const userStSkip = currentLeague.standings.find(r => r.isUser);
+      const userPosSkip = currentLeague.standings.findIndex(r => r.isUser) + 1;
+      if (userStSkip) {
+        saveSeasonToHistory({
+          season,
+          leagueId: selectedLeagueId,
+          leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
+          position: userPosSkip,
+          points: userStSkip.points,
+          won: userStSkip.won,
+          drawn: userStSkip.drawn,
+          lost: userStSkip.lost,
+          goalsFor: userStSkip.goalsFor,
+          goalsAgainst: userStSkip.goalsAgainst,
+          isChampion: userPosSkip === 1,
+        });
+      }
+
+      // Show season summary + champion animation
+      setSeasonSummary({ leagueState: currentLeague });
+      const championRowSkip = currentLeague.standings[0];
+      const bestSkip = getBestPlayerOfSeason(currentLeague, basePlayers);
+      setTimeout(() => {
+        setLeagueChampionAnim({
+          championName: championRowSkip?.teamName ?? "Unknown",
+          isUserChampion: !!championRowSkip?.isUser,
+          userTeamName: currentPlayers[0]?.name ?? "Your Team",
+          leagueId: selectedLeagueId,
+          leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
+          leagueLogo: leagueLogoMap[selectedLeagueId],
+          bestPlayerName: bestSkip?.stat.playerName ?? null,
+          bestPlayerTeam: bestSkip?.stat.teamName ?? null,
+          bestPlayerGoals: bestSkip?.stat.goals ?? 0,
+          bestPlayerAssists: bestSkip?.stat.assists ?? 0,
+          bestPlayerPhoto: getPlayerPortrait(bestSkip?.stat.playerName),
+        });
+      }, 600);
     }
     function handleSeasonSkipUp(e: KeyboardEvent) { keysDown.delete(e.key); }
     window.addEventListener("keydown", handleSeasonSkipDown);
@@ -402,29 +455,41 @@ export default function Home() {
   // HELPERS
   // ============================================
 
-  function notify(text: string) {
+  function notify(text: string, duration = 4000) {
     setMessage(text);
-    setTimeout(() => setMessage(""), 3000);
+    setTimeout(() => setMessage(""), duration);
   }
 
   // ── Save / Load ───────────────────────────
   function handleSave() {
-    const data: SaveData = {
-      version: 1,
-      savedAt: new Date().toISOString(),
-      season, turnIndex, mode, gameLengthMode,
-      budgetMode, eventsEnabled, eventType: "all",
-      timerSeconds, negativeBudgetEndsGame,
-      gamePlayers, news: news.slice(-30), // آخر 30 خبر فقط
-      seasonEvent,
-    };
-    saveGame(data);
-    notify("💾 Game saved!");
+    try {
+      const result = autoSave({
+        version: 3,
+        savedAt: new Date().toISOString(),
+        season, turnIndex, mode, gameLengthMode,
+        budgetMode, eventsEnabled, eventType: "all",
+        timerSeconds, negativeBudgetEndsGame,
+        gamePlayers, news: news.slice(-30),
+        seasonEvent,
+        singlePlayerStyle,
+        selectedLeagueId,
+        leagueState,
+        leagueEnabled,
+        otherLeagues,
+        pendingPromoted,
+      });
+      notify(`💾 تم الحفظ في الخانة ${result.slot}`);
+      if (result.nextWillWrap) {
+        setTimeout(() => notify("⚠️ الحفظ التالي سيستبدل الخانة 1"), 3200);
+      }
+    } catch {
+      notify("❌ فشل الحفظ — المساحة ممتلئة");
+    }
   }
 
-  function handleLoadSave() {
-    const data = loadGame();
-    if (!data) return notify("No save found");
+  function handleLoadFromSlot(slotNum: number) {
+    const data = loadFromSlot(slotNum);
+    if (!data) return notify("لا يوجد حفظ في هذه الخانة");
     setSeason(data.season);
     setTurnIndex(data.turnIndex);
     setMode(data.mode);
@@ -436,8 +501,15 @@ export default function Home() {
     setGamePlayers(data.gamePlayers);
     setNews(data.news ?? []);
     setSeasonEvent(data.seasonEvent);
+    // Club Owner state
+    setSinglePlayerStyle(data.singlePlayerStyle ?? "investor");
+    if (data.selectedLeagueId) setSelectedLeagueId(data.selectedLeagueId as LeagueId);
+    if (data.leagueState !== undefined) setLeagueState(data.leagueState ?? null);
+    if (data.leagueEnabled !== undefined) setLeagueEnabled(data.leagueEnabled);
+    if (data.otherLeagues) setOtherLeagues(data.otherLeagues);
+    if (data.pendingPromoted) setPendingPromoted(data.pendingPromoted);
     setStarted(true);
-    notify("✅ Game loaded!");
+    notify(`✅ تم تحميل الخانة ${slotNum}`);
   }
 
   function addNewsItems(items: NewsItem[]) {
@@ -1213,9 +1285,10 @@ export default function Home() {
     }
 
     // Random season events can still fire during league rounds, but less often than
-    // the normal investor mode between-season events (8% chance per round here).
-    if (eventsEnabled && Math.random() < 0.08) {
-      const randomEventResult = createRandomSeasonEvent(season, postRoundPlayers);
+    // the normal investor mode between-season events (4% chance per round here).
+    // isDuringSeason=true excludes departure events (freeTransfer, florentinoPerez, bobPaisley).
+    if (eventsEnabled && Math.random() < 0.04) {
+      const randomEventResult = createRandomSeasonEvent(season, postRoundPlayers, true);
       postRoundPlayers = randomEventResult.updatedPlayers;
       if (randomEventResult.newsItems.length > 0) addNewsItems(randomEventResult.newsItems);
       if (randomEventResult.event) {
@@ -1369,16 +1442,43 @@ export default function Home() {
         notify(`🏁 ${leagueNameMap[selectedLeagueId] ?? "League"} season complete! Press Next Season to continue.`);
       }
 
+      // Save season to club history
+      const userSt = result.updatedLeague.standings.find(r => r.isUser);
+      const userPos2 = result.updatedLeague.standings.findIndex(r => r.isUser) + 1;
+      if (userSt) {
+        saveSeasonToHistory({
+          season,
+          leagueId: selectedLeagueId,
+          leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
+          position: userPos2,
+          points: userSt.points,
+          won: userSt.won,
+          drawn: userSt.drawn,
+          lost: userSt.lost,
+          goalsFor: userSt.goalsFor,
+          goalsAgainst: userSt.goalsAgainst,
+          isChampion: userPos2 === 1,
+        });
+      }
+
+      // Show season summary modal
+      setSeasonSummary({ leagueState: result.updatedLeague });
+
       const championRow = result.updatedLeague.standings[0];
       const best = getBestPlayerOfSeason(result.updatedLeague, basePlayers);
       setTimeout(() => {
         setLeagueChampionAnim({
           championName: championRow?.teamName ?? "Unknown",
           isUserChampion: !!championRow?.isUser,
+          userTeamName: gamePlayers[0]?.name ?? "Your Team",
+          leagueId: selectedLeagueId,
+          leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
+          leagueLogo: leagueLogoMap[selectedLeagueId],
           bestPlayerName: best?.stat.playerName ?? null,
           bestPlayerTeam: best?.stat.teamName ?? null,
           bestPlayerGoals: best?.stat.goals ?? 0,
           bestPlayerAssists: best?.stat.assists ?? 0,
+          bestPlayerPhoto: getPlayerPortrait(best?.stat.playerName),
         });
       }, 600);
     } else if (result.updatedLeague.seasonPhase === "transfer") {
@@ -1788,7 +1888,7 @@ export default function Home() {
   }
 
   if (!started && !showLeagueSelection) {
-    return <StartScreen onStart={startGame} onContinue={handleLoadSave} />;
+    return <StartScreen onStart={startGame} onLoad={handleLoadFromSlot} />;
   }
 
   const hasModal = !!(auctionState || investorOffer || negotiation);
@@ -1806,11 +1906,32 @@ export default function Home() {
     <main className="min-h-screen bg-[#060a0f] text-white">
 
       {/* Toast message */}
-      {message && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-yellow-500/50 px-5 py-3 rounded-none z-[100] text-sm font-bold shadow-xl">
-          {message}
-        </div>
-      )}
+      {message && (() => {
+        const isClubOwner = singlePlayerStyle === "clubOwner";
+        const toastTheme = isClubOwner ? getLeagueTheme(selectedLeagueId) : null;
+        const isSave = message.includes("💾") || message.includes("✅");
+        const isWarn = message.includes("⚠️") || message.includes("❌");
+        return (
+          <div
+            key={message}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 text-sm font-bold"
+            style={{
+              background: toastTheme
+                ? `linear-gradient(135deg, #0a0f1a, ${toastTheme.accentColor}22)`
+                : isWarn ? "rgba(120,20,20,0.95)" : "rgba(10,15,26,0.96)",
+              border: `1px solid ${toastTheme ? toastTheme.accentColor + "88" : isWarn ? "#ef444488" : "#FFD54F88"}`,
+              boxShadow: `0 0 24px ${toastTheme ? toastTheme.glowColor : isWarn ? "rgba(239,68,68,0.3)" : "rgba(255,213,79,0.2)"}, 0 8px 32px rgba(0,0,0,0.6)`,
+              borderRadius: "10px",
+              color: toastTheme ? toastTheme.textColor : isWarn ? "#fca5a5" : "#FFD54F",
+              backdropFilter: "blur(12px)",
+              animation: "toastSlideIn 0.3s cubic-bezier(0.22,1,0.36,1)",
+              whiteSpace: "nowrap",
+            }}>
+            {message}
+            <style>{`@keyframes toastSlideIn{from{opacity:0;transform:translate(-50%,-16px) scale(0.92)}to{opacity:1;transform:translate(-50%,0) scale(1)}}`}</style>
+          </div>
+        );
+      })()}
 
       {/* Top Bar */}
       <TopBar
@@ -1827,6 +1948,8 @@ export default function Home() {
         nextSeasonButtonLabel={getLeagueButtonLabel()}
         leagueRound={leagueEnabled && leagueState ? leagueState.currentRound : undefined}
         leagueTotalRounds={leagueState?.totalRounds ?? TOTAL_ROUNDS}
+        selectedLeagueId={selectedLeagueId}
+        singlePlayerStyle={singlePlayerStyle}
         onSeasonClick={handleSeasonClick}
         onFinishGame={() => finishGame()}
         onSave={handleSave}
@@ -1864,6 +1987,7 @@ export default function Home() {
                 marketMultiplier={marketMultiplier}
                 onSlotClick={handleSlotClick}
                 onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
+                onCompareReady={(a, b) => setCompareOwned([a, b])}
               />
             </div>
             {/* Team Panel — 1 col */}
@@ -1894,6 +2018,12 @@ export default function Home() {
                     className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
                   >
                     ⚽ Top Scorers · 🅰️ Assists · 🧤 Clean Sheets
+                  </button>
+                  <button
+                    onClick={() => setShowClubHistory(true)}
+                    className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                  >
+                    🏆 سجل النادي — Club History
                   </button>
                   {Object.keys(otherLeagues).length > 0 && (
                     <button
@@ -2296,10 +2426,15 @@ export default function Home() {
         <LeagueChampionAnimation
           championName={leagueChampionAnim.championName}
           isUserChampion={leagueChampionAnim.isUserChampion}
+          userTeamName={leagueChampionAnim.userTeamName}
+          leagueId={leagueChampionAnim.leagueId}
+          leagueName={leagueChampionAnim.leagueName}
+          leagueLogo={leagueChampionAnim.leagueLogo}
           bestPlayerName={leagueChampionAnim.bestPlayerName}
           bestPlayerTeam={leagueChampionAnim.bestPlayerTeam}
           bestPlayerGoals={leagueChampionAnim.bestPlayerGoals}
           bestPlayerAssists={leagueChampionAnim.bestPlayerAssists}
+          bestPlayerPhoto={leagueChampionAnim.bestPlayerPhoto}
           onDone={() => setLeagueChampionAnim(null)}
         />
       )}
@@ -2308,6 +2443,39 @@ export default function Home() {
         <OtherLeaguesModal
           otherLeagues={otherLeagues}
           onClose={() => setShowOtherLeagues(false)}
+        />
+      )}
+
+      {/* Season Summary Modal */}
+      {seasonSummary && leagueState && singlePlayerStyle === "clubOwner" && (
+        <SeasonSummaryModal
+          season={season}
+          leagueState={seasonSummary.leagueState}
+          leagueId={selectedLeagueId}
+          leagueName={leagueNameMap[selectedLeagueId] ?? selectedLeagueId}
+          userTeamName={gamePlayers[0]?.name ?? "Your Team"}
+          gamePlayers={gamePlayers}
+          onContinue={() => setSeasonSummary(null)}
+        />
+      )}
+
+      {/* Club History Modal */}
+      {showClubHistory && singlePlayerStyle === "clubOwner" && (
+        <ClubHistoryModal
+          leagueId={selectedLeagueId}
+          leagueName={leagueNameMap[selectedLeagueId] ?? selectedLeagueId}
+          teamName={gamePlayers[0]?.name ?? "Your Team"}
+          onClose={() => setShowClubHistory(false)}
+        />
+      )}
+
+      {/* Player Comparison Modal */}
+      {compareOwned && (
+        <ComparisonModal
+          playerA={compareOwned[0]}
+          playerB={compareOwned[1]}
+          season={season}
+          onClose={() => setCompareOwned(null)}
         />
       )}
     </main>
