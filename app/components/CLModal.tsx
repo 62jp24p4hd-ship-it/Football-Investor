@@ -5,7 +5,7 @@ import type { CLState, CLTie } from "../game/clTypes";
 import { getCLTopScorers, getCLTopAssists, getCLTopCleanSheets } from "../game/clEngine";
 import { LEAGUE_FLAG } from "../game/clTeams";
 
-type Tab = "standings" | "bracket" | "scorers" | "assists" | "cleansheets";
+type Tab = "standings" | "playoff" | "bracket" | "scorers" | "assists" | "cleansheets";
 
 type Props = {
   clState: CLState;
@@ -126,6 +126,96 @@ function StandingsTab({ clState }: { clState: CLState }) {
       <div style={{ display: "flex", gap: 16, marginTop: 12, fontSize: 11, color: "#64748b" }}>
         <span><span style={{ color: CL_GOLD, fontWeight: 800 }}>✓</span> Direct R16 (Top 8)</span>
         <span><span style={{ color: "#94a3b8", fontWeight: 700 }}>P</span> Playoff (9th-24th)</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Playoff Tab ────────────────────────────
+
+function PlayoffTab({ clState }: { clState: CLState }) {
+  const userTeam = clState.standings.find(s => s.isUser)?.teamName;
+
+  if (clState.playoffTies.length === 0) {
+    return (
+      <div style={{ color: "#64748b", textAlign: "center", padding: "40px 0" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🏟️</div>
+        <div>الملحق المؤهل يبدأ بعد انتهاء دور المجموعات</div>
+        <div style={{ fontSize: 12, marginTop: 6, color: "#334155" }}>Playoff round starts after group phase</div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ color: CL_GOLD, fontSize: 13, fontWeight: 800, marginBottom: 16, textAlign: "center" }}>
+        ملحق التأهل — Playoff Round
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {clState.playoffTies.map((tie, i) => {
+          const isUser = tie.userInvolved;
+          const aTotal = (tie.leg1?.goalsA ?? 0) + (tie.leg2?.goalsA ?? 0);
+          const bTotal = (tie.leg1?.goalsB ?? 0) + (tie.leg2?.goalsB ?? 0);
+          const played = !!tie.leg1;
+
+          return (
+            <div
+              key={tie.id}
+              style={{
+                background: isUser ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.03)",
+                border: `1px solid ${isUser ? "rgba(251,191,36,0.35)" : "rgba(255,255,255,0.08)"}`,
+                borderRadius: 10,
+                padding: "12px 16px",
+                boxShadow: isUser ? "0 0 12px rgba(251,191,36,0.1)" : "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ color: "#334155", fontSize: 11, fontWeight: 700, minWidth: 18 }}>{i + 1}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{
+                      color: isUser && tie.teamA === userTeam ? CL_GOLD : "#e2e8f0",
+                      fontWeight: isUser && tie.teamA === userTeam ? 800 : 500,
+                      fontSize: 13,
+                    }}>{tie.teamA}</span>
+                    {played && (
+                      <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 13 }}>{aTotal}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{
+                      color: isUser && tie.teamB === userTeam ? CL_GOLD : "#94a3b8",
+                      fontWeight: isUser && tie.teamB === userTeam ? 800 : 400,
+                      fontSize: 13,
+                    }}>{tie.teamB}</span>
+                    {played && (
+                      <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: 13 }}>{bTotal}</span>
+                    )}
+                  </div>
+                </div>
+                {tie.winner && (
+                  <div style={{
+                    background: "rgba(251,191,36,0.15)",
+                    border: "1px solid rgba(251,191,36,0.3)",
+                    borderRadius: 6,
+                    padding: "3px 8px",
+                    fontSize: 10,
+                    color: CL_GOLD,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    maxWidth: 100,
+                    textAlign: "center",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    ✓ {tie.winner}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -428,6 +518,9 @@ export default function CLModal({ clState, onClose }: Props) {
           flexShrink: 0,
         }}>
           <TabButton label="الترتيب" active={tab === "standings"} onClick={() => setTab("standings")} />
+          {clState.playoffTies.length > 0 && (
+            <TabButton label="🏟️ الملحق" active={tab === "playoff"} onClick={() => setTab("playoff")} />
+          )}
           <TabButton label="الأدوار الإقصائية" active={tab === "bracket"} onClick={() => setTab("bracket")} />
           <TabButton label="⚽ الهدافون" active={tab === "scorers"} onClick={() => setTab("scorers")} />
           <TabButton label="🎯 صناعة الأهداف" active={tab === "assists"} onClick={() => setTab("assists")} />
@@ -437,6 +530,7 @@ export default function CLModal({ clState, onClose }: Props) {
         {/* Content */}
         <div style={{ padding: "16px 20px", maxHeight: "70vh", overflowY: "auto" }}>
           {tab === "standings" && <StandingsTab clState={clState} />}
+          {tab === "playoff" && <PlayoffTab clState={clState} />}
           {tab === "bracket" && <BracketTab clState={clState} />}
 
           {tab === "scorers" && (

@@ -10,7 +10,15 @@ type LeagueStandingsProps = {
   leagueName?: string;
   leagueLogo?: string;
   tier?: 1 | 2;
+  leagueId?: string;
 };
+
+// Returns positions (1-indexed) that should be green in tier 1 (below champion)
+function getCLGreenPositions(leagueId?: string): number[] {
+  if (["saudi_league", "portuguese_league", "eredivisie"].includes(leagueId ?? "")) return [2, 3];
+  if (leagueId === "super_lig") return [2];
+  return [2, 3, 4, 5]; // default: big-5 style (2–5 green)
+}
 
 export default function LeagueStandings({
   standings,
@@ -19,10 +27,12 @@ export default function LeagueStandings({
   leagueName = "Premier League",
   leagueLogo,
   tier = 1,
+  leagueId,
 }: LeagueStandingsProps) {
   if (!standings || standings.length === 0) return null;
 
   const totalTeams = standings.length;
+  const clGreenPositions = tier === 1 ? getCLGreenPositions(leagueId) : [];
 
   return (
     <div className="bg-slate-900/60 border border-slate-700 rounded-xl p-3 mt-3">
@@ -68,28 +78,20 @@ export default function LeagueStandings({
               let isRedAnimated = false;
               let isGreen = false;
 
-              if (tier === 2) {
-                if (position === 1) {
-                  isGoldAnimated = true;
-                  rowText = "text-yellow-100 font-semibold";
-                } else if (position === 2 || position === 3) {
-                  isGreen = true;
-                  rowText = "text-green-100";
-                } else if (isRelegationZone) {
-                  isRedAnimated = true;
-                  rowText = "text-red-100";
-                }
-              } else {
-                if (position === 1) {
-                  isGoldAnimated = true;
-                  rowText = "text-yellow-100 font-semibold";
-                } else if (position >= 2 && position <= 5) {
-                  isGreen = true;
-                  rowText = "text-green-100";
-                } else if (isRelegationZone) {
-                  isRedAnimated = true;
-                  rowText = "text-red-100";
-                }
+              if (position === 1) {
+                isGoldAnimated = true;
+                rowText = "text-yellow-100 font-semibold";
+              } else if (tier === 2 && (position === 2 || position === 3)) {
+                // Tier 2: positions 2–3 are promotion spots → green
+                isGreen = true;
+                rowText = "text-green-100";
+              } else if (tier === 1 && clGreenPositions.includes(position)) {
+                // Tier 1: only specific leagues have CL spots below 1st → green
+                isGreen = true;
+                rowText = "text-green-100";
+              } else if (isRelegationZone) {
+                isRedAnimated = true;
+                rowText = "text-red-100";
               }
 
               return (

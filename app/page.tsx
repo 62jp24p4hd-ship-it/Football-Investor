@@ -36,9 +36,10 @@ import {
 import type { LeagueState, MatchEvent, MatchPreview, LeaguePlayerStat } from "./game/leagueEngine";
 import { getPlayerPortrait } from "./game/playerPortraits";
 import type { CLState, CLTie } from "./game/clTypes";
-import { initializeCL, playCLRound, setupPlayoff, playPlayoffLeg, drawR16, playKnockoutLeg, getCLRoundForDomesticRound } from "./game/clEngine";
+import { initializeCL, playCLRound, setupPlayoff, playPlayoffLeg, drawR16, playKnockoutLeg, getCLRoundForDomesticRound, rebuildCLTeamRosters } from "./game/clEngine";
 import CLModal from "./components/CLModal";
 import CLDrawAnimation from "./components/CLDrawAnimation";
+import CLChampionAnimation from "./components/CLChampionAnimation";
 
 const LEAGUE_MAX_PURCHASE_CHANCES = 14; // hard cap, club owner mode only — any bonus chances beyond this are ignored
 const LEAGUE_REQUIRED_SQUAD_SIZE = 11;
@@ -197,6 +198,7 @@ export default function Home() {
   const [showClubHistory, setShowClubHistory] = useState(false);
   const [seasonSummary, setSeasonSummary] = useState<{ leagueState: import("./game/leagueEngine").LeagueState } | null>(null);
   const [compareOwned, setCompareOwned] = useState<[import("./game/types").OwnedPlayer, import("./game/types").OwnedPlayer] | null>(null);
+  const [champAnimFired, setChampAnimFired] = useState(false); // prevent double champion animation per season
   const [leagueChampionAnim, setLeagueChampionAnim] = useState<{
     championName: string;
     isUserChampion: boolean;
@@ -219,6 +221,9 @@ export default function Home() {
   const [clMatchPreview, setClMatchPreview] = useState<{ round: number; userTeam: string; opponent: string; isUserHome: boolean; roundLabel?: string } | null>(null);
   const [pendingCLKnockout, setPendingCLKnockout] = useState<{ phase: CLState["phase"]; leg: 1|2; userTie: CLTie } | null>(null);
   const [pendingShowCLDraw, setPendingShowCLDraw] = useState(false);
+  const [showCLPlayoffDraw, setShowCLPlayoffDraw] = useState(false);
+  const [pendingShowCLPlayoffDraw, setPendingShowCLPlayoffDraw] = useState(false);
+  const [clChampionAnim, setClChampionAnim] = useState<{ championName: string; isUserChampion: boolean } | null>(null);
   // Standings from the previous season used to seed CL qualification
   const [clPrevStandings, setClPrevStandings] = useState<Record<string, { teamName: string; isUser: boolean }[]>>({});
 
@@ -298,6 +303,18 @@ export default function Home() {
 
 
 
+
+  // ── Rebuild CL team rosters if missing (migration for pre-fix saves) ──
+  useEffect(() => {
+    if (!clState) return;
+    const hasRosters = clState.teamRosters && Object.keys(clState.teamRosters).length > 0;
+    if (hasRosters) return;
+    // Build rosters from whatever league data is available now
+    const allAvailable: Record<string, import("./game/leagueEngine").LeagueState> = { ...otherLeagues };
+    if (leagueState) allAvailable[selectedLeagueId] = leagueState;
+    if (Object.keys(allAvailable).length === 0) return;
+    setClState(prev => prev ? rebuildCLTeamRosters(prev, allAvailable) : prev);
+  }, [clState?.season, Object.keys(clState?.teamRosters ?? {}).length]);
 
   // ── Generate infinite mode players ────────
   useEffect(() => {
@@ -380,7 +397,12 @@ export default function Home() {
       e.preventDefault();
       if (clMatchPreview) { setClMatchPreview(null); if (pendingCLKnockout) { handlePlayKnockoutRound(); } else { handlePlayCLRound(); } return; }
       if (matchPreview) { confirmPlayLeagueGame(); return; }
-      if (matchSummary) { setMatchSummary(null); if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); } return; }
+      if (matchSummary) {
+        setMatchSummary(null);
+        if (pendingShowCLPlayoffDraw) { setShowCLPlayoffDraw(true); setPendingShowCLPlayoffDraw(false); }
+        else if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); }
+        return;
+      }
       handleMainSeasonButtonClick();
     }
     window.addEventListener("keydown", handleShortcut);
@@ -1241,6 +1263,7 @@ export default function Home() {
     );
     setLeagueState({ ...newLeague, seasonPhase: "playing" });
     setLeagueEnabled(true);
+    setChampAnimFired(false); // reset per-season flag
 
     // Initialize other leagues
     const ALL_LEAGUE_IDS = ["premier_league","bundesliga","la_liga","serie_a","ligue_1",
@@ -1517,6 +1540,36 @@ export default function Home() {
       });
     }
 
+    // ── Early champion detection (before last round) ──
+    if (result.updatedLeague.seasonPhase === "playing" && !champAnimFired) {
+      const leader = result.updatedLeague.standings[0];
+      const second = result.updatedLeague.standings[1];
+      if (leader && second) {
+        const remaining = (result.updatedLeague.totalRounds ?? TOTAL_ROUNDS) - result.updatedLeague.currentRound;
+        const maxSecondPoints = second.points + remaining * 3;
+        if (leader.points > maxSecondPoints) {
+          // Champion is mathematically decided — fire animation now
+          setChampAnimFired(true);
+          const best = getBestPlayerOfSeason(result.updatedLeague, basePlayers);
+          setTimeout(() => {
+            setLeagueChampionAnim({
+              championName: leader.teamName,
+              isUserChampion: !!leader.isUser,
+              userTeamName: gamePlayers[0]?.name ?? "Your Team",
+              leagueId: selectedLeagueId,
+              leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
+              leagueLogo: leagueLogoMap[selectedLeagueId],
+              bestPlayerName: best?.stat.playerName ?? null,
+              bestPlayerTeam: best?.stat.teamName ?? null,
+              bestPlayerGoals: best?.stat.goals ?? 0,
+              bestPlayerAssists: best?.stat.assists ?? 0,
+              bestPlayerPhoto: getPlayerPortrait(best?.stat.playerName),
+            });
+          }, 600);
+        }
+      }
+    }
+
     if (result.updatedLeague.seasonPhase === "finished") {
       // Promotion / Relegation
       const TIER2_TO_TIER1: Record<string, string> = { championship: "premier_league", bundesliga2: "bundesliga", segunda: "la_liga", serie_b: "serie_a", ligue_2: "ligue_1" };
@@ -1609,21 +1662,25 @@ export default function Home() {
 
       const championRow = result.updatedLeague.standings[0];
       const best = getBestPlayerOfSeason(result.updatedLeague, basePlayers);
-      setTimeout(() => {
-        setLeagueChampionAnim({
-          championName: championRow?.teamName ?? "Unknown",
-          isUserChampion: !!championRow?.isUser,
-          userTeamName: gamePlayers[0]?.name ?? "Your Team",
-          leagueId: selectedLeagueId,
-          leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
-          leagueLogo: leagueLogoMap[selectedLeagueId],
-          bestPlayerName: best?.stat.playerName ?? null,
-          bestPlayerTeam: best?.stat.teamName ?? null,
-          bestPlayerGoals: best?.stat.goals ?? 0,
-          bestPlayerAssists: best?.stat.assists ?? 0,
-          bestPlayerPhoto: getPlayerPortrait(best?.stat.playerName),
-        });
-      }, 600);
+      if (!champAnimFired) {
+        // Only fire if not already triggered by early detection
+        setChampAnimFired(true);
+        setTimeout(() => {
+          setLeagueChampionAnim({
+            championName: championRow?.teamName ?? "Unknown",
+            isUserChampion: !!championRow?.isUser,
+            userTeamName: gamePlayers[0]?.name ?? "Your Team",
+            leagueId: selectedLeagueId,
+            leagueName: leagueNameMap[selectedLeagueId] ?? selectedLeagueId,
+            leagueLogo: leagueLogoMap[selectedLeagueId],
+            bestPlayerName: best?.stat.playerName ?? null,
+            bestPlayerTeam: best?.stat.teamName ?? null,
+            bestPlayerGoals: best?.stat.goals ?? 0,
+            bestPlayerAssists: best?.stat.assists ?? 0,
+            bestPlayerPhoto: getPlayerPortrait(best?.stat.playerName),
+          });
+        }, 600);
+      }
     } else if (result.updatedLeague.seasonPhase === "transfer") {
       notify(`🔄 Round ${result.updatedLeague.currentRound} played. Transfer window is now open (Rounds 18-21)!`);
     } else {
@@ -1671,7 +1728,7 @@ export default function Home() {
       });
     }
 
-    // After round 8, setup playoff with real teams
+    // After round 8, setup playoff with real teams + trigger playoff draw animation
     let finalCLState = newCLState;
     if (round >= 8 && newCLState.phase === "group") {
       finalCLState = setupPlayoff(newCLState); // creates 8 real playoff ties
@@ -1683,6 +1740,7 @@ export default function Home() {
         tone: "neutral",
         source: "UEFA",
       });
+      setPendingShowCLPlayoffDraw(true); // show playoff draw after match summary closes
     }
 
     setClState(finalCLState);
@@ -1719,11 +1777,14 @@ export default function Home() {
       newCLState = res.clState;
       userEvents = res.userEvents;
       resultTie = res.userTie;
-      if (phase === "final" && newCLState.champion === userTeamName) {
-        notify("🏆 CHAMPIONS LEAGUE WINNERS! +€80M prize money!");
-        setGamePlayers(prev => prev.map((gp, i) => i === 0 ? { ...gp, budget: gp.budget + 80 } : gp));
-      } else if (phase === "final" && newCLState.champion) {
-        notify(`🏆 ${newCLState.champion} wins the Champions League!`);
+      if (phase === "final" && newCLState.champion) {
+        const isUserWinner = newCLState.champion === userTeamName;
+        if (isUserWinner) {
+          notify("🏆 CHAMPIONS LEAGUE WINNERS! +€80M prize money!");
+          setGamePlayers(prev => prev.map((gp, i) => i === 0 ? { ...gp, budget: gp.budget + 80 } : gp));
+        }
+        // Trigger cinematic animation after match summary closes
+        setClChampionAnim({ championName: newCLState.champion, isUserChampion: isUserWinner });
       }
     }
 
@@ -2316,6 +2377,7 @@ export default function Home() {
                     leagueName={leagueNameMap[selectedLeagueId]}
                     leagueLogo={leagueLogoMap[selectedLeagueId]}
                     tier={["championship","bundesliga2","segunda","serie_b","ligue_2"].includes(selectedLeagueId) ? 2 : 1}
+                    leagueId={selectedLeagueId}
                   />
                   <button
                     onClick={() => setShowLeagueStats(true)}
@@ -2729,7 +2791,12 @@ export default function Home() {
           awayGoals={matchSummary.awayGoals}
           events={matchSummary.events}
           roundLabel={matchSummary.roundLabel}
-          onClose={() => { setMatchSummary(null); if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); } }}
+          onClose={() => {
+            setMatchSummary(null);
+            if (pendingShowCLPlayoffDraw) { setShowCLPlayoffDraw(true); setPendingShowCLPlayoffDraw(false); }
+            else if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); }
+            // CL champion anim shows after final match summary closes (clChampionAnim already set)
+          }}
         />
       )}
 
@@ -2807,11 +2874,31 @@ export default function Home() {
         />
       )}
 
-      {/* Champions League Draw Animation */}
+      {/* Champions League Playoff Draw Animation */}
+      {showCLPlayoffDraw && clState && clState.playoffTies.length > 0 && (
+        <CLDrawAnimation
+          ties={clState.playoffTies}
+          title="قرعة الملحق المؤهل"
+          subtitle="Playoff Round Draw — انقر للتخطي"
+          onDone={() => setShowCLPlayoffDraw(false)}
+        />
+      )}
+
+      {/* Champions League R16 Draw Animation */}
       {showCLDraw && clState && clState.r16Ties.length > 0 && (
         <CLDrawAnimation
           r16Ties={clState.r16Ties}
           onDone={() => setShowCLDraw(false)}
+        />
+      )}
+
+      {/* Champions League Winner Animation */}
+      {clChampionAnim && (
+        <CLChampionAnimation
+          championName={clChampionAnim.championName}
+          isUserChampion={clChampionAnim.isUserChampion}
+          userTeamName={gamePlayers[0]?.name ?? "Your Team"}
+          onDone={() => setClChampionAnim(null)}
         />
       )}
 

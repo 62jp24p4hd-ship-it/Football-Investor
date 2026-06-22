@@ -813,25 +813,56 @@ export function initializeCL(
 // GET CL TOP SCORERS / ASSISTS / CLEAN SHEETS
 // ============================================
 
+// Generic fallback names produced when a team has no roster — exclude from display
+const GENERIC_PLAYER_NAMES = new Set([
+  "Striker", "Forward", "Winger", "Midfielder", "Playmaker",
+]);
+
+function isRealPlayer(name: string): boolean {
+  return !GENERIC_PLAYER_NAMES.has(name);
+}
+
 export function getCLTopScorers(clState: CLState, limit: number = 10): CLPlayerStat[] {
   return Object.values(clState.playerStats)
-    .filter(p => p.goals > 0)
+    .filter(p => p.goals > 0 && isRealPlayer(p.playerName))
     .sort((a, b) => b.goals - a.goals)
     .slice(0, limit);
 }
 
 export function getCLTopAssists(clState: CLState, limit: number = 10): CLPlayerStat[] {
   return Object.values(clState.playerStats)
-    .filter(p => p.assists > 0)
+    .filter(p => p.assists > 0 && isRealPlayer(p.playerName))
     .sort((a, b) => b.assists - a.assists)
     .slice(0, limit);
 }
 
 export function getCLTopCleanSheets(clState: CLState, limit: number = 10): CLPlayerStat[] {
   return Object.values(clState.playerStats)
-    .filter(p => p.cleanSheets > 0)
+    .filter(p => p.cleanSheets > 0 && isRealPlayer(p.playerName))
     .sort((a, b) => b.cleanSheets - a.cleanSheets)
     .slice(0, limit);
+}
+
+// ============================================
+// REBUILD TEAM ROSTERS (for existing CLState that was created before teamRosters existed)
+// ============================================
+
+export function rebuildCLTeamRosters(
+  clState: CLState,
+  allLeagueStates: Record<string, LeagueState>
+): CLState {
+  const teamRosters: Record<string, string[]> = { ...clState.teamRosters };
+  for (const leagueState of Object.values(allLeagueStates)) {
+    for (const team of leagueState.teams) {
+      if (!team.isUser && team.players && team.players.length > 0) {
+        // Only set if not already present (preserve any existing roster)
+        if (!teamRosters[team.name] || teamRosters[team.name].length === 0) {
+          teamRosters[team.name] = team.players.map(p => p.name);
+        }
+      }
+    }
+  }
+  return { ...clState, teamRosters };
 }
 
 // ============================================
