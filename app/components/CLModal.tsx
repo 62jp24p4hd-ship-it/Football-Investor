@@ -148,75 +148,186 @@ function PlayoffTab({ clState }: { clState: CLState }) {
 
   return (
     <div>
-      <div style={{ color: CL_GOLD, fontSize: 13, fontWeight: 800, marginBottom: 16, textAlign: "center" }}>
-        ملحق التأهل — Playoff Round
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 28, marginBottom: 4 }}>🏟️</div>
+        <div style={{ color: CL_GOLD, fontSize: 15, fontWeight: 900, letterSpacing: "0.06em" }}>
+          ملحق التأهل
+        </div>
+        <div style={{ color: "#475569", fontSize: 11, letterSpacing: "0.1em", marginTop: 2 }}>
+          PLAYOFF ROUND — إياب وذهاب
+        </div>
+        <div style={{ height: 1, background: "linear-gradient(to right, transparent, rgba(251,191,36,0.4), transparent)", marginTop: 12 }} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {clState.playoffTies.map((tie, i) => {
           const isUser = tie.userInvolved;
-          const aTotal = (tie.leg1?.goalsA ?? 0) + (tie.leg2?.goalsA ?? 0);
-          const bTotal = (tie.leg1?.goalsB ?? 0) + (tie.leg2?.goalsB ?? 0);
-          const played = !!tie.leg1;
+          const flagA = LEAGUE_FLAG[tie.teamALeagueId] ?? "🌍";
+          const flagB = LEAGUE_FLAG[tie.teamBLeagueId] ?? "🌍";
+          const leg1A = tie.leg1?.goalsA ?? null;
+          const leg1B = tie.leg1?.goalsB ?? null;
+          const leg2A = tie.leg2?.goalsA ?? null;
+          const leg2B = tie.leg2?.goalsB ?? null;
+          const aTotal = (leg1A ?? 0) + (leg2A ?? 0);
+          const bTotal = (leg1B ?? 0) + (leg2B ?? 0);
+          const played = leg1A !== null;
+          const finished = !!tie.winner;
+
+          const isAWinner = finished && tie.winner === tie.teamA;
+          const isBWinner = finished && tie.winner === tie.teamB;
+          const isUserA = tie.teamA === userTeam;
+          const isUserB = tie.teamB === userTeam;
 
           return (
             <div
               key={tie.id}
               style={{
-                background: isUser ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isUser ? "rgba(251,191,36,0.35)" : "rgba(255,255,255,0.08)"}`,
-                borderRadius: 10,
-                padding: "12px 16px",
-                boxShadow: isUser ? "0 0 12px rgba(251,191,36,0.1)" : "none",
+                borderRadius: 14,
+                overflow: "hidden",
+                border: isUser
+                  ? "1.5px solid rgba(251,191,36,0.5)"
+                  : "1px solid rgba(255,255,255,0.07)",
+                boxShadow: isUser
+                  ? "0 0 20px rgba(251,191,36,0.15), 0 4px 16px rgba(0,0,0,0.4)"
+                  : "0 2px 8px rgba(0,0,0,0.3)",
+                position: "relative",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ color: "#334155", fontSize: 11, fontWeight: 700, minWidth: 18 }}>{i + 1}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{
-                      color: isUser && tie.teamA === userTeam ? CL_GOLD : "#e2e8f0",
-                      fontWeight: isUser && tie.teamA === userTeam ? 800 : 500,
-                      fontSize: 13,
-                    }}>{tie.teamA}</span>
-                    {played && (
-                      <span style={{ color: "#e2e8f0", fontWeight: 700, fontSize: 13 }}>{aTotal}</span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{
-                      color: isUser && tie.teamB === userTeam ? CL_GOLD : "#94a3b8",
-                      fontWeight: isUser && tie.teamB === userTeam ? 800 : 400,
-                      fontSize: 13,
-                    }}>{tie.teamB}</span>
-                    {played && (
-                      <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: 13 }}>{bTotal}</span>
-                    )}
-                  </div>
-                </div>
-                {tie.winner && (
-                  <div style={{
-                    background: "rgba(251,191,36,0.15)",
-                    border: "1px solid rgba(251,191,36,0.3)",
-                    borderRadius: 6,
-                    padding: "3px 8px",
-                    fontSize: 10,
-                    color: CL_GOLD,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    maxWidth: 100,
-                    textAlign: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}>
-                    ✓ {tie.winner}
-                  </div>
-                )}
+              {/* Card background */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: isUser
+                  ? "linear-gradient(135deg, rgba(251,191,36,0.1) 0%, rgba(15,23,60,0.95) 100%)"
+                  : "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,8,32,0.95) 100%)",
+              }} />
+
+              {/* Match number */}
+              <div style={{
+                position: "absolute", top: 10, left: 10,
+                fontSize: 9, fontWeight: 800,
+                color: isUser ? CL_GOLD : "#334155",
+                letterSpacing: "0.05em",
+              }}>
+                #{i + 1}
               </div>
+
+              {/* Main VS layout */}
+              <div style={{
+                position: "relative", zIndex: 1,
+                display: "grid",
+                gridTemplateColumns: "1fr auto 1fr",
+                alignItems: "center",
+                padding: "16px 12px 12px",
+                gap: 8,
+              }}>
+                {/* Team A — Left */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{flagA}</div>
+                  <div style={{
+                    color: isAWinner ? CL_GOLD : isUser && isUserA ? "#fde68a" : "#e2e8f0",
+                    fontWeight: isUser && isUserA ? 900 : 600,
+                    fontSize: 12,
+                    lineHeight: 1.3,
+                    textShadow: isUser && isUserA ? "0 0 12px rgba(251,191,36,0.4)" : "none",
+                  }}>
+                    {tie.teamA}
+                  </div>
+                  {isAWinner && (
+                    <div style={{ fontSize: 9, color: CL_GOLD, marginTop: 4, fontWeight: 800, letterSpacing: "0.05em" }}>
+                      ✓ متأهل
+                    </div>
+                  )}
+                </div>
+
+                {/* Center — Score / VS */}
+                <div style={{ textAlign: "center", minWidth: 70 }}>
+                  {played ? (
+                    <div>
+                      {/* Aggregate score */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        <span style={{
+                          fontSize: 20, fontWeight: 900,
+                          color: isAWinner ? CL_GOLD : "#e2e8f0",
+                        }}>{aTotal}</span>
+                        <span style={{ color: "#334155", fontSize: 14, fontWeight: 700 }}>—</span>
+                        <span style={{
+                          fontSize: 20, fontWeight: 900,
+                          color: isBWinner ? CL_GOLD : "#e2e8f0",
+                        }}>{bTotal}</span>
+                      </div>
+                      <div style={{ color: "#334155", fontSize: 9, marginTop: 2, letterSpacing: "0.05em" }}>
+                        مجموع
+                      </div>
+                      {/* Leg scores */}
+                      <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 2 }}>
+                        {leg1A !== null && (
+                          <div style={{ fontSize: 9, color: "#475569" }}>
+                            ذهاب: {leg1A}–{leg1B}
+                          </div>
+                        )}
+                        {leg2A !== null && (
+                          <div style={{ fontSize: 9, color: "#475569" }}>
+                            إياب: {leg2A}–{leg2B}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: "50%",
+                        background: isUser
+                          ? "linear-gradient(135deg, #92400e, #fbbf24)"
+                          : "linear-gradient(135deg, #1e3a8a, #3b82f6)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        margin: "0 auto",
+                        fontSize: 10, fontWeight: 900, color: "#fff",
+                        boxShadow: isUser ? "0 0 12px rgba(251,191,36,0.4)" : "0 0 8px rgba(59,130,246,0.3)",
+                      }}>VS</div>
+                      <div style={{ color: "#334155", fontSize: 9, marginTop: 4 }}>لم تُلعب</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Team B — Right */}
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{flagB}</div>
+                  <div style={{
+                    color: isBWinner ? CL_GOLD : isUser && isUserB ? "#fde68a" : "#e2e8f0",
+                    fontWeight: isUser && isUserB ? 900 : 600,
+                    fontSize: 12,
+                    lineHeight: 1.3,
+                    textShadow: isUser && isUserB ? "0 0 12px rgba(251,191,36,0.4)" : "none",
+                  }}>
+                    {tie.teamB}
+                  </div>
+                  {isBWinner && (
+                    <div style={{ fontSize: 9, color: CL_GOLD, marginTop: 4, fontWeight: 800, letterSpacing: "0.05em" }}>
+                      ✓ متأهل
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom accent for user tie */}
+              {isUser && (
+                <div style={{
+                  height: 2,
+                  background: "linear-gradient(to right, transparent, #fbbf24, transparent)",
+                }} />
+              )}
             </div>
           );
         })}
       </div>
+
+      <style>{`
+        @keyframes playoffGlow {
+          from { box-shadow: 0 0 20px rgba(251,191,36,0.15); }
+          to   { box-shadow: 0 0 35px rgba(251,191,36,0.3); }
+        }
+      `}</style>
     </div>
   );
 }

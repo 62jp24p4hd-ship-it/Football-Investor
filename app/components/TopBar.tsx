@@ -24,13 +24,15 @@ type Props = {
   leagueTotalRounds?: number;
   selectedLeagueId?: string;
   singlePlayerStyle?: "investor" | "clubOwner";
+  clRoundLabel?: string | null;
+  clEliminated?: boolean;
 };
 
 export default function TopBar({
   season, mode, gameLengthMode, activePlayerIndex, gamePlayers,
   timerSeconds, timer, pendingSlot, onNextSeason, onSeasonClick,
   onFinishGame, onSecretClick, onSave, canNextSeason, nextSeasonButtonLabel,
-  leagueRound, leagueTotalRounds, selectedLeagueId, singlePlayerStyle
+  leagueRound, leagueTotalRounds, selectedLeagueId, singlePlayerStyle, clRoundLabel, clEliminated
 }: Props) {
   const isClubOwner = singlePlayerStyle === "clubOwner";
   const theme = isClubOwner ? getLeagueTheme(selectedLeagueId) : getLeagueTheme();
@@ -127,6 +129,43 @@ export default function TopBar({
                 </div>
               )}
             </button>
+
+            {/* CL Round Badge */}
+            {isClubOwner && clRoundLabel && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "5px 10px",
+                  borderRadius: "6px",
+                  minWidth: "52px",
+                  background: clEliminated
+                    ? "rgba(100,116,139,0.12)"
+                    : "rgba(251,191,36,0.08)",
+                  border: clEliminated
+                    ? "1px solid rgba(100,116,139,0.25)"
+                    : "1px solid rgba(251,191,36,0.35)",
+                  boxShadow: clEliminated ? "none" : "0 0 10px rgba(251,191,36,0.12)",
+                }}
+              >
+                <span style={{
+                  fontSize: "9px", fontWeight: 700, letterSpacing: "0.08em",
+                  color: clEliminated ? "#475569" : "#fbbf24",
+                  opacity: 0.85, lineHeight: 1, marginBottom: "2px",
+                }}>
+                  🏆 UCL
+                </span>
+                <span style={{
+                  fontSize: "11px", fontWeight: 900, lineHeight: 1,
+                  color: clEliminated ? "#64748b" : "#fde68a",
+                  letterSpacing: "0.02em",
+                }}>
+                  {clRoundLabel}
+                </span>
+              </div>
+            )}
 
             {/* Budget Card — single mode shows active player */}
             {gamePlayers.length > 0 && (

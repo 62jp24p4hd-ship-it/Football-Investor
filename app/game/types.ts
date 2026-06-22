@@ -44,7 +44,10 @@ export type NewsTone =
   | "good"
   | "bad"
   | "neutral"
-  | "special";
+  | "special"
+  | "league_title"
+  | "relegated"
+  | "cl_champion";
 
 export type RewardCard =
   | "freeze"

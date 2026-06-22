@@ -186,7 +186,7 @@ export default function CLChampionAnimation({ championName, isUserChampion, user
           }}
         >
           <img
-            src="/cl-trophy.png"
+            src="/images/cl-trophy.png"
             alt="Champions League Trophy"
             style={{
               width: 180,

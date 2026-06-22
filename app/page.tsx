@@ -224,6 +224,7 @@ export default function Home() {
   const [showCLPlayoffDraw, setShowCLPlayoffDraw] = useState(false);
   const [pendingShowCLPlayoffDraw, setPendingShowCLPlayoffDraw] = useState(false);
   const [clChampionAnim, setClChampionAnim] = useState<{ championName: string; isUserChampion: boolean } | null>(null);
+  const [pendingCLChampionAnim, setPendingCLChampionAnim] = useState<{ championName: string; isUserChampion: boolean } | null>(null);
   // Standings from the previous season used to seed CL qualification
   const [clPrevStandings, setClPrevStandings] = useState<Record<string, { teamName: string; isUser: boolean }[]>>({});
 
@@ -401,6 +402,7 @@ export default function Home() {
         setMatchSummary(null);
         if (pendingShowCLPlayoffDraw) { setShowCLPlayoffDraw(true); setPendingShowCLPlayoffDraw(false); }
         else if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); }
+        else if (pendingCLChampionAnim) { setClChampionAnim(pendingCLChampionAnim); setPendingCLChampionAnim(null); }
         return;
       }
       handleMainSeasonButtonClick();
@@ -1550,6 +1552,15 @@ export default function Home() {
         if (leader.points > maxSecondPoints) {
           // Champion is mathematically decided — fire animation now
           setChampAnimFired(true);
+          if (leader.isUser) {
+            addNewsItem({
+              id: Date.now() + 9001,
+              season,
+              title: `🏆 ${leagueNameMap[selectedLeagueId] ?? "League"} Champions!`,
+              description: `${gamePlayers[0]?.name ?? "Your Team"} are confirmed champions with ${leader.points} points — an unforgettable title!`,
+              tone: "league_title",
+            });
+          }
           const best = getBestPlayerOfSeason(result.updatedLeague, basePlayers);
           setTimeout(() => {
             setLeagueChampionAnim({
@@ -1609,6 +1620,13 @@ export default function Home() {
         }, 800);
       } else if (TIER1_TO_TIER2[selectedLeagueId] && userPos > totalClubs - 3) {
         const relegatedTo = TIER1_TO_TIER2[selectedLeagueId] as LeagueId;
+        addNewsItem({
+          id: Date.now() + 9002,
+          season,
+          title: `😢 relegated to ${leagueNameMap[relegatedTo] ?? relegatedTo}`,
+          description: `${gamePlayers[0]?.name ?? "Your Team"} finished ${userPos}th — relegated from ${leagueNameMap[selectedLeagueId]}. Time to fight back.`,
+          tone: "relegated",
+        });
         setTimeout(() => {
           notify(`😢 RELEGATED! You've been relegated to ${leagueNameMap[relegatedTo]}.`);
           setSelectedLeagueId(relegatedTo);
@@ -1782,9 +1800,16 @@ export default function Home() {
         if (isUserWinner) {
           notify("🏆 CHAMPIONS LEAGUE WINNERS! +€80M prize money!");
           setGamePlayers(prev => prev.map((gp, i) => i === 0 ? { ...gp, budget: gp.budget + 80 } : gp));
+          addNewsItem({
+            id: Date.now() + 9003,
+            season,
+            title: `🏆 Champions of Europe!`,
+            description: `${userTeamName} wins the UEFA Champions League! The ultimate glory in club football. +€80M prize money.`,
+            tone: "cl_champion",
+          });
         }
-        // Trigger cinematic animation after match summary closes
-        setClChampionAnim({ championName: newCLState.champion, isUserChampion: isUserWinner });
+        // Queue cinematic animation — fires after match summary closes
+        setPendingCLChampionAnim({ championName: newCLState.champion, isUserChampion: isUserWinner });
       }
     }
 
@@ -2327,6 +2352,41 @@ export default function Home() {
           }
         }}
         canNextSeason={canNextSeason}
+        clRoundLabel={(() => {
+          if (!clState || !leagueEnabled) return null;
+          const userTeamName = gamePlayers[0]?.name ?? "";
+          if (clState.champion) return "بطل 🏆";
+          const phase = clState.phase;
+          if (phase === "group") return `${clState.currentGroupRound}/8`;
+          // Check if user is involved in any active tie
+          const phaseLabels: Record<string, string> = {
+            playoff_leg1: "ملحق 1",
+            playoff_leg2: "ملحق 2",
+            r16_leg1: "دور 16 ↑",
+            r16_leg2: "دور 16",
+            qf_leg1: "ربع N ↑",
+            qf_leg2: "ربع N",
+            sf_leg1: "نصف N ↑",
+            sf_leg2: "نصف N",
+            final: "النهائي",
+            finished: "انتهى",
+          };
+          return phaseLabels[phase] ?? phase;
+        })()}
+        clEliminated={(() => {
+          if (!clState || !leagueEnabled) return false;
+          if (clState.champion && clState.champion !== (gamePlayers[0]?.name ?? "")) return true;
+          const phase = clState.phase;
+          if (phase === "group") return false;
+          if (phase === "finished") return true;
+          const userInAny =
+            clState.playoffTies.some((t: CLTie) => t.userInvolved) ||
+            clState.r16Ties.some((t: CLTie) => t.userInvolved) ||
+            clState.qfTies.some((t: CLTie) => t.userInvolved) ||
+            clState.sfTies.some((t: CLTie) => t.userInvolved) ||
+            (clState.finalTie ? clState.finalTie.userInvolved : false);
+          return !userInAny;
+        })()}
       />
 
       {/* Main layout */}
@@ -2795,7 +2855,7 @@ export default function Home() {
             setMatchSummary(null);
             if (pendingShowCLPlayoffDraw) { setShowCLPlayoffDraw(true); setPendingShowCLPlayoffDraw(false); }
             else if (pendingShowCLDraw) { setShowCLDraw(true); setPendingShowCLDraw(false); }
-            // CL champion anim shows after final match summary closes (clChampionAnim already set)
+            else if (pendingCLChampionAnim) { setClChampionAnim(pendingCLChampionAnim); setPendingCLChampionAnim(null); }
           }}
         />
       )}
