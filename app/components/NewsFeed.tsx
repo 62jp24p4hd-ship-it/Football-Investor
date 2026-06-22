@@ -330,8 +330,8 @@ const MAX_NEWS = 5;
 
 export default function NewsFeed({ news, seasonEvent, season }: Props) {
   const currentNews = news.filter(item => item.season === season);
-  // Newest first, max 5
-  const visibleNews = [...currentNews].reverse().slice(0, MAX_NEWS);
+  // News is already newest-first (addNewsItem prepends). Just take top 5.
+  const visibleNews = currentNews.slice(0, MAX_NEWS);
 
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const prevCountRef = useRef(currentNews.length);
@@ -389,20 +389,6 @@ export default function NewsFeed({ news, seasonEvent, season }: Props) {
         <span style={{ fontWeight: 900, color: "#fff", fontSize: 13, letterSpacing: "0.04em" }}>
           Football News
         </span>
-        {currentNews.length > 0 && (
-          <span style={{
-            marginLeft: "auto",
-            background: "rgba(220,38,38,0.2)",
-            color: "#f87171",
-            border: "1px solid rgba(220,38,38,0.35)",
-            borderRadius: 20,
-            fontSize: 10,
-            fontWeight: 900,
-            padding: "1px 8px",
-          }}>
-            {currentNews.length}
-          </span>
-        )}
       </div>
 
       {/* ── Active Event ── */}

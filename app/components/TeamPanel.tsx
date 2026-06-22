@@ -13,12 +13,13 @@ type Props = {
   marketMultiplier: number;
   isActive: boolean;
   mode: "single" | "versus";
+  isClubOwner?: boolean;
   onUseCard: (playerIndex: number, card: RewardCard) => void;
   onShowStats: () => void;
   onSkipTurn?: () => void;
 };
 
-export default function TeamPanel({ gamePlayer, playerIndex, season, marketMultiplier, isActive, mode, onUseCard, onShowStats, onSkipTurn }: Props) {
+export default function TeamPanel({ gamePlayer, playerIndex, season, marketMultiplier, isActive, mode, isClubOwner, onUseCard, onShowStats, onSkipTurn }: Props) {
   const [showFinancials, setShowFinancials] = useState(false);
   const dashboard = calculateFinancialDashboard(gamePlayer, season);
   const netWorth = calculateNetWorth(gamePlayer, season);
@@ -93,17 +94,19 @@ export default function TeamPanel({ gamePlayer, playerIndex, season, marketMulti
         </div>
       </div>
 
-      {/* Chances */}
-      <div className="px-4 py-2 flex items-center gap-4 border-b border-white/8">
-        <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/20 rounded-none px-2 py-1">
-          <span className="text-sm">🎟</span>
-          <span className="text-xs text-yellow-300 font-bold">{gamePlayer.purchaseChances} buy</span>
+      {/* Chances — hidden in club owner mode (unlimited buy/sell) */}
+      {!isClubOwner && (
+        <div className="px-4 py-2 flex items-center gap-4 border-b border-white/8">
+          <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-500/20 rounded-none px-2 py-1">
+            <span className="text-sm">🎟</span>
+            <span className="text-xs text-yellow-300 font-bold">{gamePlayer.purchaseChances} buy</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-red-900/20 border border-red-500/20 rounded-none px-2 py-1">
+            <span className="text-sm">💰</span>
+            <span className="text-xs text-red-300 font-bold">{gamePlayer.sellChances} sell</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 bg-red-900/20 border border-red-500/20 rounded-none px-2 py-1">
-          <span className="text-sm">💰</span>
-          <span className="text-xs text-red-300 font-bold">{gamePlayer.sellChances} sell</span>
-        </div>
-      </div>
+      )}
 
       {/* Financial Dashboard toggle */}
       <button onClick={() => setShowFinancials(!showFinancials)}

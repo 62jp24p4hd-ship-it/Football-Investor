@@ -2374,33 +2374,49 @@ export function ClubLegendAnimation({ onDone }: AnimProps) {
 // KONAMI CODE ANIMATION
 // Matrix rain → terminal reveal → Infinite Budget
 // ============================================
-export function KonamiCodeAnimation({ onDone }: AnimProps) {
-  const [phase, setPhase] = useState<"matrix" | "terminal" | "done">("matrix");
+export function KonamiCodeAnimation({ onDone, isClubOwner = false }: AnimProps & { isClubOwner?: boolean }) {
+  const [phase, setPhase] = useState<"intro" | "terminal">("intro");
   const [matrixLines, setMatrixLines] = useState<string[]>([]);
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
+  const [stars] = useState(() =>
+    Array.from({ length: 38 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 10 + Math.random() * 14,
+      delay: Math.random() * 2.5,
+      dur: 1.6 + Math.random() * 2,
+      icon: ["⭐","🌟","✨","🐐","👑"][Math.floor(Math.random() * 5)],
+    }))
+  );
 
   const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
 
   useEffect(() => {
+    if (isClubOwner) {
+      const t = setTimeout(() => setPhase("terminal"), 2200);
+      return () => clearTimeout(t);
+    }
     const matrixInterval = setInterval(() => {
       const line = Array.from({ length: 28 }, () =>
         CHARS[Math.floor(Math.random() * CHARS.length)]
       ).join(" ");
       setMatrixLines(prev => [...prev.slice(-14), line]);
     }, 70);
-
-    const toTerminal = setTimeout(() => {
-      clearInterval(matrixInterval);
-      setPhase("terminal");
-    }, 2000);
-
+    const toTerminal = setTimeout(() => { clearInterval(matrixInterval); setPhase("terminal"); }, 2000);
     return () => { clearInterval(matrixInterval); clearTimeout(toTerminal); };
-  }, []);
+  }, [isClubOwner]);
 
   useEffect(() => {
     if (phase !== "terminal") return;
 
-    const sequence: string[] = [
+    const sequence: string[] = isClubOwner ? [
+      "> 🐐 KONAMI CODE DETECTED...",
+      "> ASSEMBLING LEGENDARY SQUAD...",
+      "> 11 GOAT STARTERS SIGNED ✓",
+      "> 11 SQUAD PLAYERS ADDED ✓",
+      "> BENCH IS LOADED. SQUAD IS READY.",
+      "> GO WIN EVERYTHING, LEGEND. 🏆",
+    ] : [
       "> KONAMI CODE DETECTED...",
       "> BYPASSING FINANCIAL LIMITS...",
       "> INJECTING €99,999M INTO ACCOUNT...",
@@ -2411,14 +2427,10 @@ export function KonamiCodeAnimation({ onDone }: AnimProps) {
     setTerminalLines([]);
     let idx = 0;
     let finished = false;
-
     const lineInterval = setInterval(() => {
       if (finished) return;
       if (idx < sequence.length) {
-        const line = sequence[idx];
-        if (typeof line === "string") {
-          setTerminalLines(prev => [...prev, line]);
-        }
+        setTerminalLines(prev => [...prev, sequence[idx]]);
         idx++;
       } else {
         finished = true;
@@ -2426,10 +2438,136 @@ export function KonamiCodeAnimation({ onDone }: AnimProps) {
         setTimeout(() => { onDone(); }, 1400);
       }
     }, 420);
-
     return () => { finished = true; clearInterval(lineInterval); };
-  }, [phase]);
+  }, [phase, isClubOwner]);
 
+  // Club Owner: gold GOAT animation
+  if (isClubOwner) {
+    return (
+      <div
+        className="fixed inset-0 z-[999] flex flex-col items-center justify-center overflow-hidden pointer-events-auto"
+        onClick={() => { playClickSound(); onDone(); }}
+        style={{
+          background: "radial-gradient(ellipse at center, #1a0e00 0%, #0b0600 55%, #000 100%)",
+          cursor: "pointer", fontFamily: "monospace",
+        }}
+      >
+        {/* Ambient gold glow */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: "radial-gradient(ellipse 75% 65% at 50% 50%, rgba(212,175,55,0.14) 0%, transparent 70%)",
+          animation: "goatGlow 1.8s ease-in-out infinite alternate",
+        }} />
+
+        {/* Floating particles */}
+        {stars.map((s, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            left: `${s.x}%`, top: `${s.y}%`,
+            fontSize: `${s.size}px`, opacity: 0,
+            animation: `goatStar ${s.dur}s ease-in-out ${s.delay}s infinite`,
+            pointerEvents: "none",
+          }}>{s.icon}</div>
+        ))}
+
+        <div className="absolute top-4 right-4 text-[10px] tracking-widest uppercase"
+          style={{ color: "rgba(212,175,55,0.4)" }}>TAP TO SKIP</div>
+
+        {phase === "intro" && (
+          <div style={{ textAlign: "center", animation: "goatFadeIn 0.5s ease-out both" }}>
+            <div style={{
+              fontSize: "clamp(3.5rem,11vw,6.5rem)", lineHeight: 1, marginBottom: "20px",
+              animation: "goatBounce 0.75s ease-in-out infinite alternate",
+              filter: "drop-shadow(0 0 35px rgba(212,175,55,0.95))",
+            }}>🐐</div>
+            <div style={{
+              fontSize: "clamp(2rem,6vw,3.5rem)", fontWeight: 900, letterSpacing: "0.14em",
+              color: "#FFD54F",
+              textShadow: "0 0 30px #FFD54F, 0 0 65px rgba(212,175,55,0.6), 0 0 110px rgba(212,175,55,0.25)",
+              animation: "goatPulse 0.8s ease-in-out infinite alternate",
+            }}>LEGENDARY</div>
+            <div style={{
+              fontSize: "clamp(1rem,3vw,1.7rem)", fontWeight: 900, letterSpacing: "0.5em",
+              color: "rgba(212,175,55,0.65)", marginTop: "6px",
+            }}>SQUAD</div>
+          </div>
+        )}
+
+        {phase === "terminal" && (
+          <div className="w-full max-w-lg px-8" style={{ animation: "goatFadeIn 0.4s ease-out both" }}>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
+              <div style={{
+                fontSize: "clamp(2rem,5.5vw,3.2rem)", fontWeight: 900, letterSpacing: "0.12em",
+                color: "#FFD54F",
+                textShadow: "0 0 28px #FFD54F, 0 0 60px rgba(212,175,55,0.55), 0 0 95px rgba(212,175,55,0.2)",
+                animation: "goatPulse 0.7s ease-in-out infinite alternate",
+                marginBottom: "6px",
+              }}>LEGENDARY XI</div>
+              <div style={{
+                fontSize: "clamp(0.9rem,2.5vw,1.2rem)", fontWeight: 900, letterSpacing: "0.45em",
+                color: "rgba(212,175,55,0.6)",
+              }}>ASSEMBLED 👑</div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {terminalLines.map((line, i) => (
+                <div key={i} style={{
+                  fontSize: "13px", fontWeight: 700,
+                  color: (line ?? "").includes("✓") ? "#34d399"
+                    : (line ?? "").includes("LEGEND") || (line ?? "").includes("🏆") ? "#FFD54F"
+                    : (line ?? "").includes("🐐") ? "#fbbf24"
+                    : "rgba(212,175,55,0.8)",
+                  textShadow: "0 0 8px currentColor",
+                  animation: "konamiLineIn 0.25s ease-out both",
+                }}>
+                  {line ?? ""}
+                </div>
+              ))}
+              {terminalLines.length > 0 && terminalLines.length < 6 && (
+                <span className="inline-block w-2 h-4 ml-1 align-middle"
+                  style={{ background: "#FFD54F", animation: "konamiBlink 0.7s step-end infinite" }} />
+              )}
+            </div>
+          </div>
+        )}
+
+        <style>{`
+          @keyframes goatGlow {
+            0%   { opacity: 0.6; }
+            100% { opacity: 1; }
+          }
+          @keyframes goatStar {
+            0%   { opacity: 0; transform: translateY(0) scale(0.7) rotate(0deg); }
+            30%  { opacity: 0.9; }
+            70%  { opacity: 0.9; }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.3) rotate(25deg); }
+          }
+          @keyframes goatFadeIn {
+            from { opacity: 0; transform: scale(0.88); }
+            to   { opacity: 1; transform: scale(1); }
+          }
+          @keyframes goatBounce {
+            0%   { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-14px) scale(1.1); }
+          }
+          @keyframes goatPulse {
+            0%   { opacity: 0.82; transform: scale(1); }
+            100% { opacity: 1;    transform: scale(1.04); }
+          }
+          @keyframes konamiLineIn {
+            from { opacity: 0; transform: translateX(-12px); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes konamiBlink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Investor mode: original green matrix animation
   return (
     <div
       className="fixed inset-0 z-[999] flex flex-col items-center justify-center overflow-hidden pointer-events-auto"
@@ -2441,7 +2579,7 @@ export function KonamiCodeAnimation({ onDone }: AnimProps) {
         TAP TO SKIP
       </div>
 
-      {phase === "matrix" && (
+      {phase === "intro" && (
         <div className="w-full h-full flex flex-col justify-center px-6 overflow-hidden">
           {matrixLines.map((line, i) => (
             <div key={i} className="text-[11px] leading-relaxed tracking-widest"
@@ -2459,51 +2597,36 @@ export function KonamiCodeAnimation({ onDone }: AnimProps) {
       {phase === "terminal" && (
         <div className="w-full max-w-lg px-8">
           <div className="text-center mb-8">
-            <div
-              className="font-black tracking-widest mb-1"
+            <div className="font-black tracking-widest mb-1"
               style={{
-                fontSize: "clamp(2.2rem,6vw,3.5rem)",
-                color: "#00ff41",
+                fontSize: "clamp(2.2rem,6vw,3.5rem)", color: "#00ff41",
                 textShadow: "0 0 20px #00ff41, 0 0 50px #00ff41, 0 0 80px rgba(0,255,65,0.4)",
                 animation: "konamiPulse 0.6s ease-in-out infinite alternate",
-              }}
-            >
+              }}>
               CHEAT CODE
             </div>
-            <div
-              className="font-black tracking-[0.4em] text-xl uppercase"
-              style={{
-                color: "#FFD54F",
-                textShadow: "0 0 15px #FFD54F, 0 0 30px rgba(255,213,79,0.5)",
-              }}
-            >
+            <div className="font-black tracking-[0.4em] text-xl uppercase"
+              style={{ color: "#FFD54F", textShadow: "0 0 15px #FFD54F, 0 0 30px rgba(255,213,79,0.5)" }}>
               ACTIVATED
             </div>
           </div>
 
           <div className="space-y-2">
             {terminalLines.map((line, i) => (
-              <div
-                key={i}
-                className="text-sm font-bold"
+              <div key={i} className="text-sm font-bold"
                 style={{
-                  color: (line ?? "").includes("\u221e") || (line ?? "").includes("\u2713")
-                    ? "#FFD54F"
-                    : (line ?? "").includes("LEGEND")
-                    ? "#10B981"
+                  color: (line ?? "").includes("∞") || (line ?? "").includes("✓") ? "#FFD54F"
+                    : (line ?? "").includes("LEGEND") ? "#10B981"
                     : "#00ff41",
                   textShadow: "0 0 6px currentColor",
                   animation: "konamiLineIn 0.25s ease-out both",
-                }}
-              >
+                }}>
                 {line ?? ""}
               </div>
             ))}
             {terminalLines.length > 0 && terminalLines.length < 5 && (
-              <span
-                className="inline-block w-2 h-4 ml-1 align-middle"
-                style={{ background: "#00ff41", animation: "konamiBlink 0.7s step-end infinite" }}
-              />
+              <span className="inline-block w-2 h-4 ml-1 align-middle"
+                style={{ background: "#00ff41", animation: "konamiBlink 0.7s step-end infinite" }} />
             )}
           </div>
         </div>

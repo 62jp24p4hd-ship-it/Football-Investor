@@ -116,6 +116,10 @@ export function getAgeCategory(age: number): string {
 }
 
 // ============================================
+// POSITION COMPATIBILITY (for out-of-position penalty)
+// ============================================
+
+// ============================================
 // RETIREMENT UTILITIES
 // ============================================
 

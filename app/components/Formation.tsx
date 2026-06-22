@@ -16,6 +16,7 @@ type Props = {
   pendingSlot: string | null;
   marketMultiplier: number;
   isVersus?: boolean;
+  isClubOwner?: boolean;
   onSlotClick: (slot: string) => void;
   onOwnedClick: (playerIndex: number, ownedIndex: number) => void;
   onCompareReady?: (a: OwnedPlayer, b: OwnedPlayer) => void;
@@ -348,11 +349,13 @@ if (typeof document !== "undefined") {
   }
 }
 
-export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, isVersus, onSlotClick, onOwnedClick, onCompareReady }: Props) {
+export default function Formation({ gamePlayer, playerIndex, season, isActive, pendingSlot, marketMultiplier, isVersus, isClubOwner, onSlotClick, onOwnedClick, onCompareReady }: Props) {
   const isFrozen = gamePlayer.frozenSeason === season;
   const [filterPos, setFilterPos] = useState<string>("ALL");
   const [compareMode, setCompareMode] = useState(false);
   const [compareSlots, setCompareSlots] = useState<string[]>([]);
+
+  const ALL_SLOTS = ["LW","ST","RW","CAM","LCM","RCM","LB","LCB","RCB","RB","GK"];
 
   const owned = (slot: string) => gamePlayer.owned.find(o => o.slot === slot);
   const ownedIdx = (slot: string) => gamePlayer.owned.findIndex(o => o.slot === slot);
@@ -382,6 +385,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
 
   function card(slot: string) {
     const o = owned(slot);
+    const oIdx = ownedIdx(slot);
     const posMatch = filterPos === "ALL" || !o || o.player.position === filterPos ||
       (filterPos === "ATT" && ["ST","LW","RW","SS","CF"].includes(o.player.position)) ||
       (filterPos === "MID" && ["CM","CAM","CDM","LM","RM"].includes(o.player.position)) ||
@@ -408,7 +412,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         )}
         <SlotCard
           slot={slot}
-          owned={o} ownedIndex={ownedIdx(slot)}
+          owned={o} ownedIndex={oIdx}
           isActive={isActive && !compareMode} isPending={pendingSlot === slot}
           playerIndex={playerIndex}
           onSlotClick={onSlotClick} onOwnedClick={onOwnedClick}
@@ -505,7 +509,11 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-emerald-400 font-bold">€{gamePlayer.budget}M</span>
               <span className="text-white/20 text-xs">•</span>
-              <span className="text-xs text-yellow-400 font-bold">🎟 {gamePlayer.purchaseChances}</span>
+              {isClubOwner ? (
+                <span className="text-xs text-yellow-400 font-bold">🎟 ∞</span>
+              ) : (
+                <span className="text-xs text-yellow-400 font-bold">🎟 {gamePlayer.purchaseChances}</span>
+              )}
               {isFrozen && <span className="text-xs text-blue-400 font-bold">🧊 Frozen</span>}
             </div>
           </div>
@@ -543,6 +551,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         </div>
 
       </div>
+
     </div>
   );
 }

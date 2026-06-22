@@ -688,9 +688,13 @@ export default function Home() {
     if (mode === "single" && leagueEnabled && leagueState && !isTransferMarketOpen(leagueState)) {
       return notify("🔒 Transfer market is closed during the league season (opens Rounds 18-21)");
     }
-    if (!activePlayer || activePlayer.purchaseChances <= 0) return notify("No purchase chances remaining");
+    const isClubOwner = singlePlayerStyle === "clubOwner";
+    if (!isClubOwner && (!activePlayer || activePlayer.purchaseChances <= 0)) return notify("No purchase chances remaining");
     if (pendingSlot && pendingSlot !== slot) return notify("Finish current selection first");
-    if (activePlayer.owned.find((o) => o.slot === slot)) return;
+    // Club owner: can buy additional players for same slot (go to bench/outside)
+    if (!isClubOwner && activePlayer && activePlayer.owned.find((o) => o.slot === slot)) return;
+    // Club owner: cap total squad at 22
+    if (isClubOwner && activePlayer && activePlayer.owned.length >= 11) return notify("الفريق مكتمل");
 
     setSelectedOwned(null);
     setPendingSlot(slot);
@@ -792,6 +796,9 @@ export default function Home() {
       },
     };
 
+    // Determine squad status for new player in club owner mode
+    const isClubOwnerBuy = singlePlayerStyle === "clubOwner";
+
     const newOwned: OwnedPlayer = {
       player: playerWithZeroFirstSeason,
       slot: negotiation.slot,
@@ -805,11 +812,16 @@ export default function Home() {
 
     const updatedPlayers = gamePlayers.map((p, i) => {
       if (i !== activePlayerIndex) return p;
+      const isClubOwnerMode = singlePlayerStyle === "clubOwner";
+      // In club owner mode: unlimited buys, no slot conflict (add alongside existing)
+      const newOwned_ = isClubOwnerMode
+        ? [...p.owned, newOwned]
+        : [...p.owned.filter((o) => o.slot !== negotiation.slot), newOwned];
       return {
         ...p,
         budget: p.budget - value,
-        purchaseChances: p.purchaseChances - 1,
-        owned: [...p.owned.filter((o) => o.slot !== negotiation.slot), newOwned],
+        purchaseChances: isClubOwnerMode ? p.purchaseChances : p.purchaseChances - 1,
+        owned: newOwned_,
       };
     });
 
@@ -864,19 +876,18 @@ export default function Home() {
       : item.buyPrice;
     const profit = sellPrice - item.buyPrice;
 
+    const isClubOwnerMode = singlePlayerStyle === "clubOwner";
     const updatedPlayers = gamePlayers.map((p, i) => {
       if (i !== playerIndex) return p;
-      const extraChance = p.soldBonusUsedThisSeason ? 0 : 1;
+      // Club owner: unlimited sell, no purchase chance bonus
+      const extraChance = (isClubOwnerMode || p.soldBonusUsedThisSeason) ? 0 : 1;
       const rawNewChances = p.purchaseChances + extraChance;
-      const cappedChances =
-        mode === "single" && singlePlayerStyle === "clubOwner"
-          ? Math.min(rawNewChances, LEAGUE_MAX_PURCHASE_CHANCES)
-          : rawNewChances;
+      const cappedChances = isClubOwnerMode ? p.purchaseChances : rawNewChances;
       return {
         ...p,
         budget: p.budget + sellPrice,
         purchaseChances: cappedChances,
-        soldBonusUsedThisSeason: true,
+        soldBonusUsedThisSeason: isClubOwnerMode ? p.soldBonusUsedThisSeason : true,
         owned: p.owned.filter((_, idx) => idx !== ownedIndex),
         sold: [{
           owner: p.name, name: item.player.name, buySeason: item.buySeason,
@@ -1231,9 +1242,10 @@ export default function Home() {
     if (negotiation) return notify("A contract negotiation is in progress");
 
     const userGp = gamePlayers[0];
-    if (!userGp || userGp.owned.length < LEAGUE_REQUIRED_SQUAD_SIZE) {
+    const startersCount = userGp?.owned.length ?? 0;
+    if (!userGp || startersCount < LEAGUE_REQUIRED_SQUAD_SIZE) {
       return notify(
-        `⚠️ You need a full starting XI (${LEAGUE_REQUIRED_SQUAD_SIZE} players) before starting the season. (${userGp?.owned.length ?? 0}/${LEAGUE_REQUIRED_SQUAD_SIZE})`
+        `⚠️ You need a full starting XI (${LEAGUE_REQUIRED_SQUAD_SIZE} players) before starting the season. (${startersCount}/${LEAGUE_REQUIRED_SQUAD_SIZE})`
       );
     }
     const filledSlots = new Set(userGp.owned.map(o => o.slot));
@@ -1952,23 +1964,20 @@ export default function Home() {
 
     const alreadyOwnedSlots = new Set(userGp.owned.map(o => o.slot));
     const newOwned: OwnedPlayer[] = [];
-    const goats = getSecretPlayers(); // one legendary GOAT per position, spread across different eras/seasons
+    const goats = getSecretPlayers();
 
     // Random GK pool for fallback if no GOAT GK
     const randomGkPool = generateSeasonPlayerPool(season).filter(p => p.position === "GK");
 
     for (const pos of ALL_POSITIONS) {
-      if (alreadyOwnedSlots.has(pos)) continue; // keep any player already in that slot
+      if (alreadyOwnedSlots.has(pos)) continue;
 
       let chosen: Player | undefined = goats.find(p => p.position === pos);
-
-      // Fallback: use random GK if no GOAT GK exists
       if (!chosen && pos === "GK" && randomGkPool.length > 0) {
         chosen = randomGkPool[Math.floor(Math.random() * randomGkPool.length)];
       }
       if (!chosen) continue;
 
-      const goatSeason = chosen.availableSeason;
       const price = calculateLeaguePlayerPrice(chosen.rating ?? 95);
       const salary = getRecommendedSalary(price);
 
@@ -2004,7 +2013,7 @@ export default function Home() {
     setGamePlayers(prev =>
       prev.map((gp, idx) => idx === 0 ? { ...gp, owned: [...gp.owned, ...newOwned] } : gp)
     );
-    notify(`⚡ Legendary XI assembled! Signed ${newOwned.length} GOAT(s) to your squad!`);
+    notify(`🐐 Legendary XI assembled! ${newOwned.length} GOAT(s) signed!`);
   }
 
   function nextSeason(listOverride?: GamePlayer[]) {
@@ -2410,6 +2419,7 @@ export default function Home() {
                 isActive={true}
                 pendingSlot={pendingSlot}
                 marketMultiplier={marketMultiplier}
+                isClubOwner={singlePlayerStyle === "clubOwner"}
                 onSlotClick={handleSlotClick}
                 onOwnedClick={(pi, oi) => setSelectedOwned({ playerIndex: pi, ownedIndex: oi })}
                 onCompareReady={(a, b) => setCompareOwned([a, b])}
@@ -2424,6 +2434,7 @@ export default function Home() {
                 marketMultiplier={marketMultiplier}
                 isActive={true}
                 mode={mode}
+                isClubOwner={singlePlayerStyle === "clubOwner"}
                 onUseCard={handleUseCard}
                 onShowStats={() => setShowStats(true)}
                 onSkipTurn={handleSkipTurn}
@@ -2464,6 +2475,12 @@ export default function Home() {
                     className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
                   >
                     🏆 سجل النادي — Club History
+                  </button>
+                  <button
+                    onClick={() => setShowHowToPlay(true)}
+                    className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                  >
+                    📖 كيف تلعب — How To Play
                   </button>
                   {Object.keys(otherLeagues).length > 0 && (
                     <button
@@ -2626,7 +2643,10 @@ export default function Home() {
       )}
 
       {showHowToPlay && (
-        <HowToPlayModal onClose={() => setShowHowToPlay(false)} />
+        <HowToPlayModal
+          onClose={() => setShowHowToPlay(false)}
+          defaultTab={singlePlayerStyle === "clubOwner" ? "clubowner" : "investor"}
+        />
       )}
 
       {/* Florentino Pérez Boss Entrance */}
@@ -2811,6 +2831,7 @@ export default function Home() {
 
       {showKonamiAnim && (
         <KonamiCodeAnimation
+          isClubOwner={singlePlayerStyle === "clubOwner"}
           onDone={() => {
             setShowKonamiAnim(false);
             setKonamiUsed(true);

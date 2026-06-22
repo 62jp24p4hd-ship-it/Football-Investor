@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { BudgetMode, GameMode, EventType } from "../game/types";
 import { getAllSlots, deleteSlot } from "../game/saveSystem";
 import type { SlotInfo } from "../game/saveSystem";
+import HowToPlayModal from "./HowToPlayModal";
 
 type StartConfig = {
   mode: GameMode;
@@ -397,41 +398,7 @@ export default function StartScreen({ onStart, onLoad }: Props) {
         </div>
 
         {showHowToPlay && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background:"rgba(0,0,0,0.85)", backdropFilter:"blur(8px)", animation:"modalFadeIn 0.25s ease-out" }}>
-            <div className="w-full max-w-md overflow-hidden"
-              style={{ background:"linear-gradient(160deg,#080c14,#0a0f1e)", border:"1px solid rgba(99,102,241,0.4)", boxShadow:"0 0 60px rgba(99,102,241,0.15)", animation:"modalSlideUp 0.3s cubic-bezier(0.22,1,0.36,1)" }}>
-              <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(99,102,241,0.08)" }}>
-                <div>
-                  <div className="font-black text-white text-lg tracking-wide">كيف تلعب</div>
-                  <div className="text-[10px] tracking-[0.2em] uppercase mt-0.5" style={{ color:"rgba(165,180,252,0.6)" }}>How To Play</div>
-                </div>
-                <button onClick={() => setShowHowToPlay(false)}
-                  className="w-8 h-8 flex items-center justify-center font-black text-lg transition-all hover:scale-110 active:scale-90"
-                  style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.1)", color:"#9ca3af" }}>
-                  ×
-                </button>
-              </div>
-              <div className="p-5">
-                {HOW_TO_PLAY.map((item, i) => (
-                  <div key={i} className="flex items-start gap-4 py-3"
-                    style={{ borderBottom: i < HOW_TO_PLAY.length-1 ? "1px solid rgba(255,255,255,0.05)" : "none",
-                      animation:`modalItemIn 0.3s ease-out ${i*0.06}s both` }}>
-                    <span className="text-2xl flex-shrink-0">{item.emoji}</span>
-                    <div>
-                      <div className="text-white font-bold text-sm">{item.en}</div>
-                      <div className="text-[11px] mt-0.5" style={{ color:"#6b7280" }}>{item.ar}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <style>{`
-              @keyframes modalFadeIn{from{opacity:0}to{opacity:1}}
-              @keyframes modalSlideUp{from{opacity:0;transform:translateY(30px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
-              @keyframes modalItemIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
-            `}</style>
-          </div>
+          <HowToPlayModal onClose={() => setShowHowToPlay(false)} />
         )}
 
         {showDevMsg && (

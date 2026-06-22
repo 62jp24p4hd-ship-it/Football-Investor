@@ -431,13 +431,11 @@ export function generateLeagueTeams(
 // ============================================
 
 export function calculateUserStrength(gp: GamePlayer, season: number): number {
-  if (gp.owned.length === 0) return 65; // weak default if no players bought
-
+  if (gp.owned.length === 0) return 65;
   const ratings = gp.owned.map(item => {
     const stats = getSeasonStats(item.player, season);
     return stats.rating ?? item.player.rating ?? 70;
   });
-
   return ratings.reduce((s, r) => s + r, 0) / ratings.length;
 }
 
@@ -707,14 +705,64 @@ export function playRound(
       const outcome = userGoals > oppGoals ? "Win" : userGoals < oppGoals ? "Loss" : "Draw";
       const tone = outcome === "Win" ? "good" : outcome === "Loss" ? "bad" : "neutral";
 
+      const scoreline = `${userIsHome ? userGoals : oppGoals}-${userIsHome ? oppGoals : userGoals}`;
+      const journalist = pickRandom(["Fabrizio Romano", "David Ornstein", "Gary Neville", "Jamie Carragher", "Roy Keane"]);
+      const source = pickRandom(["Sky Sports", "BBC Sport", "The Athletic", "ESPN FC", "TalkSPORT"]);
+
+      const winComments = [
+        `Dominant showing from ${userGp.name}. ${opponent.name} had no answer tonight.`,
+        `Clinical performance. ${userGp.name} looked a different class and fully deserved the three points.`,
+        `${opponent.name} tried to hang on but were outplayed from start to finish. A statement result.`,
+        `You can't argue with that scoreline. ${userGp.name} were simply better in every department.`,
+        `Controlled, composed, and clinical. This is what title-chasing football looks like.`,
+        `${userGp.name} put on a masterclass. ${opponent.name} were chasing shadows all night.`,
+        `Three points that tell the full story. ${userGp.name} were electric from the first whistle.`,
+      ];
+      const bigWinComments = [
+        `An absolute statement of intent. ${userGp.name} destroyed ${opponent.name} — this was ruthless.`,
+        `This wasn't a match, it was a demolition. ${userGp.name} are in frightening form right now.`,
+        `You have to feel for ${opponent.name} tonight. Totally outclassed from minute one.`,
+        `${userGoals} goals — this was an embarrassment for ${opponent.name}. ${userGp.name} are flying.`,
+      ];
+      const lossComments = [
+        `Difficult night for ${userGp.name}. ${opponent.name} took their chances and deserved the win.`,
+        `${userGp.name} struggled to create meaningful chances. ${opponent.name} were well-organised and clinical.`,
+        `A below-par performance. ${userGp.name} will need to regroup quickly after this setback.`,
+        `${opponent.name} exposed the weaknesses we've seen before. This result will sting for a while.`,
+        `Hard to find positives after that. ${userGp.name} were second best for large spells of the game.`,
+        `${userGp.name} ran out of ideas against a resolute ${opponent.name} side. Disappointing evening.`,
+      ];
+      const bigLossComments = [
+        `An absolute nightmare. ${userGp.name} collapsed completely — this performance raises serious questions.`,
+        `There are no excuses for a result like this. ${userGp.name} were all over the place defensively.`,
+        `${opponent.name} were relentless. ${userGp.name} had no answer and it showed on the scoreboard.`,
+      ];
+      const drawComments = [
+        `Honours even in a tight contest. Both sides had moments but neither could find a winner.`,
+        `A point each and both sides will take it. ${userGp.name} showed resilience to earn the draw.`,
+        `Frustrating for ${userGp.name} — they had enough to win this but ${opponent.name} held firm.`,
+        `A fair result in the end. Compact from both teams and moments of quality were limited.`,
+        `${userGp.name} will feel they left two points on the pitch. Still, a clean sheet is a solid base.`,
+      ];
+
+      const diff = userGoals - oppGoals;
+      let comment: string;
+      if (outcome === "Win") {
+        comment = diff >= 3 ? pickRandom(bigWinComments) : pickRandom(winComments);
+      } else if (outcome === "Loss") {
+        comment = diff <= -3 ? pickRandom(bigLossComments) : pickRandom(lossComments);
+      } else {
+        comment = pickRandom(drawComments);
+      }
+
       newsItems.push({
         id: randomId(),
         season,
-        title: `⚽ Round ${round}: ${outcome} vs ${opponent.name}`,
-        description: `${userGp.name} ${userIsHome ? userGoals : oppGoals}-${userIsHome ? oppGoals : userGoals} ${opponent.name}. ${statsUpdate.summary}`,
+        title: `⚽ R${round}: ${outcome} ${scoreline} vs ${opponent.name}`,
+        description: comment,
         tone,
-        journalist: pickRandom(["Fabrizio Romano", "David Ornstein"]),
-        source: "Sky Sports",
+        journalist,
+        source,
       });
     }
   }
