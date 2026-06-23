@@ -40,6 +40,7 @@ import { initializeCL, playCLRound, setupPlayoff, playPlayoffLeg, drawR16, playK
 import CLModal from "./components/CLModal";
 import CLDrawAnimation from "./components/CLDrawAnimation";
 import CLChampionAnimation from "./components/CLChampionAnimation";
+import CLGroupDrawAnimation, { type GroupDrawFixture } from "./components/CLGroupDrawAnimation";
 
 const LEAGUE_MAX_PURCHASE_CHANCES = 14; // hard cap, club owner mode only — any bonus chances beyond this are ignored
 const LEAGUE_REQUIRED_SQUAD_SIZE = 11;
@@ -222,6 +223,8 @@ export default function Home() {
   const [pendingCLKnockout, setPendingCLKnockout] = useState<{ phase: CLState["phase"]; leg: 1|2; userTie: CLTie } | null>(null);
   const [pendingShowCLDraw, setPendingShowCLDraw] = useState(false);
   const [showCLPlayoffDraw, setShowCLPlayoffDraw] = useState(false);
+  const [showCLGroupDraw, setShowCLGroupDraw] = useState(false);
+  const [clGroupDrawFixtures, setClGroupDrawFixtures] = useState<GroupDrawFixture[]>([]);
   const [pendingShowCLPlayoffDraw, setPendingShowCLPlayoffDraw] = useState(false);
   const [clChampionAnim, setClChampionAnim] = useState<{ championName: string; isUserChampion: boolean } | null>(null);
   const [pendingCLChampionAnim, setPendingCLChampionAnim] = useState<{ championName: string; isUserChampion: boolean } | null>(null);
@@ -1327,11 +1330,43 @@ export default function Home() {
         const newCLState = initializeCL(season, clPrevStandings, selectedLeagueId, userTeamName, allLeagueStatesForCL);
         setClState(newCLState);
         setPendingCLRound(null);
+        // Show group stage draw animation if user qualified
+        const userInCL = newCLState.teams.find(t => t.isUser);
+        if (userInCL) {
+          const uName = userInCL.name;
+          const seenRounds = new Set<number>();
+          const rawUserFixtures: GroupDrawFixture[] = newCLState.groupFixtures
+            .filter(f => f.homeTeam === uName || f.awayTeam === uName)
+            .sort((a, b) => a.round - b.round)
+            .filter(f => { if (seenRounds.has(f.round)) return false; seenRounds.add(f.round); return true; })
+            .slice(0, 8)
+            .map(f => ({
+              round: f.round,
+              opponent: f.homeTeam === uName ? f.awayTeam : f.homeTeam,
+              opponentLeagueId: f.homeTeam === uName ? f.awayLeagueId : f.homeLeagueId,
+              isHome: f.homeTeam === uName,
+            }));
+          // Enforce exactly 4 home / 4 away
+          const homeFixtures = rawUserFixtures.filter(f => f.isHome);
+          const awayFixtures = rawUserFixtures.filter(f => !f.isHome);
+          while (homeFixtures.length > 4) {
+            const moved = homeFixtures.pop()!;
+            awayFixtures.push({ ...moved, isHome: false });
+          }
+          while (awayFixtures.length > 4) {
+            const moved = awayFixtures.pop()!;
+            homeFixtures.push({ ...moved, isHome: true });
+          }
+          const userFixtures: GroupDrawFixture[] = [...homeFixtures, ...awayFixtures]
+            .sort((a, b) => a.round - b.round);
+          setClGroupDrawFixtures(userFixtures);
+          setShowCLGroupDraw(true);
+        }
         addNewsItem({
           id: Date.now(),
           season,
           title: "🏆 Champions League Draw Complete!",
-          description: `${newCLState.teams.length} teams compete in this season's Champions League. ${userTeamName} are ${newCLState.teams.find(t => t.isUser) ? "participating!" : "not qualified."}`,
+          description: `${newCLState.teams.length} teams compete in this season's Champions League. ${userTeamName} are ${userInCL ? "participating!" : "not qualified."}`,
           tone: "special",
         });
       } catch {
@@ -1663,9 +1698,13 @@ export default function Home() {
           capturedCLStandings[lid] = ol.standings.map(s => ({ teamName: s.teamName, isUser: false }));
         }
         setClPrevStandings(capturedCLStandings);
-        // Reset CL for next season
-        setClState(null);
-        setPendingCLRound(null);
+        // Reset CL for next season ONLY if CL is already done
+        // If CL is still in progress (e.g. Bundesliga ends before CL Final),
+        // preserve clState so forceAdvanceCLToNextUserMatch can continue it
+        if (!clState || clState.phase === "finished" || clState.champion !== null) {
+          setClState(null);
+          setPendingCLRound(null);
+        }
       }
 
       // Save season to club history
@@ -1853,6 +1892,59 @@ export default function Home() {
     setPendingCLKnockout(null);
   }
 
+  // Called after league finishes to advance CL knockouts until user has a match or CL ends
+  function forceAdvanceCLToNextUserMatch() {
+    if (!clState || clState.phase === "finished" || clState.champion !== null) {
+      setLeagueEnabled(false); setLeagueState(null); setMatchSummary(null); nextSeason(); return;
+    }
+    const uName = gamePlayers[0]?.name ?? "";
+    const uStrength = calculateUserStrength(gamePlayers[0], season);
+    const uRoster = gamePlayers[0]?.owned ?? [];
+    let nextCLState = clState;
+    let foundUserMatch = false;
+
+    function findUserKOTie(ties: CLTie[], leg: 1|2): CLTie | null {
+      return ties.find(t => t.userInvolved && (leg === 1 ? t.leg1 === null : t.leg2 === null)) ?? null;
+    }
+    type KOEntry2 = { phase: CLState["phase"]; leg: 1|2; koRound: "r16"|"qf"|"sf"|"final"|"playoff" };
+    const koSchedule2: KOEntry2[] = [
+      { phase: "playoff_leg1", leg: 1, koRound: "playoff" },
+      { phase: "playoff_leg2", leg: 2, koRound: "playoff" },
+      { phase: "r16_leg1",     leg: 1, koRound: "r16" },
+      { phase: "r16_leg2",     leg: 2, koRound: "r16" },
+      { phase: "qf_leg1",      leg: 1, koRound: "qf" },
+      { phase: "qf_leg2",      leg: 2, koRound: "qf" },
+      { phase: "sf_leg1",      leg: 1, koRound: "sf" },
+      { phase: "sf_leg2",      leg: 2, koRound: "sf" },
+      { phase: "final",        leg: 1, koRound: "final" },
+    ];
+    for (const entry of koSchedule2) {
+      if (nextCLState.phase !== entry.phase || nextCLState.champion !== null) continue;
+      const ties = entry.koRound === "playoff" ? nextCLState.playoffTies
+        : entry.koRound === "r16" ? nextCLState.r16Ties
+        : entry.koRound === "qf" ? nextCLState.qfTies
+        : entry.koRound === "sf" ? nextCLState.sfTies
+        : nextCLState.finalTie ? [nextCLState.finalTie] : [];
+      const userTie = findUserKOTie(ties, entry.leg);
+      if (userTie) { setPendingCLKnockout({ phase: entry.phase, leg: entry.leg, userTie }); foundUserMatch = true; break; }
+      // User not in this round — auto-simulate
+      if (entry.koRound === "playoff") {
+        const { clState: nc } = playPlayoffLeg(nextCLState, entry.leg, uName, uStrength, uRoster);
+        nextCLState = nc;
+        if (entry.leg === 2) { nextCLState = drawR16(nextCLState); setShowCLDraw(true); }
+      } else {
+        const { clState: nc } = playKnockoutLeg(nextCLState, entry.koRound, entry.leg, uName, uStrength, uRoster);
+        nextCLState = nc;
+        if (entry.koRound === "final" && nextCLState.champion) notify(`🏆 ${nextCLState.champion} wins the Champions League!`);
+      }
+    }
+    if (nextCLState !== clState) setClState(nextCLState);
+    if (!foundUserMatch) {
+      // User eliminated or CL finished — end season
+      setLeagueEnabled(false); setLeagueState(null); setMatchSummary(null); nextSeason();
+    }
+  }
+
   function handleMainSeasonButtonClick() {
     if (mode !== "single" || singlePlayerStyle !== "clubOwner") {
       nextSeason();
@@ -1863,11 +1955,23 @@ export default function Home() {
       return;
     }
     if (leagueState.seasonPhase === "finished") {
-      setLeagueEnabled(false);
-      setLeagueState(null);
-      setMatchSummary(null);
-      nextSeason();
-      return;
+      const clStillGoing = clState && clState.phase !== "finished" && clState.champion === null;
+      if (clStillGoing) {
+        // League done but CL still in progress — continue CL first
+        if (pendingCLKnockout && clState) {
+          // Pending match already queued — show preview (fall through below)
+        } else {
+          // Advance CL to next user match (or auto-sim remaining if user eliminated)
+          forceAdvanceCLToNextUserMatch();
+          return;
+        }
+      } else {
+        setLeagueEnabled(false);
+        setLeagueState(null);
+        setMatchSummary(null);
+        nextSeason();
+        return;
+      }
     }
     // ── If a CL knockout match is pending, show preview ──
     if (pendingCLKnockout && clState) {
@@ -1911,7 +2015,11 @@ export default function Home() {
   function getLeagueButtonLabel(): string | undefined {
     if (mode !== "single" || singlePlayerStyle !== "clubOwner") return undefined;
     if (!leagueEnabled || !leagueState) return "Start Season";
-    if (leagueState.seasonPhase === "finished") return "Next Season";
+    if (leagueState.seasonPhase === "finished") {
+      const clStillGoing = clState && clState.phase !== "finished" && clState.champion === null;
+      if (clStillGoing) return "🏆 CL Match";
+      return "Next Season";
+    }
     if (pendingCLKnockout) return "🏆 CL Match";
     if (pendingCLRound !== null && clState?.phase === "group") return "🏆 CL Match";
     return "Next Game";
@@ -2476,12 +2584,6 @@ export default function Home() {
                   >
                     🏆 سجل النادي — Club History
                   </button>
-                  <button
-                    onClick={() => setShowHowToPlay(true)}
-                    className="w-full mt-2 py-2 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
-                  >
-                    📖 كيف تلعب — How To Play
-                  </button>
                   {Object.keys(otherLeagues).length > 0 && (
                     <button
                       onClick={() => setShowOtherLeagues(true)}
@@ -2962,6 +3064,15 @@ export default function Home() {
           title="قرعة الملحق المؤهل"
           subtitle="Playoff Round Draw — انقر للتخطي"
           onDone={() => setShowCLPlayoffDraw(false)}
+        />
+      )}
+
+      {/* Champions League Group Stage Draw Animation */}
+      {showCLGroupDraw && clGroupDrawFixtures.length > 0 && (
+        <CLGroupDrawAnimation
+          userTeamName={gamePlayers[0]?.name ?? "Your Team"}
+          fixtures={clGroupDrawFixtures}
+          onDone={() => setShowCLGroupDraw(false)}
         />
       )}
 
