@@ -270,6 +270,191 @@ function EpicNewsCard({ item, isNewest, isNew }: { item: NewsItem; isNewest: boo
   );
 }
 
+// ── Brand themes for sponsorship cards ──────────
+const BRAND_THEMES: Record<string, {
+  bg: string; border: string; glow: string;
+  titleColor: string; accentColor: string;
+  badge: string; icon: string;
+}> = {
+  Nike: {
+    bg: "linear-gradient(135deg, rgba(10,10,10,0.97) 0%, rgba(25,25,25,0.9) 100%)",
+    border: "rgba(255,255,255,0.6)",
+    glow: "0 0 24px rgba(255,255,255,0.12), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#ffffff",
+    accentColor: "#ffffff",
+    badge: "NIKE",
+    icon: "✔️",
+  },
+  Adidas: {
+    bg: "linear-gradient(135deg, rgba(0,0,80,0.9) 0%, rgba(0,0,40,0.97) 100%)",
+    border: "rgba(100,160,255,0.7)",
+    glow: "0 0 24px rgba(100,160,255,0.2), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#93c5fd",
+    accentColor: "#60a5fa",
+    badge: "ADIDAS",
+    icon: "🌿",
+  },
+  Puma: {
+    bg: "linear-gradient(135deg, rgba(80,0,0,0.92) 0%, rgba(40,0,0,0.97) 100%)",
+    border: "rgba(255,100,80,0.65)",
+    glow: "0 0 24px rgba(255,80,60,0.2), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#fca5a5",
+    accentColor: "#f87171",
+    badge: "PUMA",
+    icon: "🐆",
+  },
+  Pepsi: {
+    bg: "linear-gradient(135deg, rgba(0,20,120,0.92) 0%, rgba(120,0,20,0.85) 100%)",
+    border: "rgba(147,197,253,0.6)",
+    glow: "0 0 24px rgba(59,130,246,0.25), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#bfdbfe",
+    accentColor: "#93c5fd",
+    badge: "PEPSI",
+    icon: "🥤",
+  },
+  "EA Sports": {
+    bg: "linear-gradient(135deg, rgba(0,40,20,0.95) 0%, rgba(0,20,10,0.97) 100%)",
+    border: "rgba(52,211,153,0.6)",
+    glow: "0 0 24px rgba(52,211,153,0.2), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#6ee7b7",
+    accentColor: "#34d399",
+    badge: "EA SPORTS",
+    icon: "🎮",
+  },
+  "Red Bull": {
+    bg: "linear-gradient(135deg, rgba(60,0,0,0.95) 0%, rgba(0,10,60,0.95) 100%)",
+    border: "rgba(251,191,36,0.65)",
+    glow: "0 0 24px rgba(239,68,68,0.2), 0 0 40px rgba(251,191,36,0.1), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#fde68a",
+    accentColor: "#fbbf24",
+    badge: "RED BULL",
+    icon: "🐂",
+  },
+  Beats: {
+    bg: "linear-gradient(135deg, rgba(80,0,0,0.97) 0%, rgba(20,0,0,0.98) 100%)",
+    border: "rgba(239,68,68,0.7)",
+    glow: "0 0 28px rgba(239,68,68,0.25), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#fca5a5",
+    accentColor: "#ef4444",
+    badge: "BEATS",
+    icon: "🎧",
+  },
+  Hublot: {
+    bg: "linear-gradient(135deg, rgba(30,20,0,0.97) 0%, rgba(10,8,0,0.98) 100%)",
+    border: "rgba(212,175,55,0.75)",
+    glow: "0 0 28px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.8)",
+    titleColor: "#fde68a",
+    accentColor: "#D4AF37",
+    badge: "HUBLOT",
+    icon: "⌚",
+  },
+};
+
+function SponsorshipNewsCard({ item, isNewest, isNew }: { item: NewsItem; isNewest: boolean; isNew: boolean }) {
+  const brand = item.sponsorBrand ?? "";
+  const theme = BRAND_THEMES[brand] ?? {
+    bg: "linear-gradient(135deg, rgba(80,20,120,0.9), rgba(20,5,40,0.97))",
+    border: "rgba(168,85,247,0.6)",
+    glow: "0 0 24px rgba(168,85,247,0.2), 0 4px 16px rgba(0,0,0,0.7)",
+    titleColor: "#c084fc",
+    accentColor: "#a855f7",
+    badge: "DEAL",
+    icon: "🤝",
+  };
+
+  // Extract player name from title: "🤝 Sponsorship Deal — PlayerName"
+  const playerName = item.title.replace(/^🤝\s*Sponsorship Deal\s*—\s*/i, "").trim();
+
+  return (
+    <div style={{
+      borderRadius: 10,
+      overflow: "hidden",
+      border: `1.5px solid ${theme.border}`,
+      background: theme.bg,
+      boxShadow: isNew ? theme.glow : "0 2px 10px rgba(0,0,0,0.5)",
+      animation: isNewest && isNew ? "epicSlideIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" : undefined,
+      position: "relative",
+    }}>
+      {/* Shimmer */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: `linear-gradient(105deg, transparent 35%, ${theme.accentColor}12 50%, transparent 65%)`,
+        animation: "shimmerSlide 3s ease-in-out infinite",
+      }} />
+
+      <div style={{ position: "relative", zIndex: 1, padding: "11px 14px" }}>
+        {/* Top: badge + NEW + source */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span style={{
+            fontSize: 8, fontWeight: 900, letterSpacing: "0.14em",
+            background: `${theme.accentColor}22`,
+            color: theme.accentColor,
+            padding: "2px 7px", borderRadius: 3,
+            border: `1px solid ${theme.accentColor}55`,
+          }}>
+            {theme.icon} {theme.badge}
+          </span>
+          <span style={{
+            fontSize: 8, fontWeight: 900, letterSpacing: "0.12em",
+            color: "#64748b",
+            padding: "2px 6px", borderRadius: 3,
+            background: "rgba(255,255,255,0.05)",
+          }}>
+            DEAL
+          </span>
+          {isNewest && (
+            <span style={{
+              fontSize: 8, fontWeight: 900, color: "#dc2626",
+              letterSpacing: "0.1em",
+              animation: "newBlink 1s step-end 3",
+            }}>● NEW</span>
+          )}
+          <span style={{ marginLeft: "auto", fontSize: 9, color: "#334155", fontWeight: 600 }}>
+            {item.source ?? "Sky Sports"}
+          </span>
+        </div>
+
+        {/* Main row: icon + content */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            fontSize: 30,
+            filter: `drop-shadow(0 0 10px ${theme.accentColor}88)`,
+            flexShrink: 0,
+            animation: isNew ? "epicEmoji 2s ease-in-out infinite alternate" : undefined,
+          }}>
+            {theme.icon}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              color: theme.titleColor,
+              fontWeight: 900, fontSize: 13,
+              lineHeight: 1.3, marginBottom: 3,
+              textShadow: `0 0 20px ${theme.accentColor}66`,
+            }}>
+              {playerName}
+            </div>
+            <div style={{ color: "#64748b", fontSize: 10.5, lineHeight: 1.45 }}>
+              {item.description}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom: journalist + glow line */}
+        {item.journalist && (
+          <div style={{ marginTop: 8, fontSize: 9.5, color: "#1e293b", fontWeight: 600 }}>
+            ✍️ {item.journalist}
+          </div>
+        )}
+        <div style={{
+          height: 1.5, marginTop: 8,
+          background: `linear-gradient(to right, transparent, ${theme.accentColor}, transparent)`,
+          boxShadow: `0 0 6px ${theme.accentColor}88`,
+        }} />
+      </div>
+    </div>
+  );
+}
+
 // Scrolling ticker
 function NewsTicker({ items }: { items: NewsItem[] }) {
   const tickerRef = useRef<HTMLDivElement>(null);
@@ -446,6 +631,11 @@ export default function NewsFeed({ news, seasonEvent, season }: Props) {
               const portrait = getNewsPortrait(item.title);
               const isNewest = idx === 0;
               const isNew = newIds.has(String(item.id));
+
+              // Sponsorship branded cards
+              if (item.sponsorBrand) {
+                return <SponsorshipNewsCard key={item.id} item={item} isNewest={isNewest} isNew={isNew} />;
+              }
 
               // Special epic cards
               if (cfg.special) {

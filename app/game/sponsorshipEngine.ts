@@ -166,6 +166,7 @@ export function createSponsorshipNews(
     tone: "special",
     journalist,
     source,
+    sponsorBrand: sponsorship.brand,
   };
 }
 
@@ -265,6 +266,7 @@ export function checkSeasonSponsorships(
         tone: "good",
         journalist: pickRandom(JOURNALISTS),
         source: pickRandom(NEWS_SOURCES),
+        sponsorBrand: sponsorship.brand,
       });
 
       return {

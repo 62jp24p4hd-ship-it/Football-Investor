@@ -264,6 +264,7 @@ export type NewsItem = {
   tone: NewsTone;
   journalist?: string;
   source?: string;
+  sponsorBrand?: string; // brand name for sponsorship deal cards
 };
 
 // ============================================

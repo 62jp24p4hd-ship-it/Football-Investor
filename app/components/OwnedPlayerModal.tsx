@@ -8,38 +8,73 @@ import { calculateAge, nationalityFlag, positionBg, getSatisfactionColor, getRet
 import { getContractStatusLabel, isContractLastSeason } from "../game/contractEngine";
 import { sponsorBrandIcon, sponsorBrandColor } from "../game/sponsorshipEngine";
 
-// حساب تفاصيل نمو القيمة حسب المركز
+// حساب تفاصيل نمو القيمة — بناءً على الأداء المطلق للموسم
 function getValueGrowthBreakdown(
   position: string,
-  currentGoals: number,
-  currentAssists: number,
-  currentCleanSheets: number,
-  prevGoals: number,
-  prevAssists: number,
-  prevCleanSheets: number,
+  goals: number,
+  assists: number,
+  cleanSheets: number,
+  games: number,
 ) {
-  const attackers = ["ST", "LW", "RW"];
+  const attackers  = ["ST", "LW", "RW"];
   const midfielders = ["CAM", "LCM", "RCM"];
-  const defenders = ["LB", "LCB", "RCB", "RB"];
+  const defenders  = ["LB", "LCB", "RCB", "RB"];
 
   const rows: { icon: string; label: string; pct: number }[] = [];
 
-  if (attackers.includes(position)) {
-    const gDiff = currentGoals - prevGoals;
-    const aDiff = currentAssists - prevAssists;
-    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: Math.floor(currentGoals / 5) * 5 - Math.floor(prevGoals / 5) * 5 });
-    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: (Math.floor(currentAssists / 5) * 2.5) - (Math.floor(prevAssists / 5) * 2.5) });
+  if (games === 0) {
+    rows.push({ icon: "💤", label: "No games played", pct: -4 });
+  } else if (attackers.includes(position)) {
+    let goalPct = 0;
+    if (goals >= 25)      goalPct = 22;
+    else if (goals >= 20) goalPct = 16;
+    else if (goals >= 15) goalPct = 10;
+    else if (goals >= 10) goalPct = 5;
+    else if (goals >= 5)  goalPct = 1;
+    else if (goals >= 1)  goalPct = -1;
+    else                  goalPct = -4;
+    rows.push({ icon: "⚽", label: `Goals (${goals})`, pct: goalPct });
+    const astBonus = Math.floor(assists / 6) * 2;
+    if (astBonus !== 0) rows.push({ icon: "🎯", label: `Assists bonus (${assists})`, pct: astBonus });
+
   } else if (midfielders.includes(position)) {
-    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: Math.floor(currentAssists / 5) * 5 - Math.floor(prevAssists / 5) * 5 });
-    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: (Math.floor(currentGoals / 5) * 2.5) - (Math.floor(prevGoals / 5) * 2.5) });
+    let astPct = 0;
+    if (assists >= 15)      astPct = 22;
+    else if (assists >= 10) astPct = 16;
+    else if (assists >= 7)  astPct = 10;
+    else if (assists >= 4)  astPct = 5;
+    else if (assists >= 2)  astPct = 1;
+    else if (assists >= 1)  astPct = -1;
+    else                    astPct = -4;
+    rows.push({ icon: "🎯", label: `Assists (${assists})`, pct: astPct });
+    const goalBonus = Math.floor(goals / 6) * 2;
+    if (goalBonus !== 0) rows.push({ icon: "⚽", label: `Goals bonus (${goals})`, pct: goalBonus });
+
   } else if (defenders.includes(position)) {
-    // Clean Sheets: يمكن يرتفع أو ينخفض
-    rows.push({ icon: "🧤", label: `Clean Sheets (${currentCleanSheets})`, pct: Math.floor(currentCleanSheets / 5) * 5 - Math.floor(prevCleanSheets / 5) * 5 });
-    // Goals وAssists: bonus فقط — لا عقوبة
-    rows.push({ icon: "⚽", label: `Goals (${currentGoals})`, pct: Math.max(0, (Math.floor(currentGoals / 5) * 10) - (Math.floor(prevGoals / 5) * 10)) });
-    rows.push({ icon: "🎯", label: `Assists (${currentAssists})`, pct: Math.max(0, (Math.floor(currentAssists / 5) * 12.5) - (Math.floor(prevAssists / 5) * 12.5)) });
+    let csPct = 0;
+    if (cleanSheets >= 18)      csPct = 22;
+    else if (cleanSheets >= 13) csPct = 16;
+    else if (cleanSheets >= 9)  csPct = 10;
+    else if (cleanSheets >= 6)  csPct = 5;
+    else if (cleanSheets >= 3)  csPct = 1;
+    else if (cleanSheets >= 1)  csPct = -1;
+    else                        csPct = -4;
+    rows.push({ icon: "🧤", label: `Clean Sheets (${cleanSheets})`, pct: csPct });
+    const goalBonus = Math.max(0, Math.floor(goals   / 5) * 3);
+    const astBonus  = Math.max(0, Math.floor(assists / 5) * 2);
+    if (goalBonus > 0) rows.push({ icon: "⚽", label: `Goals bonus (${goals})`,   pct: goalBonus });
+    if (astBonus  > 0) rows.push({ icon: "🎯", label: `Assists bonus (${assists})`, pct: astBonus });
+
   } else if (position === "GK") {
-    rows.push({ icon: "🧤", label: `Clean Sheets (${currentCleanSheets})`, pct: Math.floor(currentCleanSheets / 5) * 10 - Math.floor(prevCleanSheets / 5) * 10 });
+    let csPct = 0;
+    if (cleanSheets >= 18)      csPct = 22;
+    else if (cleanSheets >= 13) csPct = 16;
+    else if (cleanSheets >= 9)  csPct = 10;
+    else if (cleanSheets >= 6)  csPct = 5;
+    else if (cleanSheets >= 3)  csPct = 1;
+    else if (cleanSheets >= 1)  csPct = -1;
+    else                        csPct = -4;
+    rows.push({ icon: "🧤", label: `Clean Sheets (${cleanSheets})`, pct: csPct });
   }
 
   const total = rows.reduce((sum, r) => sum + r.pct, 0);
@@ -106,6 +141,17 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
   const profit = currentVal - buyPrice;
   const age = calculateAge(player.startAge, player.availableSeason, season);
 
+  // Career totals — فقط المواسم اللي لعبها الاعب معك (من الشراء حتى الموسم الحالي)
+  const careerGoals       = Object.entries(player.statsBySeason ?? {})
+    .filter(([s]) => { const n = Number(s); return n >= buySeason && n <= season; })
+    .reduce((sum, [, st]) => sum + (st.goals ?? 0), 0);
+  const careerAssists     = Object.entries(player.statsBySeason ?? {})
+    .filter(([s]) => { const n = Number(s); return n >= buySeason && n <= season; })
+    .reduce((sum, [, st]) => sum + (st.assists ?? 0), 0);
+  const careerCleanSheets = Object.entries(player.statsBySeason ?? {})
+    .filter(([s]) => { const n = Number(s); return n >= buySeason && n <= season; })
+    .reduce((sum, [, st]) => sum + (st.cleanSheets ?? 0), 0);
+
   const formConfig: Record<string, { label: string; color: string; emoji: string }> = {
     excellent: { label: "Excellent Season", color: "#D4AF37", emoji: "🔥" },
     good:      { label: "Good Season",      color: "#10b981", emoji: "📈" },
@@ -123,9 +169,7 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
     stats.goals ?? 0,
     stats.assists ?? 0,
     stats.cleanSheets ?? 0,
-    prevStats?.goals ?? 0,
-    prevStats?.assists ?? 0,
-    prevStats?.cleanSheets ?? 0,
+    stats.games ?? 0,
   );
   const isLastSeason = isContractLastSeason(contract, season);
 
@@ -142,264 +186,324 @@ export default function OwnedPlayerModal({ owned, ownerName, season, marketMulti
     : player.hiddenType === "trap" ? "bg-orange-500"
     : "bg-blue-500";
 
+  // Accent colour per player type
+  const accent = player.secret
+    ? "#D4AF37"
+    : player.hiddenType === "talent" ? "#10b981"
+    : player.hiddenType === "trap"   ? "#f97316"
+    : "#818cf8";
+
+  const accentDim  = `${accent}22`;
+  const accentMid  = `${accent}44`;
+  const accentBold = `${accent}99`;
+
+  const defenders = ["LB","LCB","RCB","RB"];
+  const isGK = player.position === "GK";
+  const isDef = defenders.includes(player.position);
+
   return (
-    <div className="fixed inset-0 bg-black/88 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`border-2 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl ${cardColor}`}
-        style={{ background: "#0a0f14" }}>
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)" }}>
 
-        <div className={`h-2 ${topBar}`} />
+      <div className="w-full max-w-lg overflow-hidden"
+        style={{
+          background: "linear-gradient(160deg, #0d1117 0%, #0a0d14 100%)",
+          border: `1px solid ${accentMid}`,
+          borderRadius: "24px",
+          boxShadow: `0 0 60px ${accentDim}, 0 24px 48px rgba(0,0,0,0.7)`,
+          maxHeight: "92vh",
+          overflowY: "auto",
+        }}>
 
-        <div className="p-8">
+        {/* ── HERO ─────────────────────────────────── */}
+        <div className="relative px-6 pt-6 pb-5 overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${accentDim} 0%, rgba(0,0,0,0) 70%)` }}>
 
-          {/* Player header */}
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="text-3xl">{nationalityFlag(player.nationality)}</div>
-                <PixelPortrait name={player.name} size={64} />
+          {/* Glow blob */}
+          <div className="absolute top-0 right-0 w-40 h-40 pointer-events-none"
+            style={{ background: `radial-gradient(circle, ${accent}18 0%, transparent 70%)` }} />
+
+          <div className="flex items-start justify-between relative z-10">
+            {/* Left: identity */}
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-center gap-1">
+                <span style={{ fontSize: "22px", lineHeight: 1 }}>{nationalityFlag(player.nationality)}</span>
+                <PixelPortrait name={player.name} size={52} />
               </div>
-              <h2 className="text-4xl font-black text-white leading-tight">{player.name}</h2>
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`text-sm font-black px-2.5 py-1 rounded-none ${positionBg(player.position)}`}>
-                  {player.position}
-                </span>
-                <span className="text-gray-400">{player.nationality}</span>
-                <span className="text-gray-500">•</span>
-                <span className="text-gray-400">{age} years old</span>
+              <div>
+                <h2 className="text-2xl font-black text-white leading-tight tracking-tight">{player.name}</h2>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${positionBg(player.position)}`}>
+                    {player.position}
+                  </span>
+                  <span className="text-gray-500 text-xs">{player.nationality}</span>
+                  <span className="text-gray-700 text-xs">·</span>
+                  <span className="text-gray-500 text-xs">{age}y</span>
+                  {player.secret && <span className="text-[10px] font-black text-yellow-300 bg-yellow-900/30 px-1.5 py-0.5 rounded-md">GOATs</span>}
+                </div>
+                {player.league && <div className="text-gray-600 text-[11px] mt-1">{player.league}</div>}
               </div>
-              <div className="text-gray-500 text-sm mt-1">{player.league}</div>
             </div>
-            <div className="text-right">
-              <div className="text-5xl font-black text-yellow-300">€{currentVal}M</div>
-              <div className="text-gray-500 text-sm mt-1">Current Value</div>
+
+            {/* Right: current value */}
+            <div className="text-right shrink-0">
+              <div className="text-3xl font-black leading-none" style={{ color: accent }}>€{currentVal}M</div>
+              <div className="text-[10px] text-gray-600 mt-1 uppercase tracking-wider">Current Value</div>
               {formInfo && (
-                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-none text-xs font-black"
-                  style={{ background: `${formInfo.color}18`, border: `1px solid ${formInfo.color}55`, color: formInfo.color }}>
+                <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black"
+                  style={{ background: `${formInfo.color}15`, border: `1px solid ${formInfo.color}40`, color: formInfo.color }}>
                   {formInfo.emoji} {formInfo.label}
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Stats — حسب المركز */}
-          {(() => {
-            const defenders = ["LB","LCB","RCB","RB"];
-            const pos = player.position;
+        {/* ── DIVIDER ──────────────────────────────── */}
+        <div style={{ height: "1px", background: `linear-gradient(90deg, transparent, ${accentMid}, transparent)` }} />
 
-            if (pos === "GK") return (
-              <div className="grid grid-cols-3 gap-4 mb-6 bg-black/30 rounded-none p-5 text-center">
-                <Stat value={stats.rating} label="Rating" />
-                <Stat value={stats.games} label="Games" />
-                <Stat value={stats.cleanSheets ?? 0} label="Clean Sheets" icon="🧤" />
-              </div>
-            );
+        <div className="px-6 py-5 space-y-4">
 
-            if (defenders.includes(pos)) return (
-              <div className="grid grid-cols-5 gap-3 mb-6 bg-black/30 rounded-none p-5 text-center">
-                <Stat value={stats.rating} label="Rating" />
-                <Stat value={stats.games} label="Games" />
-                <Stat value={stats.goals ?? 0} label="Goals" icon="⚽" />
-                <Stat value={stats.assists ?? 0} label="Assists" icon="🎯" />
-                <Stat value={stats.cleanSheets ?? 0} label="Clean Sheets" icon="🧤" highlight />
-              </div>
-            );
-
-            return (
-              <div className="grid grid-cols-4 gap-4 mb-6 bg-black/30 rounded-none p-5 text-center">
-                <Stat value={stats.rating} label="Rating" />
-                <Stat value={stats.games} label="Games" />
-                <Stat value={stats.goals ?? 0} label="Goals" icon="⚽" />
-                <Stat value={stats.assists ?? 0} label="Assists" icon="🎯" />
-              </div>
-            );
-          })()}
-
-          {/* Investment */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white/5 rounded-none p-4 text-center">
-              <div className="text-xl font-black text-gray-300">€{buyPrice}M</div>
-              <div className="text-xs text-gray-500 mt-1">Bought ({buySeason})</div>
+          {/* ── THIS SEASON STATS ────────────────────── */}
+          <div>
+            <div className="text-[10px] uppercase tracking-widest mb-2.5" style={{ color: `${accent}88` }}>
+              Season {season}
             </div>
-            <div className="bg-white/5 rounded-none p-4 text-center">
-              <div className="text-xl font-black text-yellow-300">€{currentVal}M</div>
-              <div className="text-xs text-gray-500 mt-1">Now ({season})</div>
-            </div>
-            <div className={`rounded-none p-4 text-center ${profit >= 0 ? "bg-emerald-950/40" : "bg-red-950/40"}`}>
-              <div className={`text-xl font-black ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {profit >= 0 ? "+" : ""}€{profit}M
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Profit / Loss</div>
-            </div>
-
-            {/* Value Growth Breakdown */}
-            {breakdown.rows.length > 0 && (
-              <div className="rounded-none p-3 col-span-3"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="text-[10px] uppercase tracking-widest text-gray-600 mb-2 flex items-center gap-1">
-                  {breakdown.total >= 0 ? "📈" : "📉"} Value Growth Breakdown
+            <div className="grid gap-2" style={{ gridTemplateColumns: isGK ? "repeat(3,1fr)" : isDef ? "repeat(5,1fr)" : "repeat(4,1fr)" }}>
+              {[
+                { val: stats.rating,          label: "Rating",       icon: "⭐" },
+                { val: stats.games,            label: "Games",        icon: "🎮" },
+                ...(!isGK ? [{ val: stats.goals ?? 0,   label: "Goals",   icon: "⚽" }] : []),
+                ...(!isGK ? [{ val: stats.assists ?? 0, label: "Assists", icon: "🎯" }] : []),
+                ...(isGK || isDef ? [{ val: stats.cleanSheets ?? 0, label: "Clean", icon: "🧤" }] : []),
+              ].map(({ val, label, icon }) => (
+                <div key={label} className="flex flex-col items-center py-2.5 px-1 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <span className="text-[10px] mb-0.5">{icon}</span>
+                  <span className="text-lg font-black text-white leading-none">{val}</span>
+                  <span className="text-[9px] text-gray-600 mt-1 uppercase tracking-wide">{label}</span>
                 </div>
-                <div className="space-y-1.5">
-                  {breakdown.rows.filter(r => r.pct !== 0).map((row, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">{row.icon} {row.label}</span>
-                      <span className="text-xs font-black" style={{ color: row.pct >= 0 ? "#34d399" : "#f87171" }}>
-                        {row.pct >= 0 ? "+" : ""}{row.pct}%
-                      </span>
+              ))}
+            </div>
+          </div>
+
+          {/* ── INVESTMENT ROW ───────────────────────── */}
+          <div className="rounded-2xl p-4"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="text-[10px] uppercase tracking-widest mb-3" style={{ color: `${accent}88` }}>Investment</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-center">
+                <div className="text-xs text-gray-600 mb-1">Bought {buySeason}</div>
+                <div className="text-lg font-black text-gray-300">€{buyPrice}M</div>
+              </div>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="flex items-center gap-1 opacity-30">
+                  <div style={{ width: 24, height: 1, background: profit >= 0 ? "#34d399" : "#f87171" }} />
+                  <span style={{ fontSize: 12, color: profit >= 0 ? "#34d399" : "#f87171" }}>
+                    {profit >= 0 ? "▶" : "◀"}
+                  </span>
+                  <div style={{ width: 24, height: 1, background: profit >= 0 ? "#34d399" : "#f87171" }} />
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-600 mb-1">Now {season}</div>
+                <div className="text-lg font-black" style={{ color: accent }}>€{currentVal}M</div>
+              </div>
+              <div className="w-px self-stretch mx-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+              <div className="text-center">
+                <div className="text-xs text-gray-600 mb-1">P&L</div>
+                <div className={`text-lg font-black ${profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {profit >= 0 ? "+" : ""}€{profit}M
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── CAREER WITH YOU ──────────────────────── */}
+          {season > buySeason && (
+            <div className="rounded-2xl p-4 flex items-center justify-around"
+              style={{ background: `${accent}0d`, border: `1px solid ${accent}25` }}>
+              <div className="text-[10px] uppercase tracking-widest" style={{ color: `${accent}77` }}>
+                🏅<br/>Career
+              </div>
+              {!isGK && (
+                <>
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-white">{careerGoals}</div>
+                    <div className="text-[9px] text-gray-600 mt-0.5">⚽ Goals</div>
+                  </div>
+                  <div className="w-px self-stretch" style={{ background: `${accent}20` }} />
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-white">{careerAssists}</div>
+                    <div className="text-[9px] text-gray-600 mt-0.5">🎯 Assists</div>
+                  </div>
+                </>
+              )}
+              {(isGK || isDef) && (
+                <>
+                  {isDef && <div className="w-px self-stretch" style={{ background: `${accent}20` }} />}
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-white">{careerCleanSheets}</div>
+                    <div className="text-[9px] text-gray-600 mt-0.5">🧤 Clean Sheets</div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── VALUE GROWTH ─────────────────────────── */}
+          {breakdown.rows.length > 0 && (
+            <div className="rounded-2xl p-4"
+              style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] uppercase tracking-widest text-gray-600">
+                  {breakdown.total >= 0 ? "📈" : "📉"} Value Forecast
+                </span>
+                <span className="text-sm font-black" style={{ color: breakdown.total >= 0 ? "#34d399" : "#f87171" }}>
+                  {breakdown.total >= 0 ? "+" : ""}{Math.round(breakdown.total)}%
+                </span>
+              </div>
+              <div className="space-y-2">
+                {breakdown.rows.filter(r => r.pct !== 0).map((row, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-500 flex-1">{row.icon} {row.label}</span>
+                    <div className="flex-1 h-1 rounded-full overflow-hidden"
+                      style={{ background: "rgba(255,255,255,0.07)" }}>
+                      <div className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, Math.abs(row.pct) / 25 * 100)}%`,
+                          background: row.pct >= 0 ? "#34d399" : "#f87171",
+                        }} />
                     </div>
-                  ))}
-                  {breakdown.rows.filter(r => r.pct !== 0).length === 0 && (
-                    <div className="text-xs text-gray-600 text-center">No change from previous season</div>
-                  )}
-                </div>
-                {breakdown.rows.some(r => r.pct !== 0) && (
-                  <div className="flex items-center justify-between mt-2 pt-2"
-                    style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="text-xs font-black text-gray-300">📊 Total Bonus</span>
-                    <span className="text-sm font-black" style={{ color: breakdown.total >= 0 ? "#34d399" : "#f87171" }}>
-                      {breakdown.total >= 0 ? "+" : ""}{breakdown.total}%
+                    <span className="text-[10px] font-black w-8 text-right"
+                      style={{ color: row.pct >= 0 ? "#34d399" : "#f87171" }}>
+                      {row.pct >= 0 ? "+" : ""}{row.pct}%
                     </span>
-                  </div>
-                )}
-
-                {/* Prev vs Current stats */}
-                {season > player.availableSeason && (
-                  <div className="mt-3 pt-2 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div className="text-[9px] uppercase tracking-widest text-gray-700 mb-1.5">Season Comparison</div>
-                    {stats.goals !== undefined && (
-                      <div className="flex justify-between text-[10px]">
-                        <span className="text-gray-600">⚽ Goals</span>
-                        <span className="text-gray-400">{prevStats?.goals ?? 0} → <span className="text-white font-bold">{stats.goals}</span></span>
-                      </div>
-                    )}
-                    {stats.assists !== undefined && (
-                      <div className="flex justify-between text-[10px]">
-                        <span className="text-gray-600">🎯 Assists</span>
-                        <span className="text-gray-400">{prevStats?.assists ?? 0} → <span className="text-white font-bold">{stats.assists}</span></span>
-                      </div>
-                    )}
-                    {stats.cleanSheets !== undefined && (
-                      <div className="flex justify-between text-[10px]">
-                        <span className="text-gray-600">🧤 Clean Sheets</span>
-                        <span className="text-gray-400">{prevStats?.cleanSheets ?? 0} → <span className="text-white font-bold">{stats.cleanSheets}</span></span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Contract */}
-          <div className="bg-white/5 rounded-none p-4 mb-4 grid grid-cols-3 gap-4">
-            <div>
-              <div className="text-xs text-gray-500 uppercase mb-1">Contract</div>
-              <div className="text-sm font-bold text-white">{contractStatus}</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 uppercase mb-1">Salary</div>
-              <div className="text-sm font-bold text-red-400">€{contract.salary}M/yr</div>
-            </div>
-            <div>
-              <div className="text-xs text-gray-500 uppercase mb-1">Satisfaction</div>
-              <div className={`text-sm font-bold ${getSatisfactionColor(contract.satisfaction)}`}>
-                {contract.satisfaction}%
-              </div>
-            </div>
-          </div>
-
-          {/* Sponsorships */}
-          {owned.sponsorships.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2 font-bold">Sponsorships</div>
-              <div className="flex gap-2 flex-wrap">
-                {owned.sponsorships.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-white/5 rounded-none px-3 py-2">
-                    <span className="text-sm">{sponsorBrandIcon(s.brand)}</span>
-                    <span className={`text-sm font-bold ${sponsorBrandColor(s.brand)}`}>{s.brand}</span>
-                    <span className="text-emerald-400 text-sm font-bold">+€{s.annualIncome}M/yr</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* ── CONTRACT ─────────────────────────────── */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Contract",     value: contractStatus,          color: "text-white" },
+              { label: "Salary",       value: `€${contract.salary}M/yr`, color: "text-red-400" },
+              { label: "Satisfaction", value: `${contract.satisfaction}%`, color: getSatisfactionColor(contract.satisfaction) },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-xl p-3 text-center"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="text-[9px] uppercase tracking-wider text-gray-600 mb-1.5">{label}</div>
+                <div className={`text-xs font-black ${color}`}>{value}</div>
+              </div>
+            ))}
+            {/* Satisfaction bar */}
+            <div className="col-span-3 h-1.5 rounded-full overflow-hidden"
+              style={{ background: "rgba(255,255,255,0.07)" }}>
+              <div className="h-full rounded-full transition-all"
+                style={{
+                  width: `${contract.satisfaction}%`,
+                  background: contract.satisfaction >= 70
+                    ? "linear-gradient(90deg,#10b981,#34d399)"
+                    : contract.satisfaction >= 40
+                    ? "linear-gradient(90deg,#f59e0b,#fbbf24)"
+                    : "linear-gradient(90deg,#ef4444,#f87171)",
+                }} />
+            </div>
+          </div>
+
+          {/* ── SPONSORSHIPS ─────────────────────────── */}
+          {owned.sponsorships.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-gray-600 mb-2">Sponsorships</div>
+              <div className="flex gap-2 flex-wrap">
+                {owned.sponsorships.map((s, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                    <span>{sponsorBrandIcon(s.brand)}</span>
+                    <span className={`text-xs font-bold ${sponsorBrandColor(s.brand)}`}>{s.brand}</span>
+                    <span className="text-emerald-400 text-xs font-bold">+€{s.annualIncome}M/yr</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── CHAMPIONS LEAGUE ─────────────────────── */}
+          {clStats && (clStats.goals > 0 || clStats.assists > 0 || clStats.cleanSheets > 0 || clStats.games > 0) && (
+            <div className="rounded-2xl p-4"
+              style={{
+                background: "linear-gradient(135deg, rgba(0,8,32,0.9), rgba(0,16,64,0.6))",
+                border: "1px solid rgba(251,191,36,0.3)",
+              }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span>🏆</span>
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#fbbf24" }}>Champions League</span>
+              </div>
+              <div className={`grid gap-2 text-center ${isGK ? "grid-cols-2" : "grid-cols-4"}`}>
+                {[
+                  { val: clStats.games, label: "Games", color: "#fbbf24" },
+                  ...(!isGK ? [{ val: clStats.goals, label: "⚽ Goals", color: "white" }] : []),
+                  ...(!isGK ? [{ val: clStats.assists, label: "🎯 Assists", color: "white" }] : []),
+                  { val: clStats.cleanSheets, label: "🧤 Clean", color: "white" },
+                ].map(({ val, label, color }) => (
+                  <div key={label}>
+                    <div className="text-xl font-black" style={{ color }}>{val}</div>
+                    <div className="text-[9px] text-gray-500 mt-0.5">{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── WARNINGS ─────────────────────────────── */}
           {warning && (
-            <div className="text-sm text-orange-400 bg-orange-950/30 border border-orange-500/20 rounded-none px-4 py-3 mb-5 text-center font-bold">
+            <div className="text-xs text-orange-400 rounded-xl px-4 py-3 text-center font-bold"
+              style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.25)" }}>
               {warning}
             </div>
           )}
-
-          {/* Florentino Perez warning */}
           {owned.refusesRenewal && (
-            <div className="text-sm text-purple-400 bg-purple-950/40 border border-purple-500/30 rounded-none px-4 py-3 mb-4 text-center font-bold">
+            <div className="text-xs text-purple-400 rounded-xl px-4 py-3 text-center font-bold"
+              style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}>
               👑 Florentino Perez is watching — this player refuses to renew.
             </div>
           )}
-
-          {/* Contract warning */}
           {isLastSeason && !owned.refusesRenewal && (
-            <div className="text-sm text-yellow-400 bg-yellow-950/40 border border-yellow-500/30 rounded-none px-4 py-3 mb-4 text-center font-bold">
+            <div className="text-xs text-yellow-400 rounded-xl px-4 py-3 text-center font-bold"
+              style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.25)" }}>
               ⚠️ Last season on contract — renew or lose this player for free!
             </div>
           )}
 
-          {/* Champions League Stats */}
-          {clStats && (clStats.goals > 0 || clStats.assists > 0 || clStats.cleanSheets > 0 || clStats.games > 0) && (
-            <div className="mb-4 rounded-none p-4" style={{
-              background: "linear-gradient(135deg, rgba(0,8,32,0.8), rgba(0,16,64,0.5))",
-              border: "1px solid rgba(251,191,36,0.25)",
-            }}>
-              <div className="flex items-center gap-2 mb-3">
-                <span style={{ fontSize: 14 }}>🏆</span>
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#fbbf24" }}>
-                  دوري الأبطال — Champions League
-                </span>
-              </div>
-              <div className={`grid gap-3 text-center ${player.position === "GK" ? "grid-cols-2" : "grid-cols-4"}`}>
-                <div>
-                  <div className="text-xl font-black" style={{ color: "#fbbf24" }}>{clStats.games}</div>
-                  <div className="text-[10px] text-gray-500 uppercase mt-1">Games</div>
-                </div>
-                {player.position !== "GK" && (
-                  <>
-                    <div>
-                      <div className="text-xl font-black text-white">{clStats.goals}</div>
-                      <div className="text-[10px] text-gray-500 uppercase mt-1">⚽ Goals</div>
-                    </div>
-                    <div>
-                      <div className="text-xl font-black text-white">{clStats.assists}</div>
-                      <div className="text-[10px] text-gray-500 uppercase mt-1">🎯 Assists</div>
-                    </div>
-                  </>
-                )}
-                <div>
-                  <div className="text-xl font-black text-white">{clStats.cleanSheets}</div>
-                  <div className="text-[10px] text-gray-500 uppercase mt-1">🧤 Clean Sheets</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3">
+          {/* ── ACTIONS ──────────────────────────────── */}
+          <div className="flex gap-2 pt-1">
             <button onClick={onKeep}
-              className="flex-1 py-4 rounded-none border border-white/15 text-gray-400 hover:text-white hover:border-white/30 font-black text-base transition-all">
+              className="flex-1 py-3.5 text-sm font-black rounded-2xl transition-all"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#9ca3af",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#fff"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.25)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.12)"; }}>
               Keep
             </button>
             <button
               onClick={owned.refusesRenewal ? undefined : onRenew}
               disabled={!!owned.refusesRenewal}
-              className="flex-1 py-4 rounded-none font-black text-base transition-all"
+              className="flex-1 py-3.5 text-sm font-black rounded-2xl transition-all"
               style={owned.refusesRenewal
-                ? { background: "rgba(255,255,255,0.05)", color: "#4b5563", cursor: "not-allowed", border: "1px solid rgba(255,255,255,0.08)" }
-                : { background: "linear-gradient(135deg, #1d4ed8, #2563eb)", color: "white", boxShadow: "0 4px 15px rgba(37,99,235,0.3)" }}>
+                ? { background: "rgba(255,255,255,0.04)", color: "#4b5563", cursor: "not-allowed", border: "1px solid rgba(255,255,255,0.07)" }
+                : { background: "linear-gradient(135deg, #1e40af, #3b82f6)", color: "white", boxShadow: "0 4px 20px rgba(59,130,246,0.35)", border: "none" }}>
               {owned.refusesRenewal ? "👑 Won't Renew" : "🔄 Renew"}
             </button>
             <button onClick={onSell} disabled={!canSell}
-              className="flex-1 py-4 rounded-none font-black text-base transition-all"
+              className="flex-1 py-3.5 text-sm font-black rounded-2xl transition-all"
               style={canSell
-                ? { background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "white", boxShadow: "0 4px 15px rgba(239,68,68,0.3)" }
-                : { background: "rgba(255,255,255,0.05)", color: "#4b5563", cursor: "not-allowed" }}>
+                ? { background: "linear-gradient(135deg, #b91c1c, #ef4444)", color: "white", boxShadow: "0 4px 20px rgba(239,68,68,0.35)", border: "none" }
+                : { background: "rgba(255,255,255,0.04)", color: "#4b5563", cursor: "not-allowed", border: "1px solid rgba(255,255,255,0.07)" }}>
               {canSell ? `Sell €${currentVal}M` : "No Sell Chances"}
             </button>
           </div>

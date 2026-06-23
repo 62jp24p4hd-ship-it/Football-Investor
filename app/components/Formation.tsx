@@ -424,6 +424,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
   }
 
   const CARD_H = "h-[118px]";
+  const ROW_GAP = "gap-3";
 
   return (
     <div className={`relative overflow-hidden transition-all duration-300`}
@@ -495,7 +496,7 @@ export default function Formation({ gamePlayer, playerIndex, season, isActive, p
         </div>
       )}
 
-      <div className="relative z-10 p-3 flex flex-col gap-2">
+      <div className={`relative z-10 p-3 flex flex-col ${ROW_GAP}`}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2"

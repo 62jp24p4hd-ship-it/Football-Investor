@@ -302,81 +302,100 @@ export type PerformanceGrowthResult = {
   direction: "up" | "down" | "flat";
 };
 
-function getPerformanceBonusPct(
+// ============================================
+// ABSOLUTE PERFORMANCE SCORE
+// بناءً على إحصائيات الموسم المنتهي فقط —
+// بدون مقارنة بالموسم السابق
+// ============================================
+
+function getAbsolutePerformancePct(
   position: string,
   goals: number,
   assists: number,
-  cleanSheets: number
+  cleanSheets: number,
+  games: number
 ): number {
-  const attackers = ["ST", "LW", "RW"];
+  const attackers  = ["ST", "LW", "RW"];
   const midfielders = ["CAM", "LCM", "RCM"];
-  const defenders = ["LB", "LCB", "RCB", "RB"];
+  const defenders  = ["LB", "LCB", "RCB", "RB"];
 
-  let bonus = 0;
+  // لاعب ما لعب → نزول خفيف
+  if (games === 0) return -4;
+
+  let base = 0;
 
   if (attackers.includes(position)) {
-    bonus += Math.floor(goals / 5) * 5;
-    bonus += Math.floor(assists / 5) * 2.5;
+    // الأهداف: المقياس الأساسي
+    if (goals >= 25)      base = 22;
+    else if (goals >= 20) base = 16;
+    else if (goals >= 15) base = 10;
+    else if (goals >= 10) base = 5;
+    else if (goals >= 5)  base = 1;
+    else if (goals >= 1)  base = -1;
+    else                  base = -4;
+    // التمريرات الحاسمة: إضافة ثانوية
+    base += Math.floor(assists / 6) * 2;
+
   } else if (midfielders.includes(position)) {
-    bonus += Math.floor(assists / 5) * 5;
-    bonus += Math.floor(goals / 5) * 2.5;
+    // التمريرات الحاسمة: المقياس الأساسي
+    if (assists >= 15)      base = 22;
+    else if (assists >= 10) base = 16;
+    else if (assists >= 7)  base = 10;
+    else if (assists >= 4)  base = 5;
+    else if (assists >= 2)  base = 1;
+    else if (assists >= 1)  base = -1;
+    else                    base = -4;
+    // الأهداف: إضافة ثانوية
+    base += Math.floor(goals / 6) * 2;
+
   } else if (defenders.includes(position)) {
-    bonus += Math.floor(cleanSheets / 5) * 5;
-    // Goals وAssists: bonus فقط — لا عقوبة لو نزلوا
-    bonus += Math.max(0, Math.floor(goals / 5) * 10);
-    bonus += Math.max(0, Math.floor(assists / 5) * 12.5);
+    // الشباك النظيفة: المقياس الأساسي
+    if (cleanSheets >= 18)      base = 22;
+    else if (cleanSheets >= 13) base = 16;
+    else if (cleanSheets >= 9)  base = 10;
+    else if (cleanSheets >= 6)  base = 5;
+    else if (cleanSheets >= 3)  base = 1;
+    else if (cleanSheets >= 1)  base = -1;
+    else                        base = -4;
+    // الأهداف والتمريرات للمدافعين: bonus فقط
+    base += Math.max(0, Math.floor(goals   / 5) * 3);
+    base += Math.max(0, Math.floor(assists / 5) * 2);
+
   } else if (position === "GK") {
-    bonus += Math.floor(cleanSheets / 5) * 10;
+    if (cleanSheets >= 18)      base = 22;
+    else if (cleanSheets >= 13) base = 16;
+    else if (cleanSheets >= 9)  base = 10;
+    else if (cleanSheets >= 6)  base = 5;
+    else if (cleanSheets >= 3)  base = 1;
+    else if (cleanSheets >= 1)  base = -1;
+    else                        base = -4;
+
+  } else {
+    // positions أخرى → ثابت تقريباً
+    base = 0;
   }
 
-  return bonus; // النسبة المئوية (مثلاً 25 = +25%)
+  return base;
 }
 
 export function calculatePerformanceGrowth(
   currentValue: number,
   position: string,
-  currentGoals: number,
-  currentAssists: number,
-  currentCleanSheets: number,
-  prevGoals: number,
-  prevAssists: number,
-  prevCleanSheets: number
+  goals: number,
+  assists: number,
+  cleanSheets: number,
+  games: number = 0,
 ): PerformanceGrowthResult {
-  const defenders = ["LB", "LCB", "RCB", "RB"];
-  const currentBonus = getPerformanceBonusPct(position, currentGoals, currentAssists, currentCleanSheets);
+  const base  = getAbsolutePerformancePct(position, goals, assists, cleanSheets, games);
 
-  // للمدافعين: فقط Clean Sheets تؤثر سلبياً — Goals/Assists bonus فقط
-  let prevBonus: number;
-  if (defenders.includes(position)) {
-    const prevCSBonus = Math.floor(prevCleanSheets / 5) * 5;
-    const currCSBonus = Math.floor(currentCleanSheets / 5) * 5;
-    const currGoalBonus = Math.max(0, Math.floor(currentGoals / 5) * 10);
-    const currAstBonus  = Math.max(0, Math.floor(currentAssists / 5) * 12.5);
-    prevBonus = prevCSBonus; // فقط الـ CS السابق يُقارن
-    const netCS = currCSBonus - prevCSBonus;
-    const baseline = (Math.random() * 10) - 5;
-    const totalPct = netCS + currGoalBonus + currAstBonus + baseline;
-    const changeAbs = Math.round(currentValue * (totalPct / 100));
-    const newValue = Math.max(1, currentValue + changeAbs);
-    return {
-      newValue,
-      changePct: totalPct,
-      changeAbs,
-      direction: totalPct > 1 ? "up" : totalPct < -1 ? "down" : "flat",
-    };
-  }
+  // ضوضاء عشوائية صغيرة ±2% فقط
+  const noise = (Math.random() * 4) - 2;
 
-  prevBonus = getPerformanceBonusPct(position, prevGoals, prevAssists, prevCleanSheets);
-
-  // الفرق بين الموسمين — إذا تحسّن يزيد، إذا انخفض ينقص
-  const netPct = currentBonus - prevBonus;
-
-  // أضف baseline random صغير (±5%) لإضفاء تشويق
-  const baseline = (Math.random() * 10) - 5; // -5% to +5%
-  const totalPct = netPct + baseline;
+  // الحد الأقصى للنمو: +25% | الحد الأقصى للنزول: -15%
+  const totalPct = Math.max(-15, Math.min(25, base + noise));
 
   const changeAbs = Math.round(currentValue * (totalPct / 100));
-  const newValue = Math.max(1, currentValue + changeAbs);
+  const newValue  = Math.max(1, currentValue + changeAbs);
 
   return {
     newValue,

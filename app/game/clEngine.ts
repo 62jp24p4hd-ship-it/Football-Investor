@@ -286,7 +286,9 @@ function updatePlayerStats(
   homeGoals: number,
   awayGoals: number,
   userTeamName: string,
-  userRoster?: OwnedPlayer[]
+  userRoster?: OwnedPlayer[],
+  homePlayerNames?: string[],
+  awayPlayerNames?: string[],
 ): Record<string, CLPlayerStat> {
   const updated = { ...stats };
 
@@ -314,7 +316,7 @@ function updatePlayerStats(
     s.assists++;
   }
 
-  // Clean sheets — only for user's goalkeeper
+  // Clean sheets — user's GK
   if (userRoster) {
     const isUserHome = homeTeam === userTeamName;
     const userConceded = isUserHome ? awayGoals : homeGoals;
@@ -325,6 +327,18 @@ function updatePlayerStats(
         s.cleanSheets++;
       }
     }
+  }
+
+  // Clean sheets — AI teams' GKs (first player in roster = GK by convention)
+  if (homeTeam !== userTeamName && awayGoals === 0 && homePlayerNames && homePlayerNames.length > 0) {
+    const gkName = homePlayerNames[0];
+    const s = ensure(gkName, homeTeam);
+    s.cleanSheets++;
+  }
+  if (awayTeam !== userTeamName && homeGoals === 0 && awayPlayerNames && awayPlayerNames.length > 0) {
+    const gkName = awayPlayerNames[0];
+    const s = ensure(gkName, awayTeam);
+    s.cleanSheets++;
   }
 
   return updated;
@@ -388,7 +402,9 @@ export function playCLRound(
       result.homeGoals,
       result.awayGoals,
       userTeamName,
-      isUserMatch ? userRoster : undefined
+      isUserMatch ? userRoster : undefined,
+      homePlayerNames,
+      awayPlayerNames,
     );
 
     return { ...f, homeGoals: result.homeGoals, awayGoals: result.awayGoals, played: true };
@@ -512,7 +528,8 @@ export function playPlayoffLeg(
     playerStats = updatePlayerStats(
       playerStats, result.scorers, result.assisters,
       homeTeamName, awayTeamName, result.homeGoals, result.awayGoals,
-      userTeamName, isUserMatch ? userRoster : undefined
+      userTeamName, isUserMatch ? userRoster : undefined,
+      homePlayerNames, awayPlayerNames,
     );
 
     let newTie: CLTie;
@@ -625,7 +642,7 @@ export function playKnockoutLeg(
         if (isUserMatch) capturedUserEvents = result.events;
         playerStats = updatePlayerStats(playerStats, result.scorers, result.assisters,
           homeTeamName, awayTeamName, result.homeGoals, result.awayGoals, userTeamName,
-          isUserMatch ? userRoster : undefined);
+          isUserMatch ? userRoster : undefined, hPN, aPN);
         let hg = result.homeGoals, ag = result.awayGoals;
         if (hg === ag) { if (Math.random() < 0.5) hg++; else ag++; }
         const winner = hg > ag ? tie.teamA : tie.teamB;
@@ -651,7 +668,7 @@ export function playKnockoutLeg(
       if (isUserMatch) capturedUserEvents = result.events;
       playerStats = updatePlayerStats(playerStats, result.scorers, result.assisters,
         homeTeamName, awayTeamName, result.homeGoals, result.awayGoals, userTeamName,
-        isUserMatch ? userRoster : undefined);
+        isUserMatch ? userRoster : undefined, hPN2, aPN2);
       let newTie: CLTie;
       if (leg === 1) {
         newTie = { ...tie, leg1: { goalsA: result.homeGoals, goalsB: result.awayGoals } };

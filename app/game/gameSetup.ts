@@ -146,20 +146,18 @@ export function setupNewSeason(
         ? item.currentValue
         : item.buyPrice;
 
-      const prevSeason = newSeason - 1;
-      const currentStats = item.player.statsBySeason?.[newSeason] ?? item.player.statsBySeason?.[prevSeason] ?? null;
-      const prevStats = item.player.statsBySeason?.[prevSeason] ?? null;
+      // stats الموسم اللي انتهى للتو (newSeason - 1)
+      const justEndedSeason = newSeason - 1;
+      const seasonStats = item.player.statsBySeason?.[justEndedSeason] ?? null;
 
-      if (currentStats) {
+      if (seasonStats) {
         const result = calculatePerformanceGrowth(
           safeCurrentValue,
           item.player.position,
-          currentStats.goals ?? 0,
-          currentStats.assists ?? 0,
-          currentStats.cleanSheets ?? 0,
-          prevStats?.goals ?? 0,
-          prevStats?.assists ?? 0,
-          prevStats?.cleanSheets ?? 0,
+          seasonStats.goals ?? 0,
+          seasonStats.assists ?? 0,
+          seasonStats.cleanSheets ?? 0,
+          seasonStats.games ?? 0,
         );
 
         // خبر التغيير في القيمة
